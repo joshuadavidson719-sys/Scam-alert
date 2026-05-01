@@ -29,6 +29,7 @@ import { CategoryPill } from "@/components/CategoryPill";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { TrendingCarousel } from "@/components/TrendingCarousel";
+import { FollowSuggestions } from "@/components/FollowSuggestions";
 import { router } from "expo-router";
 
 const HEADER_HEIGHT = 60;
@@ -159,10 +160,15 @@ export default function HomeScreen() {
           data={posts}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={
-            activeCategory === "all" ? <TrendingCarousel /> : null
+            activeCategory === "all" ? (
+              <>
+                <TrendingCarousel />
+                <FollowSuggestions />
+              </>
+            ) : null
           }
-          renderItem={({ item }) => (
-            <View style={{ paddingHorizontal: 12 }}>
+          renderItem={({ item, index }) => (
+            <View style={{ paddingHorizontal: 12, marginTop: index === 0 ? 12 : 0 }}>
               <PostCard
                 post={item}
                 onComment={() => setCommentPostId(item.id)}

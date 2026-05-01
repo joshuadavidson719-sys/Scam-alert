@@ -71,6 +71,7 @@ Without these, the app shows a warning banner and login/signup will fail.
 ## Key Components
 - `components/PostCard.tsx` — Feed post with like/comment/share/report
 - `components/TrendingCarousel.tsx` — Horizontal hot-scored trending post carousel
+- `components/FollowSuggestions.tsx` — "People to Follow" niche-matched horizontal scroll
 - `components/UserAvatar.tsx` — Avatar with initials fallback
 - `components/CategoryPill.tsx` — Category filter chip
 - `components/CommentSheet.tsx` — Bottom sheet comment section
@@ -78,6 +79,7 @@ Without these, the app shows a warning banner and login/signup will fail.
 
 ## Key Hooks
 - `hooks/useTrendingPosts.ts` — Scores posts by likes×3 + comments×2 + shares×1.5 − time decay
+- `hooks/useFollowSuggestions.ts` — Suggests users by matching niche, excluding already-followed
 - `hooks/useUnreadMessages.ts` — Real-time unread DM count summed across all chats
 - `hooks/useColors.ts` — Returns theme palette for current color scheme
 
