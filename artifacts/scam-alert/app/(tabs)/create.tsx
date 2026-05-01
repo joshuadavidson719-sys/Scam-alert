@@ -22,16 +22,26 @@ import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth, CATEGORIES, type CategoryId } from "@/context/AuthContext";
 import { CategoryPill } from "@/components/CategoryPill";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 export default function CreateScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+
+  // Optional pre-fill from AI Scam Checker or deep links
+  const params = useLocalSearchParams<{
+    prefillTitle?: string;
+    prefillDescription?: string;
+    prefillCategory?: CategoryId;
+  }>();
+
+  const [title, setTitle] = useState(params.prefillTitle ?? "");
+  const [description, setDescription] = useState(params.prefillDescription ?? "");
   const [imageUrl, setImageUrl] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId>("scam-alert");
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>(
+    params.prefillCategory ?? "scam-alert"
+  );
   const [loading, setLoading] = useState(false);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 

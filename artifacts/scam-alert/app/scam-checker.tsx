@@ -24,6 +24,43 @@ interface AnalysisResult {
   scamType: string | null;
 }
 
+// ── Scam type → icon + colour ─────────────────────────────────────────────────
+interface ScamTypeConfig {
+  icon: keyof typeof Feather.glyphMap;
+  color: string;
+}
+
+const SCAM_TYPE_CONFIG: Record<string, ScamTypeConfig> = {
+  "Phishing":              { icon: "link",        color: "#F97316" }, // orange
+  "Lottery scam":          { icon: "gift",        color: "#8B5CF6" }, // purple
+  "Prize scam":            { icon: "award",       color: "#8B5CF6" }, // purple
+  "Romance scam":          { icon: "heart",       color: "#EC4899" }, // pink
+  "Tech support scam":     { icon: "monitor",     color: "#3B82F6" }, // blue
+  "Investment fraud":      { icon: "trending-up", color: "#059669" }, // dark green
+  "Impersonation":         { icon: "user-x",      color: "#EF4444" }, // red
+  "OTP scam":              { icon: "lock",        color: "#EAB308" }, // yellow
+  "Cryptocurrency scam":   { icon: "cpu",         color: "#06B6D4" }, // teal
+  "Job scam":              { icon: "briefcase",   color: "#6366F1" }, // indigo
+  "Advance fee fraud":     { icon: "dollar-sign", color: "#DC2626" }, // dark red
+  "Identity theft":        { icon: "user-check",  color: "#7C3AED" }, // violet
+  "Smishing":              { icon: "message-square", color: "#F59E0B" }, // amber
+  "Vishing":               { icon: "phone-off",   color: "#EF4444" }, // red
+};
+
+function getScamTypeConfig(scamType: string | null): ScamTypeConfig {
+  if (!scamType) return { icon: "alert-triangle", color: "#FF3B3B" };
+  // Exact match first
+  if (SCAM_TYPE_CONFIG[scamType]) return SCAM_TYPE_CONFIG[scamType];
+  // Fuzzy match — find a key that is a substring of the scam type or vice versa
+  const lower = scamType.toLowerCase();
+  for (const key of Object.keys(SCAM_TYPE_CONFIG)) {
+    if (lower.includes(key.toLowerCase()) || key.toLowerCase().includes(lower)) {
+      return SCAM_TYPE_CONFIG[key];
+    }
+  }
+  return { icon: "alert-triangle", color: "#FF3B3B" };
+}
+
 export default function ScamCheckerScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -199,14 +236,19 @@ export default function ScamCheckerScreen() {
             </View>
           </View>
 
-          {result.scamType && (
-            <View style={[styles.scamTypeChip, { backgroundColor: colors.destructive + "18", borderColor: colors.destructive + "40" }]}>
-              <Feather name="tag" size={12} color={colors.destructive} />
-              <Text style={[styles.scamTypeText, { color: colors.destructive }]}>
-                {result.scamType}
-              </Text>
-            </View>
-          )}
+          {result.scamType
+            ? (() => {
+                const cfg = getScamTypeConfig(result.scamType!);
+                return (
+                  <View style={[styles.scamTypeChip, { backgroundColor: cfg.color + "18", borderColor: cfg.color + "44" }]}>
+                    <Feather name={cfg.icon} size={13} color={cfg.color} />
+                    <Text style={[styles.scamTypeText, { color: cfg.color }]}>
+                      {result.scamType}
+                    </Text>
+                  </View>
+                );
+              })()
+            : null}
 
           <Text style={[styles.explanation, { color: colors.text }]}>
             {result.explanation}
@@ -214,7 +256,7 @@ export default function ScamCheckerScreen() {
 
           {result.redFlags.length > 0 && (
             <View style={styles.redFlagsSection}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Red Flags</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Red Flags Detected</Text>
               {result.redFlags.map((flag, i) => (
                 <View key={i} style={styles.redFlagRow}>
                   <Feather name="alert-circle" size={13} color={colors.destructive} />
@@ -237,6 +279,61 @@ export default function ScamCheckerScreen() {
               {result.recommendation}
             </Text>
           </View>
+
+          {/* Action row — only shown when a scam is detected */}
+          {result.isScam && (
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={[styles.postAlertBtn, { backgroundColor: colors.primary }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  router.push({
+                    pathname: "/(tabs)/create",
+                    params: {
+                      prefillTitle: result.scamType
+                        ? `⚠️ ${result.scamType} Alert`
+                        : "⚠️ Scam Alert",
+                      prefillDescription: `${result.explanation}\n\nRed flags: ${result.redFlags.join(", ")}`,
+                      prefillCategory: "scam-alert",
+                    },
+                  } as never);
+                }}
+              >
+                <Feather name="edit-3" size={15} color="#fff" />
+                <Text style={styles.postAlertText}>Post an Alert</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.checkAnotherBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+                onPress={() => {
+                  setResult(null);
+                  setMessage("");
+                  Haptics.selectionAsync();
+                }}
+              >
+                <Feather name="refresh-cw" size={14} color={colors.textSecondary} />
+                <Text style={[styles.checkAnotherText, { color: colors.textSecondary }]}>
+                  Check Another
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {!result.isScam && (
+            <TouchableOpacity
+              style={[styles.checkAnotherBtn, { borderColor: colors.border, backgroundColor: colors.card, alignSelf: "center" }]}
+              onPress={() => {
+                setResult(null);
+                setMessage("");
+                Haptics.selectionAsync();
+              }}
+            >
+              <Feather name="refresh-cw" size={14} color={colors.textSecondary} />
+              <Text style={[styles.checkAnotherText, { color: colors.textSecondary }]}>
+                Check Another Message
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -374,15 +471,48 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
     borderRadius: 20,
     borderWidth: 1,
   },
   scamTypeText: {
     fontFamily: "Inter_600SemiBold",
     fontSize: 12,
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+  postAlertBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  postAlertText: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 14,
+    color: "#fff",
+  },
+  checkAnotherBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  checkAnotherText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 13,
   },
   redFlagsSection: { gap: 6 },
   sectionTitle: {
