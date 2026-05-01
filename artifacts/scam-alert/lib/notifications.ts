@@ -2,7 +2,13 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import * as Constants from "expo-constants";
 import { Platform } from "react-native";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "./firebase";
 
 Notifications.setNotificationHandler({
@@ -14,6 +20,17 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+export type NotificationType = "like" | "comment" | "share" | "follow" | "report";
+
+export interface NotificationPayload {
+  type: NotificationType;
+  actorId?: string;
+  actorName?: string;
+  actorAvatar?: string | null;
+  postId?: string;
+  postTitle?: string;
+}
 
 export async function registerForPushNotifications(): Promise<string | null> {
   if (!Device.isDevice) return null;
@@ -51,12 +68,36 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 }
 
+/**
+ * Sends a push notification AND writes a Firestore in-app notification record.
+ * Both operations are best-effort — failures are silent.
+ */
 export async function sendPushNotification(
   toUserId: string,
   title: string,
   body: string,
-  data?: Record<string, string>
+  data?: Record<string, string> & { type?: string }
 ) {
+  // ── 1. Write in-app Firestore notification ───────────────
+  try {
+    await addDoc(collection(db, "notifications"), {
+      recipientId: toUserId,
+      type: data?.type ?? "system",
+      actorId: data?.actorId ?? null,
+      actorName: data?.actorName ?? null,
+      actorAvatar: data?.actorAvatar ?? null,
+      postId: data?.postId ?? null,
+      postTitle: data?.postTitle ?? null,
+      title,
+      body,
+      read: false,
+      createdAt: serverTimestamp(),
+    });
+  } catch {
+    // in-app notification write failed — continue to push
+  }
+
+  // ── 2. Send Expo push notification ───────────────────────
   try {
     const snap = await getDoc(doc(db, "users", toUserId));
     if (!snap.exists()) return;
@@ -82,6 +123,6 @@ export async function sendPushNotification(
       }),
     });
   } catch {
-    // Silently fail — notifications are best-effort
+    // push delivery failed — notification is already in Firestore
   }
 }

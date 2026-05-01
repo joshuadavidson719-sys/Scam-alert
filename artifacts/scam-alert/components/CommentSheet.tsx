@@ -97,13 +97,22 @@ export function CommentSheet({ visible, postId, onClose }: Props) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const postSnap = await getDoc(doc(db, "posts", postId));
       if (postSnap.exists()) {
-        const authorId = postSnap.data()?.authorId as string | undefined;
+        const postData = postSnap.data();
+        const authorId = postData?.authorId as string | undefined;
+        const postTitle = postData?.title as string | undefined;
         if (authorId && authorId !== user.uid) {
           sendPushNotification(
             authorId,
             "💬 New Comment",
             `${profile.username}: "${text.trim().substring(0, 60)}"`,
-            { type: "comment", postId }
+            {
+              type: "comment",
+              postId,
+              postTitle: postTitle ?? "",
+              actorId: user.uid,
+              actorName: profile.username ?? "Someone",
+              actorAvatar: profile.profilePhoto ?? "",
+            }
           );
         }
       }

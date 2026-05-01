@@ -69,7 +69,14 @@ export function PostCard({ post, onComment, onReport }: Props) {
           post.authorId,
           "❤️ New Like",
           `${profile?.username ?? "Someone"} liked your post: "${post.title}"`,
-          { type: "like", postId: post.id }
+          {
+            type: "like",
+            postId: post.id,
+            postTitle: post.title,
+            actorId: user.uid,
+            actorName: profile?.username ?? "Someone",
+            actorAvatar: profile?.profilePhoto ?? "",
+          }
         );
       }
     }
@@ -115,7 +122,14 @@ export function PostCard({ post, onComment, onReport }: Props) {
             post.authorId,
             "🔁 Someone shared your alert",
             `${profile?.username ?? "Someone"} shared "${post.title}" — spreading awareness!`,
-            { type: "share", postId: post.id }
+            {
+              type: "share",
+              postId: post.id,
+              postTitle: post.title,
+              actorId: user?.uid ?? "",
+              actorName: profile?.username ?? "Someone",
+              actorAvatar: profile?.profilePhoto ?? "",
+            }
           );
         }
       }

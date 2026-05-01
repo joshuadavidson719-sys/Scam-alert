@@ -12,6 +12,7 @@ import { router } from "expo-router";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import * as Haptics from "expo-haptics";
 import { db } from "@/lib/firebase";
+import { sendPushNotification } from "@/lib/notifications";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { useFollowSuggestions, type SuggestedUser } from "@/hooks/useFollowSuggestions";
@@ -60,6 +61,18 @@ function UserCard({
       await refreshProfile();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setFollowed(true);
+      // Notify the followed user
+      sendPushNotification(
+        suggestion.uid,
+        "👤 New Follower",
+        `${profile?.username ?? "Someone"} started following you`,
+        {
+          type: "follow",
+          actorId: user.uid,
+          actorName: profile?.username ?? "Someone",
+          actorAvatar: profile?.profilePhoto ?? "",
+        }
+      );
       // Remove from list after short delay so user sees the success state
       setTimeout(() => onFollowed(suggestion.uid), 800);
     } catch {

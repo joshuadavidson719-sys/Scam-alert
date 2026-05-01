@@ -9,9 +9,11 @@ import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 function NativeTabLayout() {
   const unread = useUnreadMessages();
+  const unreadNotif = useUnreadNotifications();
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
@@ -25,6 +27,10 @@ function NativeTabLayout() {
       <NativeTabs.Trigger name="create">
         <Icon sf={{ default: "plus.circle", selected: "plus.circle.fill" }} />
         <Label>Post</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="notifications" badgeCount={unreadNotif > 0 ? unreadNotif : undefined}>
+        <Icon sf={{ default: "bell", selected: "bell.fill" }} />
+        <Label>Alerts</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="messages" badgeCount={unread > 0 ? unread : undefined}>
         <Icon sf={{ default: "bubble.left", selected: "bubble.left.fill" }} />
@@ -42,6 +48,7 @@ function ClassicTabLayout() {
   const colors = useColors();
   const colorScheme = useColorScheme();
   const unread = useUnreadMessages();
+  const unreadNotif = useUnreadNotifications();
   const isDark = colorScheme === "dark";
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
@@ -107,6 +114,20 @@ function ClassicTabLayout() {
               <SymbolView name="plus.circle" tintColor={color} size={24} />
             ) : (
               <Feather name="plus-circle" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Alerts",
+          tabBarBadge: unreadNotif > 0 ? (unreadNotif > 99 ? "99+" : unreadNotif) : undefined,
+          tabBarBadgeStyle: { backgroundColor: "#FF3B3B", fontSize: 10, minWidth: 18, height: 18, borderRadius: 9 },
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="bell" tintColor={color} size={24} />
+            ) : (
+              <Feather name="bell" size={22} color={color} />
             ),
         }}
       />
