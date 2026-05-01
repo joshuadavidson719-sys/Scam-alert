@@ -21,6 +21,7 @@ interface AnalysisResult {
   explanation: string;
   redFlags: string[];
   recommendation: string;
+  scamType: string | null;
 }
 
 export default function ScamCheckerScreen() {
@@ -63,10 +64,14 @@ export default function ScamCheckerScreen() {
     }
   };
 
-  const confidenceColor = (c: "high" | "medium" | "low") => {
-    if (c === "high") return colors.success;
+  // Confidence colour must factor in the verdict:
+  // - High confidence SCAM → red  | High confidence SAFE → green
+  // - Medium → amber in either case (some uncertainty)
+  // - Low → muted in either case (barely confident)
+  const confidenceColor = (c: "high" | "medium" | "low", isScam: boolean) => {
+    if (c === "low") return colors.textMuted;
     if (c === "medium") return colors.warning;
-    return colors.textMuted;
+    return isScam ? colors.destructive : colors.success;
   };
 
   return (
@@ -188,11 +193,20 @@ export default function ScamCheckerScreen() {
               >
                 {result.isScam ? "⚠️ Likely a SCAM" : "✅ Likely Safe"}
               </Text>
-              <Text style={[styles.confidence, { color: confidenceColor(result.confidence) }]}>
+              <Text style={[styles.confidence, { color: confidenceColor(result.confidence, result.isScam) }]}>
                 {result.confidence.charAt(0).toUpperCase() + result.confidence.slice(1)} confidence
               </Text>
             </View>
           </View>
+
+          {result.scamType && (
+            <View style={[styles.scamTypeChip, { backgroundColor: colors.destructive + "18", borderColor: colors.destructive + "40" }]}>
+              <Feather name="tag" size={12} color={colors.destructive} />
+              <Text style={[styles.scamTypeText, { color: colors.destructive }]}>
+                {result.scamType}
+              </Text>
+            </View>
+          )}
 
           <Text style={[styles.explanation, { color: colors.text }]}>
             {result.explanation}
@@ -354,6 +368,21 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     fontSize: 15,
     lineHeight: 22,
+  },
+  scamTypeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  scamTypeText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
+    letterSpacing: 0.2,
   },
   redFlagsSection: { gap: 6 },
   sectionTitle: {
