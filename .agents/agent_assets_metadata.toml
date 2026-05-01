@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "L_-Ti2eBGQAKntTJTX6SW"
+uri = "file://artifacts/scam-alert/assets/images/icon.png"
+type = "image"
+title = "scam alert app icon"
+
+[[generated]]
+id = "LiIO7d47U36Pgw-DqvYEB"
+uri = "file://artifacts/scam-alert/assets/images/splash-icon.png"
+type = "image"
+title = "scam alert splash"
+
+[[generated]]
+id = "6E7sSNqDJmxSMkC3bMQLS"
+uri = "file://artifacts/scam-alert/assets/images/post-placeholder.png"
+type = "image"
+title = "scam alert post placeholder"

@@ -1,27 +1,89 @@
-# Workspace
+# Scam Alert — Mobile Social Media App
 
 ## Overview
+Full-featured mobile social media app built with Expo (React Native) focused on scam awareness, community reporting, and AI-powered fraud detection.
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+## Architecture
 
-## Stack
+### Artifacts
+- **`artifacts/scam-alert`** — Expo mobile app (React Native + Expo Router)
+- **`artifacts/api-server`** — Express API server with scam-check endpoint
+- **`artifacts/mockup-sandbox`** — Component preview canvas (Vite)
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+### Tech Stack
+- **Frontend**: Expo SDK 54, Expo Router v6, React Native
+- **Auth & Database**: Firebase Auth + Firestore
+- **AI**: OpenAI via Replit AI Integrations proxy (`/api/scam-check`)
+- **Icons**: `@expo/vector-icons` (Feather)
+- **Haptics**: `expo-haptics`
+- **Fonts**: `@expo-google-fonts/inter` (400, 500, 600, 700)
 
-## Key Commands
+## Firebase Setup (Required)
+The app requires Firebase credentials as environment secrets:
+- `EXPO_PUBLIC_FIREBASE_API_KEY`
+- `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `EXPO_PUBLIC_FIREBASE_PROJECT_ID`
+- `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `EXPO_PUBLIC_FIREBASE_APP_ID`
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+Without these, the app shows a warning banner and login/signup will fail.
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+## Firestore Collections
+- `users/{uid}` — UserProfile (username, bio, niche, followers, following, isAdmin)
+- `posts/{id}` — PostData (authorId, title, description, category, likes, commentCount, images)
+- `posts/{id}/comments/{id}` — Comment (authorId, text, createdAt)
+- `chats/{chatId}` — Chat metadata (participants, lastMessage)
+- `chats/{chatId}/messages/{id}` — Message (senderId, text)
+- `reports/{id}` — Report (reporterId, targetId, reason, status)
+
+## Theme
+- Dark red-alert theme: primary `#FF3B3B`
+- Dark mode background: `#0D0D0D`
+- Light mode background: `#F8F8F8`
+- Full dark/light theme support via `useColors()` hook
+
+## App Screens
+
+### Auth Flow
+- `app/(auth)/login.tsx` — Login with email/password
+- `app/(auth)/signup.tsx` — Create account
+- `app/(auth)/onboarding.tsx` — Pick niche (post-signup)
+
+### Tab Navigation (5 tabs)
+- `app/(tabs)/index.tsx` — Home feed with category filter
+- `app/(tabs)/explore.tsx` — Browse by category + AI checker CTA
+- `app/(tabs)/create.tsx` — Create new post
+- `app/(tabs)/messages.tsx` — DM conversation list
+- `app/(tabs)/profile.tsx` — Own profile, posts, settings
+
+### Detail Screens
+- `app/post/[id].tsx` — Full post with like/comment/report
+- `app/user/[id].tsx` — User profile with follow/message
+- `app/chat/[id].tsx` — Real-time 1:1 chat
+- `app/scam-checker.tsx` — AI scam analysis modal
+
+### Admin & Legal
+- `app/admin.tsx` — Moderation panel (admin only)
+- `app/legal/privacy.tsx` — Privacy Policy
+- `app/legal/guidelines.tsx` — Community Guidelines
+
+## Key Components
+- `components/PostCard.tsx` — Feed post with like/comment/share/report
+- `components/UserAvatar.tsx` — Avatar with initials fallback
+- `components/CategoryPill.tsx` — Category filter chip
+- `components/CommentSheet.tsx` — Bottom sheet comment section
+- `components/ReportModal.tsx` — Report post with reason selection
+
+## API Server
+- `GET /api/healthz` — Health check
+- `POST /api/scam-check` — AI scam analysis (OpenAI)
+
+## Categories
+scam-alert, news, motivation, health, finance, crime-awareness, technology, education, entertainment
+
+## Environment Secrets
+- `SESSION_SECRET` — Set
+- `AI_INTEGRATIONS_OPENAI_API_KEY` — Set (via Replit AI Integrations)
+- `AI_INTEGRATIONS_OPENAI_BASE_URL` — Set (via Replit AI Integrations)
+- Firebase credentials — Not yet set (pending user input)
