@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import * as Haptics from "expo-haptics";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
@@ -177,13 +177,21 @@ export function FollowSuggestions() {
             People to Follow
           </Text>
         </View>
-        <TouchableOpacity
-          onPress={refresh}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={[styles.refreshBtn, { backgroundColor: colors.muted }]}
-        >
-          <Feather name="refresh-cw" size={13} color={colors.textMuted} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={() => router.push("/people-to-follow" as never)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.seeAllText, { color: colors.primary }]}>See All</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={refresh}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[styles.refreshBtn, { backgroundColor: colors.muted }]}
+          >
+            <Feather name="refresh-cw" size={13} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Subtitle */}
@@ -234,9 +242,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 7,
   },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   headerTitle: {
     fontFamily: "Inter_700Bold",
     fontSize: 16,
+  },
+  seeAllText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
   },
   refreshBtn: {
     width: 28,
