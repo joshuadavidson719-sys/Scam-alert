@@ -293,7 +293,13 @@ export default function ScamCheckerScreen() {
                       prefillTitle: result.scamType
                         ? `⚠️ ${result.scamType} Alert`
                         : "⚠️ Scam Alert",
-                      prefillDescription: `${result.explanation}\n\nRed flags: ${result.redFlags.join(", ")}`,
+                      prefillDescription: [
+                        result.explanation,
+                        result.redFlags.length > 0
+                          ? `\n🚩 Red flags:\n${result.redFlags.map(f => `• ${f}`).join("\n")}`
+                          : "",
+                        `\n💡 ${result.recommendation}`,
+                      ].join(""),
                       prefillCategory: "scam-alert",
                     },
                   } as never);

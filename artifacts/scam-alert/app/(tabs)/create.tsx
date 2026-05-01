@@ -43,6 +43,8 @@ export default function CreateScreen() {
   const [loading, setLoading] = useState(false);
   const [isPrefilled, setIsPrefilled] = useState(false);
 
+  const titleInputRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollView>(null);
   // Track which param "key" we last applied so we only inject once per
   // navigation — not on every re-render while the user edits their form.
   const appliedKeyRef = useRef<string | null>(null);
@@ -60,7 +62,15 @@ export default function CreateScreen() {
     if (params.prefillDescription) setDescription(params.prefillDescription);
     if (params.prefillCategory) setSelectedCategory(params.prefillCategory as CategoryId);
     setIsPrefilled(true);
+
+    // Give the layout a tick to settle, then focus the title so the
+    // user can immediately start editing without an extra tap.
+    setTimeout(() => {
+      titleInputRef.current?.focus();
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }, 350);
   }, [params.prefillTitle, params.prefillDescription, params.prefillCategory]);
+
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const handlePost = async () => {
@@ -107,6 +117,7 @@ export default function CreateScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={[
         styles.container,
@@ -169,14 +180,19 @@ export default function CreateScreen() {
         Title *
       </Text>
       <TextInput
+        ref={titleInputRef}
         style={[
           styles.titleInput,
-          { color: colors.text, borderColor: colors.border, backgroundColor: colors.card },
+          {
+            color: colors.text,
+            borderColor: isPrefilled ? colors.primary + "80" : colors.border,
+            backgroundColor: isPrefilled ? colors.primary + "08" : colors.card,
+          },
         ]}
         placeholder="What's the scam or news?"
         placeholderTextColor={colors.textMuted}
         value={title}
-        onChangeText={setTitle}
+        onChangeText={(t) => { setTitle(t); setIsPrefilled(false); }}
         maxLength={100}
         multiline
       />
@@ -190,12 +206,16 @@ export default function CreateScreen() {
       <TextInput
         style={[
           styles.descInput,
-          { color: colors.text, borderColor: colors.border, backgroundColor: colors.card },
+          {
+            color: colors.text,
+            borderColor: isPrefilled ? colors.primary + "80" : colors.border,
+            backgroundColor: isPrefilled ? colors.primary + "08" : colors.card,
+          },
         ]}
         placeholder="Provide details about the scam, how it works, what to watch out for..."
         placeholderTextColor={colors.textMuted}
         value={description}
-        onChangeText={setDescription}
+        onChangeText={(t) => { setDescription(t); setIsPrefilled(false); }}
         multiline
         maxLength={2000}
         textAlignVertical="top"
