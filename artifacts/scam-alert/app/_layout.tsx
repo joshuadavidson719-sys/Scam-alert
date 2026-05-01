@@ -8,7 +8,6 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -44,11 +43,17 @@ function navigateFromNotification(data: NotificationData) {
 function RootLayoutNav() {
   useEffect(() => {
     if (Platform.OS === "web") return;
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as NotificationData;
-      navigateFromNotification(data);
-    });
-    return () => sub.remove();
+    let sub: { remove: () => void } | null = null;
+    try {
+      const Notifications = require("expo-notifications");
+      sub = Notifications.addNotificationResponseReceivedListener((response: { notification: { request: { content: { data: NotificationData } } } }) => {
+        const data = response.notification.request.content.data;
+        navigateFromNotification(data);
+      });
+    } catch {
+      // Expo Go on Android — push notification listeners not supported
+    }
+    return () => sub?.remove();
   }, []);
 
   return (
@@ -100,26 +105,26 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  const notificationListener = useRef<Notifications.EventSubscription | null>(null);
+  const notificationListener = useRef<{ remove: () => void } | null>(null);
 
   useEffect(() => {
-    // Handle notification received in foreground (native only)
-    if (Platform.OS !== "web") {
-      notificationListener.current = Notifications.addNotificationReceivedListener(
-        () => {
-          // Foreground display handled by setNotificationHandler in lib/notifications.ts
-        }
-      );
-    }
+    if (Platform.OS === "web") return;
+    try {
+      const Notifications = require("expo-notifications");
 
-    // Handle cold-launch: app opened by tapping a notification (native only)
-    if (Platform.OS !== "web") {
-      Notifications.getLastNotificationResponseAsync().then((response) => {
+      // Handle notification received in foreground
+      notificationListener.current = Notifications.addNotificationReceivedListener(() => {
+        // Foreground display handled by setNotificationHandler in lib/notifications.ts
+      });
+
+      // Handle cold-launch: app opened by tapping a notification
+      Notifications.getLastNotificationResponseAsync().then((response: { notification: { request: { content: { data: NotificationData } } } } | null) => {
         if (!response) return;
-        const data = response.notification.request.content.data as NotificationData;
-        // Delay so the router is mounted before we navigate
+        const data = response.notification.request.content.data;
         setTimeout(() => navigateFromNotification(data), 500);
       });
+    } catch {
+      // Expo Go on Android — push notification listeners not supported
     }
 
     return () => {

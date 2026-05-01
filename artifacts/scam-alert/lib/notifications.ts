@@ -1,4 +1,3 @@
-import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import * as Constants from "expo-constants";
 import { Platform } from "react-native";
@@ -11,15 +10,25 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// expo-notifications push support was removed from Expo Go on Android in SDK 53.
+// All calls are wrapped in try-catch so the app loads and works normally in
+// Expo Go — push tokens simply won't be registered, and in-app Firestore
+// notifications still work. A production/development build gets full push support.
+
+try {
+  const Notifications = require("expo-notifications");
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch {
+  // Expo Go on Android — push notifications not supported, skip silently
+}
 
 export type NotificationType = "like" | "comment" | "share" | "follow" | "report";
 
@@ -35,27 +44,29 @@ export interface NotificationPayload {
 export async function registerForPushNotifications(): Promise<string | null> {
   if (!Device.isDevice) return null;
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  if (existingStatus !== "granted") {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-
-  if (finalStatus !== "granted") return null;
-
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "Scam Alert",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF3B3B",
-      sound: "default",
-    });
-  }
-
   try {
+    const Notifications = require("expo-notifications");
+
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== "granted") return null;
+
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "Scam Alert",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#FF3B3B",
+        sound: "default",
+      });
+    }
+
     const projectId =
       Constants.default.expoConfig?.extra?.eas?.projectId ??
       Constants.default.easConfig?.projectId;
@@ -64,6 +75,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     );
     return token.data;
   } catch {
+    // Expo Go on Android or permission denied — no push token
     return null;
   }
 }
