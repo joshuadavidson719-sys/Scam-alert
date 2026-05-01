@@ -11,7 +11,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
@@ -50,6 +50,7 @@ export function PostCard({ post, onComment, onReport }: Props) {
     !!user && post.likes.includes(user.uid)
   );
   const [likeCount, setLikeCount] = useState(post.likes.length);
+  const [shareCount, setShareCount] = useState(post.shareCount);
 
   const handleLike = async () => {
     if (!user) return;
@@ -75,12 +76,51 @@ export function PostCard({ post, onComment, onReport }: Props) {
   };
 
   const handleShare = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      await Share.share({
-        message: `🚨 ${post.title}\n\n${post.description}\n\nShared from Scam Alert`,
-      });
+      const result = await Share.share(
+        {
+          title: `⚠️ Scam Alert: ${post.title}`,
+          message: [
+            `⚠️ SCAM ALERT`,
+            ``,
+            `${post.title}`,
+            ``,
+            post.description,
+            ``,
+            `— Posted by ${post.authorName} on Scam Alert`,
+            `Stay informed. Stay safe. Download the app and join the community.`,
+          ].join("\n"),
+          url: "https://scam-alert.app", // shown as a rich link on iOS
+        },
+        {
+          dialogTitle: "Share this scam alert",   // Android only
+          subject: `Scam Alert: ${post.title}`,   // email subject
+        }
+      );
+
+      // Only count as a share when the user actually sent it
+      // (on Android, result.action is always sharedAction even if dismissed)
+      const didShare =
+        result.action === Share.sharedAction ||
+        result.action === "sharedAction";
+
+      if (didShare) {
+        setShareCount((n) => n + 1);
+        await updateDoc(doc(db, "posts", post.id), {
+          shareCount: increment(1),
+        });
+        if (post.authorId !== user?.uid) {
+          sendPushNotification(
+            post.authorId,
+            "🔁 Someone shared your alert",
+            `${profile?.username ?? "Someone"} shared "${post.title}" — spreading awareness!`,
+            { type: "share", postId: post.id }
+          );
+        }
+      }
     } catch {
-      // ignore
+      // Sheet cancelled or not available — no-op
     }
   };
 
@@ -159,7 +199,7 @@ export function PostCard({ post, onComment, onReport }: Props) {
         <TouchableOpacity style={styles.action} onPress={handleShare}>
           <Feather name="share-2" size={18} color={colors.textSecondary} />
           <Text style={[styles.actionText, { color: colors.textSecondary }]}>
-            Share
+            {shareCount > 0 ? shareCount : "Share"}
           </Text>
         </TouchableOpacity>
 
