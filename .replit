@@ -30,3 +30,13 @@ externalPort = 80
 [[ports]]
 localPort = 22487
 externalPort = 3000
+
+[userenv]
+
+[userenv.shared]
+EXPO_PUBLIC_FIREBASE_API_KEY = "AIzaSyCn0Rc4xWW-0LaGhJuIBtZMLsBcsD7KnqI"
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN = "applicationid-scamalert-clean.firebaseapp.com"
+EXPO_PUBLIC_FIREBASE_PROJECT_ID = "applicationid-scamalert-clean"
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET = "applicationid-scamalert-clean.firebasestorage.app"
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "86631393939"
+EXPO_PUBLIC_FIREBASE_APP_ID = "1:86631393939:web:3a359e5c70bee0c8d7bb66"
