@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "Scam Alert"
+version = "1.0.0"
+id = "artifacts/scam-alert"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 22487
+
+[services.development]
+run = "pnpm --filter @workspace/scam-alert run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/scam-alert", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/scam-alert", "run", "serve" ]
+
+[services.env]
+PORT = "22487"
+BASE_PATH = "/"
