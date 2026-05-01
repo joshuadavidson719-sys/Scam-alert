@@ -24,6 +24,7 @@ import {
   updateDoc,
   serverTimestamp,
   getDoc,
+  increment,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendPushNotification } from "@/lib/notifications";
@@ -61,10 +62,14 @@ export default function ChatScreen() {
   const otherAvatar = chatMeta?.participantAvatars[otherId] ?? null;
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !user) return;
     getDoc(doc(db, "chats", id)).then((snap) => {
       if (snap.exists()) setChatMeta(snap.data() as ChatMeta);
     });
+    // Clear unread count for this user when they open the chat
+    updateDoc(doc(db, "chats", id), {
+      [`unreadCounts.${user.uid}`]: 0,
+    }).catch(() => {});
     const q = query(
       collection(db, "chats", id, "messages"),
       orderBy("createdAt", "desc")
@@ -78,7 +83,7 @@ export default function ChatScreen() {
       setLoading(false);
     });
     return unsub;
-  }, [id]);
+  }, [id, user]);
 
   const handleSend = async () => {
     if (!text.trim() || !user || !id) return;
@@ -94,6 +99,7 @@ export default function ChatScreen() {
       await updateDoc(doc(db, "chats", id), {
         lastMessage: msgText,
         lastMessageAt: Date.now(),
+        ...(otherId ? { [`unreadCounts.${otherId}`]: increment(1) } : {}),
       });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       if (otherId && chatMeta) {

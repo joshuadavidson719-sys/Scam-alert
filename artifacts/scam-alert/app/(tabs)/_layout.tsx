@@ -8,8 +8,10 @@ import React from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 function NativeTabLayout() {
+  const unread = useUnreadMessages();
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
@@ -24,7 +26,7 @@ function NativeTabLayout() {
         <Icon sf={{ default: "plus.circle", selected: "plus.circle.fill" }} />
         <Label>Post</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="messages">
+      <NativeTabs.Trigger name="messages" badgeCount={unread > 0 ? unread : undefined}>
         <Icon sf={{ default: "bubble.left", selected: "bubble.left.fill" }} />
         <Label>Messages</Label>
       </NativeTabs.Trigger>
@@ -39,6 +41,7 @@ function NativeTabLayout() {
 function ClassicTabLayout() {
   const colors = useColors();
   const colorScheme = useColorScheme();
+  const unread = useUnreadMessages();
   const isDark = colorScheme === "dark";
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
@@ -111,6 +114,8 @@ function ClassicTabLayout() {
         name="messages"
         options={{
           title: "Messages",
+          tabBarBadge: unread > 0 ? (unread > 99 ? "99+" : unread) : undefined,
+          tabBarBadgeStyle: { backgroundColor: "#FF3B3B", fontSize: 10, minWidth: 18, height: 18, borderRadius: 9 },
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="bubble.left" tintColor={color} size={24} />
