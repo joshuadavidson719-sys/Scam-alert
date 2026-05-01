@@ -8,6 +8,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import {
@@ -41,6 +42,7 @@ interface Props {
 
 export function ReportModal({ visible, postId, onClose }: Props) {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [details, setDetails] = useState("");
@@ -82,11 +84,20 @@ export function ReportModal({ visible, postId, onClose }: Props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity
-        style={styles.backdrop}
+        style={[styles.backdrop, { backgroundColor: "rgba(0,0,0,0.45)" }]}
         activeOpacity={1}
         onPress={onClose}
       />
-      <View style={[styles.sheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View
+        style={[
+          styles.sheet,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 20,
+          },
+        ]}
+      >
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
         <Text style={[styles.title, { color: colors.text }]}>Report Post</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -182,7 +193,6 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderRightWidth: 1,
     padding: 20,
-    paddingBottom: 34,
     maxHeight: "85%",
   },
   handle: {

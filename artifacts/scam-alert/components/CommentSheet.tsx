@@ -12,6 +12,7 @@ import {
   Platform,
   Animated,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import {
@@ -141,6 +142,7 @@ const CommentRow = React.memo(function CommentRow({
 // ── Main sheet ────────────────────────────────────────────────────────────────
 export function CommentSheet({ visible, postId, postAuthorId, postTitle, onClose }: Props) {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
@@ -343,7 +345,11 @@ export function CommentSheet({ visible, postId, postAuthorId, postTitle, onClose
         <View
           style={[
             styles.inputRow,
-            { borderTopColor: colors.border, backgroundColor: colors.surface },
+            {
+              borderTopColor: colors.border,
+              backgroundColor: colors.surface,
+              paddingBottom: insets.bottom > 0 ? insets.bottom + 8 : 16,
+            },
           ]}
         >
           <UserAvatar
@@ -524,7 +530,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     gap: 8,
     padding: 12,
-    paddingBottom: Platform.OS === "ios" ? 28 : 16,
     borderTopWidth: 1,
   },
   inputWrap: {
