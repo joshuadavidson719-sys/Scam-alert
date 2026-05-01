@@ -30,10 +30,10 @@ The app requires Firebase credentials as environment secrets:
 Without these, the app shows a warning banner and login/signup will fail.
 
 ## Firestore Collections
-- `users/{uid}` — UserProfile (username, bio, niche, followers, following, isAdmin)
-- `posts/{id}` — PostData (authorId, title, description, category, likes, commentCount, images)
+- `users/{uid}` — UserProfile (username, bio, niche, followers, following, isAdmin, pushToken)
+- `posts/{id}` — PostData (authorId, title, description, category, likes, commentCount, shareCount, images)
 - `posts/{id}/comments/{id}` — Comment (authorId, text, createdAt)
-- `chats/{chatId}` — Chat metadata (participants, lastMessage)
+- `chats/{chatId}` — Chat metadata (participants, lastMessage, unreadCounts map per userId)
 - `chats/{chatId}/messages/{id}` — Message (senderId, text)
 - `reports/{id}` — Report (reporterId, targetId, reason, status)
 
@@ -51,8 +51,8 @@ Without these, the app shows a warning banner and login/signup will fail.
 - `app/(auth)/onboarding.tsx` — Pick niche (post-signup)
 
 ### Tab Navigation (5 tabs)
-- `app/(tabs)/index.tsx` — Home feed with category filter
-- `app/(tabs)/explore.tsx` — Browse by category + AI checker CTA
+- `app/(tabs)/index.tsx` — Home feed with category filter + 🔥 Trending carousel
+- `app/(tabs)/explore.tsx` — Search posts/users + category browser + AI checker CTA
 - `app/(tabs)/create.tsx` — Create new post
 - `app/(tabs)/messages.tsx` — DM conversation list
 - `app/(tabs)/profile.tsx` — Own profile, posts, settings
@@ -70,10 +70,16 @@ Without these, the app shows a warning banner and login/signup will fail.
 
 ## Key Components
 - `components/PostCard.tsx` — Feed post with like/comment/share/report
+- `components/TrendingCarousel.tsx` — Horizontal hot-scored trending post carousel
 - `components/UserAvatar.tsx` — Avatar with initials fallback
 - `components/CategoryPill.tsx` — Category filter chip
 - `components/CommentSheet.tsx` — Bottom sheet comment section
 - `components/ReportModal.tsx` — Report post with reason selection
+
+## Key Hooks
+- `hooks/useTrendingPosts.ts` — Scores posts by likes×3 + comments×2 + shares×1.5 − time decay
+- `hooks/useUnreadMessages.ts` — Real-time unread DM count summed across all chats
+- `hooks/useColors.ts` — Returns theme palette for current color scheme
 
 ## API Server
 - `GET /api/healthz` — Health check

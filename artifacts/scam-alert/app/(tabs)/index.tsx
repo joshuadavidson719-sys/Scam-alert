@@ -28,6 +28,7 @@ import { PostCard, type PostData } from "@/components/PostCard";
 import { CategoryPill } from "@/components/CategoryPill";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
+import { TrendingCarousel } from "@/components/TrendingCarousel";
 import { router } from "expo-router";
 
 const HEADER_HEIGHT = 60;
@@ -157,17 +158,19 @@ export default function HomeScreen() {
         <FlatList
           data={posts}
           keyExtractor={(item) => item.id}
+          ListHeaderComponent={
+            activeCategory === "all" ? <TrendingCarousel /> : null
+          }
           renderItem={({ item }) => (
-            <PostCard
-              post={item}
-              onComment={() => setCommentPostId(item.id)}
-              onReport={() => setReportPostId(item.id)}
-            />
+            <View style={{ paddingHorizontal: 12 }}>
+              <PostCard
+                post={item}
+                onComment={() => setCommentPostId(item.id)}
+                onReport={() => setReportPostId(item.id)}
+              />
+            </View>
           )}
-          contentContainerStyle={[
-            styles.list,
-            { paddingBottom: insets.bottom + 80 },
-          ]}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
