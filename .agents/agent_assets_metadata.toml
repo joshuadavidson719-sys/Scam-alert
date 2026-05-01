@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "L_-Ti2eBGQAKntTJTX6SW"
@@ -18,3 +17,9 @@ id = "6E7sSNqDJmxSMkC3bMQLS"
 uri = "file://artifacts/scam-alert/assets/images/post-placeholder.png"
 type = "image"
 title = "scam alert post placeholder"
+
+[[outputs]]
+id = "a3UtBJ7V3Q_FUlH0AeAmV"
+uri = "file://scam-alert-app.tar.gz"
+type = "unspecified"
+title = "Scam Alert — Full App Code"
