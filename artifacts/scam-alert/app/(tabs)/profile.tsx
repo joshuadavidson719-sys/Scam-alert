@@ -38,7 +38,7 @@ export default function ProfileScreen() {
   const { user, profile, logout, updateUserProfile } = useAuth();
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [commentPost, setCommentPost] = useState<PostData | null>(null);
   const [reportPostId, setReportPostId] = useState<string | null>(null);
   const [editingBio, setEditingBio] = useState(false);
   const [bioText, setBioText] = useState(profile?.bio ?? "");
@@ -229,7 +229,7 @@ export default function ProfileScreen() {
           <View style={{ paddingHorizontal: 12 }}>
             <PostCard
               post={item}
-              onComment={() => setCommentPostId(item.id)}
+              onComment={() => setCommentPost(item)}
               onReport={() => setReportPostId(item.id)}
             />
           </View>
@@ -238,11 +238,13 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      {commentPostId && (
+      {commentPost && (
         <CommentSheet
-          visible={!!commentPostId}
-          postId={commentPostId}
-          onClose={() => setCommentPostId(null)}
+          visible={!!commentPost}
+          postId={commentPost.id}
+          postAuthorId={commentPost.authorId}
+          postTitle={commentPost.title}
+          onClose={() => setCommentPost(null)}
         />
       )}
       {reportPostId && (

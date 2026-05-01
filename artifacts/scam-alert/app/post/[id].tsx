@@ -179,6 +179,8 @@ export default function PostDetail() {
       <CommentSheet
         visible={showComments}
         postId={post.id}
+        postAuthorId={post.authorId}
+        postTitle={post.title}
         onClose={() => setShowComments(false)}
       />
       <ReportModal

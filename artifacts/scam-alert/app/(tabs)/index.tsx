@@ -43,7 +43,7 @@ export default function HomeScreen() {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [commentPost, setCommentPost] = useState<PostData | null>(null);
   const [reportPostId, setReportPostId] = useState<string | null>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -172,7 +172,7 @@ export default function HomeScreen() {
             <View style={{ paddingHorizontal: 12, marginTop: index === 0 ? 12 : 0 }}>
               <PostCard
                 post={item}
-                onComment={() => setCommentPostId(item.id)}
+                onComment={() => setCommentPost(item)}
                 onReport={() => setReportPostId(item.id)}
               />
             </View>
@@ -190,11 +190,13 @@ export default function HomeScreen() {
         />
       )}
 
-      {commentPostId && (
+      {commentPost && (
         <CommentSheet
-          visible={!!commentPostId}
-          postId={commentPostId}
-          onClose={() => setCommentPostId(null)}
+          visible={!!commentPost}
+          postId={commentPost.id}
+          postAuthorId={commentPost.authorId}
+          postTitle={commentPost.title}
+          onClose={() => setCommentPost(null)}
         />
       )}
       {reportPostId && (
