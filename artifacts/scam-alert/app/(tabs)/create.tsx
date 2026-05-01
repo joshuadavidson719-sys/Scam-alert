@@ -183,10 +183,18 @@ export default function CreateScreen() {
         ref={titleInputRef}
         style={[
           styles.titleInput,
+          isPrefilled ? styles.glowInput : null,
           {
             color: colors.text,
-            borderColor: isPrefilled ? colors.primary + "80" : colors.border,
-            backgroundColor: isPrefilled ? colors.primary + "08" : colors.card,
+            borderColor: isPrefilled ? colors.primary : colors.border,
+            backgroundColor: isPrefilled ? colors.primary + "12" : colors.card,
+            ...(isPrefilled && {
+              shadowColor: colors.primary,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.45,
+              shadowRadius: 10,
+              elevation: 4,
+            }),
           },
         ]}
         placeholder="What's the scam or news?"
@@ -206,10 +214,18 @@ export default function CreateScreen() {
       <TextInput
         style={[
           styles.descInput,
+          isPrefilled ? styles.glowInput : null,
           {
             color: colors.text,
-            borderColor: isPrefilled ? colors.primary + "80" : colors.border,
-            backgroundColor: isPrefilled ? colors.primary + "08" : colors.card,
+            borderColor: isPrefilled ? colors.primary : colors.border,
+            backgroundColor: isPrefilled ? colors.primary + "12" : colors.card,
+            ...(isPrefilled && {
+              shadowColor: colors.primary,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.45,
+              shadowRadius: 10,
+              elevation: 4,
+            }),
           },
         ]}
         placeholder="Provide details about the scam, how it works, what to watch out for..."
@@ -280,6 +296,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
     fontSize: 15,
+  },
+  glowInput: {
+    borderWidth: 1.5,
   },
   prefillBanner: {
     flexDirection: "row",
