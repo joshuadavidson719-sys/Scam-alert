@@ -23,8 +23,10 @@ import {
   doc,
   increment,
   serverTimestamp,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { sendPushNotification } from "@/lib/notifications";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "./UserAvatar";
@@ -93,6 +95,18 @@ export function CommentSheet({ visible, postId, onClose }: Props) {
         commentCount: increment(1),
       });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const postSnap = await getDoc(doc(db, "posts", postId));
+      if (postSnap.exists()) {
+        const authorId = postSnap.data()?.authorId as string | undefined;
+        if (authorId && authorId !== user.uid) {
+          sendPushNotification(
+            authorId,
+            "💬 New Comment",
+            `${profile.username}: "${text.trim().substring(0, 60)}"`,
+            { type: "comment", postId }
+          );
+        }
+      }
       setText("");
     } catch {
       // ignore

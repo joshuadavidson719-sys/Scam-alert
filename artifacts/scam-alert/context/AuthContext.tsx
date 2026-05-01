@@ -21,6 +21,9 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured } from "@/lib/firebase";
+import {
+  registerForPushNotifications,
+} from "@/lib/notifications";
 
 export interface UserProfile {
   uid: string;
@@ -33,6 +36,7 @@ export interface UserProfile {
   following: string[];
   isAdmin: boolean;
   createdAt: number;
+  expoPushToken?: string;
 }
 
 export const CATEGORIES = [
@@ -94,18 +98,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const savePushToken = useCallback(async (uid: string) => {
+    try {
+      const token = await registerForPushNotifications();
+      if (token) {
+        await updateDoc(doc(db, "users", uid), { expoPushToken: token });
+      }
+    } catch {
+      // Notifications are optional
+    }
+  }, []);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
         await fetchProfile(firebaseUser.uid);
+        savePushToken(firebaseUser.uid);
       } else {
         setProfile(null);
       }
       setLoading(false);
     });
     return unsub;
-  }, [fetchProfile]);
+  }, [fetchProfile, savePushToken]);
 
   const login = async (email: string, password: string) => {
     const cred = await signInWithEmailAndPassword(auth, email, password);

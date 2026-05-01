@@ -26,6 +26,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { sendPushNotification } from "@/lib/notifications";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -95,6 +96,15 @@ export default function ChatScreen() {
         lastMessageAt: Date.now(),
       });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (otherId && chatMeta) {
+        const senderName = chatMeta.participantNames[user.uid] ?? "Someone";
+        sendPushNotification(
+          otherId,
+          `💬 ${senderName}`,
+          msgText.substring(0, 100),
+          { type: "message", chatId: id }
+        );
+      }
     } catch {
       // ignore
     } finally {

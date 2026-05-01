@@ -19,6 +19,7 @@ import { UserAvatar } from "./UserAvatar";
 import { CategoryPill } from "./CategoryPill";
 import type { CategoryId } from "@/context/AuthContext";
 import { formatTimeAgo } from "@/lib/utils";
+import { sendPushNotification } from "@/lib/notifications";
 
 export interface PostData {
   id: string;
@@ -44,7 +45,7 @@ interface Props {
 
 export function PostCard({ post, onComment, onReport }: Props) {
   const colors = useColors();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [liked, setLiked] = useState(
     !!user && post.likes.includes(user.uid)
   );
@@ -62,6 +63,14 @@ export function PostCard({ post, onComment, onReport }: Props) {
       setLiked(true);
       setLikeCount((n) => n + 1);
       await updateDoc(ref, { likes: arrayUnion(user.uid) });
+      if (post.authorId !== user.uid) {
+        sendPushNotification(
+          post.authorId,
+          "❤️ New Like",
+          `${profile?.username ?? "Someone"} liked your post: "${post.title}"`,
+          { type: "like", postId: post.id }
+        );
+      }
     }
   };
 
