@@ -1,5 +1,4 @@
-import * as Device from "expo-device";
-import * as Constants from "expo-constants";
+import Constants from "expo-constants";
 import { Platform } from "react-native";
 import {
   doc,
@@ -10,24 +9,29 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 
-// expo-notifications push support was removed from Expo Go on Android in SDK 53.
-// All calls are wrapped in try-catch so the app loads and works normally in
-// Expo Go — push tokens simply won't be registered, and in-app Firestore
-// notifications still work. A production/development build gets full push support.
+// expo-notifications Android push support was removed from Expo Go in SDK 53.
+// Detect Expo Go early and never attempt to load expo-notifications at all.
+// In a real development build or production build this is false and push works.
+const IS_EXPO_GO = Constants.appOwnership === "expo";
 
-try {
-  const Notifications = require("expo-notifications");
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
-} catch {
-  // Expo Go on Android — push notifications not supported, skip silently
+if (!IS_EXPO_GO && Platform.OS !== "web") {
+  // Safely initialise the notification handler only in builds that support it
+  (async () => {
+    try {
+      const Notifications = await import("expo-notifications");
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+    } catch {
+      // Not supported in this environment
+    }
+  })();
 }
 
 export type NotificationType = "like" | "comment" | "share" | "follow" | "report";
@@ -42,19 +46,22 @@ export interface NotificationPayload {
 }
 
 export async function registerForPushNotifications(): Promise<string | null> {
-  if (!Device.isDevice) return null;
+  // Skip entirely in Expo Go or on web
+  if (IS_EXPO_GO || Platform.OS === "web") return null;
 
   try {
-    const Notifications = require("expo-notifications");
+    const Device = await import("expo-device");
+    if (!Device.default.isDevice) return null;
+
+    const Notifications = await import("expo-notifications");
+    const Constants2 = await import("expo-constants");
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
-
     if (existingStatus !== "granted") {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
-
     if (finalStatus !== "granted") return null;
 
     if (Platform.OS === "android") {
@@ -68,14 +75,13 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     const projectId =
-      Constants.default.expoConfig?.extra?.eas?.projectId ??
-      Constants.default.easConfig?.projectId;
+      Constants2.default.expoConfig?.extra?.eas?.projectId ??
+      Constants2.default.easConfig?.projectId;
     const token = await Notifications.getExpoPushTokenAsync(
       projectId ? { projectId } : undefined
     );
     return token.data;
   } catch {
-    // Expo Go on Android or permission denied — no push token
     return null;
   }
 }
@@ -109,7 +115,9 @@ export async function sendPushNotification(
     // in-app notification write failed — continue to push
   }
 
-  // ── 2. Send Expo push notification ───────────────────────
+  // ── 2. Send Expo push notification (skipped in Expo Go) ──
+  if (IS_EXPO_GO) return;
+
   try {
     const snap = await getDoc(doc(db, "users", toUserId));
     if (!snap.exists()) return;

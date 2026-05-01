@@ -8,6 +8,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import Constants from "expo-constants";
 import React, { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -20,6 +21,10 @@ import { AuthProvider } from "@/context/AuthContext";
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+// Expo Go on Android removed push notification support in SDK 53.
+// Detect it upfront so we never attempt to load expo-notifications.
+const IS_EXPO_GO = Constants.appOwnership === "expo";
 
 type NotificationData = {
   type?: string;
@@ -42,18 +47,18 @@ function navigateFromNotification(data: NotificationData) {
 
 function RootLayoutNav() {
   useEffect(() => {
-    if (Platform.OS === "web") return;
+    // Skip in Expo Go (Android push removed in SDK 53) and web
+    if (IS_EXPO_GO || Platform.OS === "web") return;
+
     let sub: { remove: () => void } | null = null;
-    try {
-      const Notifications = require("expo-notifications");
-      sub = Notifications.addNotificationResponseReceivedListener((response: { notification: { request: { content: { data: NotificationData } } } }) => {
-        const data = response.notification.request.content.data;
+    import("expo-notifications").then((Notifications) => {
+      sub = Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data as NotificationData;
         navigateFromNotification(data);
       });
-    } catch {
-      // Expo Go on Android — push notification listeners not supported
-    }
-    return () => sub?.remove();
+    }).catch(() => {/* not supported */});
+
+    return () => { sub?.remove(); };
   }, []);
 
   return (
@@ -108,28 +113,22 @@ export default function RootLayout() {
   const notificationListener = useRef<{ remove: () => void } | null>(null);
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
-    try {
-      const Notifications = require("expo-notifications");
+    // Skip in Expo Go (Android push removed in SDK 53) and web
+    if (IS_EXPO_GO || Platform.OS === "web") return;
 
-      // Handle notification received in foreground
+    import("expo-notifications").then((Notifications) => {
       notificationListener.current = Notifications.addNotificationReceivedListener(() => {
         // Foreground display handled by setNotificationHandler in lib/notifications.ts
       });
 
-      // Handle cold-launch: app opened by tapping a notification
-      Notifications.getLastNotificationResponseAsync().then((response: { notification: { request: { content: { data: NotificationData } } } } | null) => {
-        if (!response) return;
-        const data = response.notification.request.content.data;
-        setTimeout(() => navigateFromNotification(data), 500);
-      });
-    } catch {
-      // Expo Go on Android — push notification listeners not supported
-    }
+      return Notifications.getLastNotificationResponseAsync();
+    }).then((response) => {
+      if (!response) return;
+      const data = response.notification.request.content.data as NotificationData;
+      setTimeout(() => navigateFromNotification(data), 500);
+    }).catch(() => {/* not supported */});
 
-    return () => {
-      notificationListener.current?.remove();
-    };
+    return () => { notificationListener.current?.remove(); };
   }, []);
 
   useEffect(() => {
