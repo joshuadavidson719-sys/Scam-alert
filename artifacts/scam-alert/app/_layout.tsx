@@ -6,10 +6,11 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -21,7 +22,35 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
+type NotificationData = {
+  type?: string;
+  postId?: string;
+  chatId?: string;
+};
+
+function navigateFromNotification(data: NotificationData) {
+  if (!data?.type) return;
+  try {
+    if ((data.type === "like" || data.type === "comment") && data.postId) {
+      router.push(`/post/${data.postId}` as never);
+    } else if (data.type === "message" && data.chatId) {
+      router.push(`/chat/${data.chatId}` as never);
+    }
+  } catch {
+    // Router not ready yet — handled by cold-launch useEffect
+  }
+}
+
 function RootLayoutNav() {
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as NotificationData;
+      navigateFromNotification(data);
+    });
+    return () => sub.remove();
+  }, []);
+
   return (
     <Stack screenOptions={{ headerBackTitle: "Back" }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -66,19 +95,31 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+
   const notificationListener = useRef<Notifications.EventSubscription | null>(null);
-  const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
   useEffect(() => {
-    notificationListener.current = Notifications.addNotificationReceivedListener(() => {
-      // Notification received in foreground — handled by setNotificationHandler
-    });
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {
-      // User tapped a notification — could route to the relevant screen here
-    });
+    // Handle notification received in foreground (native only)
+    if (Platform.OS !== "web") {
+      notificationListener.current = Notifications.addNotificationReceivedListener(
+        () => {
+          // Foreground display handled by setNotificationHandler in lib/notifications.ts
+        }
+      );
+    }
+
+    // Handle cold-launch: app opened by tapping a notification (native only)
+    if (Platform.OS !== "web") {
+      Notifications.getLastNotificationResponseAsync().then((response) => {
+        if (!response) return;
+        const data = response.notification.request.content.data as NotificationData;
+        // Delay so the router is mounted before we navigate
+        setTimeout(() => navigateFromNotification(data), 500);
+      });
+    }
+
     return () => {
       notificationListener.current?.remove();
-      responseListener.current?.remove();
     };
   }, []);
 
