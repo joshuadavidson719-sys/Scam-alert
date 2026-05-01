@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -36,13 +36,31 @@ export default function CreateScreen() {
     prefillCategory?: CategoryId;
   }>();
 
-  const [title, setTitle] = useState(params.prefillTitle ?? "");
-  const [description, setDescription] = useState(params.prefillDescription ?? "");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId>(
-    params.prefillCategory ?? "scam-alert"
-  );
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>("scam-alert");
   const [loading, setLoading] = useState(false);
+  const [isPrefilled, setIsPrefilled] = useState(false);
+
+  // Track which param "key" we last applied so we only inject once per
+  // navigation — not on every re-render while the user edits their form.
+  const appliedKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const titleParam = params.prefillTitle;
+    if (!titleParam) return;
+
+    // Build a stable fingerprint for this particular prefill batch
+    const key = `${titleParam}::${params.prefillDescription ?? ""}`;
+    if (appliedKeyRef.current === key) return; // already applied this batch
+    appliedKeyRef.current = key;
+
+    setTitle(titleParam);
+    if (params.prefillDescription) setDescription(params.prefillDescription);
+    if (params.prefillCategory) setSelectedCategory(params.prefillCategory as CategoryId);
+    setIsPrefilled(true);
+  }, [params.prefillTitle, params.prefillDescription, params.prefillCategory]);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const handlePost = async () => {
@@ -77,6 +95,8 @@ export default function CreateScreen() {
       setDescription("");
       setImageUrl("");
       setSelectedCategory("scam-alert");
+      appliedKeyRef.current = null; // allow fresh prefill on next navigation
+      setIsPrefilled(false);
       router.replace("/(tabs)/" as never);
     } catch {
       Alert.alert("Error", "Failed to create post. Please try again.");
@@ -111,6 +131,21 @@ export default function CreateScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {isPrefilled && (
+        <View style={[styles.prefillBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}>
+          <Feather name="cpu" size={13} color={colors.primary} />
+          <Text style={[styles.prefillBannerText, { color: colors.primary }]}>
+            Pre-filled from AI Scam Checker — edit before posting
+          </Text>
+          <TouchableOpacity
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={() => setIsPrefilled(false)}
+          >
+            <Feather name="x" size={14} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
         Category
@@ -225,6 +260,21 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
     fontSize: 15,
+  },
+  prefillBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  prefillBannerText: {
+    flex: 1,
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+    lineHeight: 17,
   },
   sectionLabel: {
     fontFamily: "Inter_500Medium",
