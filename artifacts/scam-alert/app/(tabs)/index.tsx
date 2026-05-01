@@ -30,6 +30,7 @@ import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { TrendingCarousel } from "@/components/TrendingCarousel";
 import { FollowSuggestions } from "@/components/FollowSuggestions";
+import { SmartBanner } from "@/components/SmartBanner";
 import { router } from "expo-router";
 
 const HEADER_HEIGHT = 60;
@@ -136,6 +137,8 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
       </View>
+
+      <SmartBanner />
 
       {loading ? (
         <View style={styles.centered}>
