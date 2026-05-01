@@ -160,12 +160,10 @@ export default function HomeScreen() {
           data={posts}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={
-            activeCategory === "all" ? (
-              <>
-                <TrendingCarousel />
-                <FollowSuggestions />
-              </>
-            ) : null
+            <>
+              {activeCategory === "all" && <TrendingCarousel />}
+              <FollowSuggestions />
+            </>
           }
           renderItem={({ item, index }) => (
             <View style={{ paddingHorizontal: 12, marginTop: index === 0 ? 12 : 0 }}>
