@@ -26,17 +26,22 @@ import {
   getDoc,
   increment,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 import { sendPushNotification } from "@/lib/notifications";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import { formatTimeAgo } from "@/lib/utils";
+import { VoiceNoteRecorder, VoiceNotePlayer } from "@/components/VoiceNote";
 
 interface Message {
   id: string;
   senderId: string;
   text: string;
+  type?: "text" | "voice";
+  voiceUri?: string;
+  voiceDuration?: number;
   createdAt: number;
 }
 
@@ -56,6 +61,7 @@ export default function ChatScreen() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
 
   const otherId = chatMeta?.participants.find((p) => p !== user?.uid) ?? "";
   const otherName = chatMeta?.participantNames[otherId] ?? "User";
@@ -118,6 +124,33 @@ export default function ChatScreen() {
     }
   };
 
+  const handleVoiceSend = async (uri: string, durationMs: number) => {
+    if (!user || !id) return;
+    setShowVoice(false);
+    setSending(true);
+    try {
+      const blob = await (await fetch(uri)).blob();
+      const storageRef = ref(storage, `voice/${id}/${user.uid}/${Date.now()}.m4a`);
+      await uploadBytes(storageRef, blob);
+      const voiceUri = await getDownloadURL(storageRef);
+      await addDoc(collection(db, "chats", id, "messages"), {
+        senderId: user.uid,
+        text: "🎤 Voice note",
+        type: "voice",
+        voiceUri,
+        voiceDuration: durationMs,
+        createdAt: serverTimestamp(),
+      });
+      await updateDoc(doc(db, "chats", id), {
+        lastMessage: "🎤 Voice note",
+        lastMessageAt: Date.now(),
+        ...(otherId ? { [`unreadCounts.${otherId}`]: increment(1) } : {}),
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {}
+    setSending(false);
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -177,14 +210,22 @@ export default function ChatScreen() {
                       : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.bubbleText,
-                      { color: isMe ? "#fff" : colors.text },
-                    ]}
-                  >
-                    {item.text}
-                  </Text>
+                  {item.type === "voice" && item.voiceUri ? (
+                    <VoiceNotePlayer
+                      uri={item.voiceUri}
+                      durationMs={item.voiceDuration ?? 0}
+                      isMine={isMe}
+                    />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.bubbleText,
+                        { color: isMe ? "#fff" : colors.text },
+                      ]}
+                    >
+                      {item.text}
+                    </Text>
+                  )}
                   <Text
                     style={[
                       styles.bubbleTime,
@@ -217,29 +258,45 @@ export default function ChatScreen() {
           },
         ]}
       >
-        <TextInput
-          style={[
-            styles.input,
-            { color: colors.text, backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-          placeholder="Type a message..."
-          placeholderTextColor={colors.textMuted}
-          value={text}
-          onChangeText={setText}
-          multiline
-          maxLength={1000}
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendBtn,
-            { backgroundColor: text.trim() ? colors.primary : colors.muted },
-          ]}
-          onPress={handleSend}
-          disabled={!text.trim() || sending}
-        >
-          <Feather name="send" size={18} color="#fff" />
-        </TouchableOpacity>
+        {showVoice ? null : (
+          <>
+            <TouchableOpacity
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowVoice(true); }}
+              style={[styles.micBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Feather name="mic" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TextInput
+              style={[
+                styles.input,
+                { color: colors.text, backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+              placeholder="Type a message..."
+              placeholderTextColor={colors.textMuted}
+              value={text}
+              onChangeText={setText}
+              multiline
+              maxLength={1000}
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendBtn,
+                { backgroundColor: text.trim() ? colors.primary : colors.muted },
+              ]}
+              onPress={handleSend}
+              disabled={!text.trim() || sending}
+            >
+              <Feather name="send" size={18} color="#fff" />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
+      {showVoice && (
+        <VoiceNoteRecorder
+          onSend={handleVoiceSend}
+          onCancel={() => setShowVoice(false)}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -311,9 +368,19 @@ const styles = StyleSheet.create({
   inputBar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    padding: 10,
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
+  },
+  micBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    flexShrink: 0,
   },
   input: {
     flex: 1,

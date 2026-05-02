@@ -16,6 +16,7 @@ import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
+import { CustomThemePicker } from "@/components/CustomThemePicker";
 import { deleteUser, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { doc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -30,13 +31,14 @@ export default function SettingsScreen() {
   const [notifLikes, setNotifLikes] = useState(true);
   const [notifMessages, setNotifMessages] = useState(true);
 
-  const themeLabel = mode === "system" ? "System Default" : mode === "dark" ? "Dark" : "Light";
-  const nextMode = mode === "system" ? "dark" : mode === "dark" ? "light" : "system";
+  const [showThemePicker, setShowThemePicker] = useState(false);
 
-  const handleThemeToggle = async () => {
-    await Haptics.selectionAsync();
-    setMode(nextMode);
+  const themeLabels: Record<string, string> = {
+    system: "System Default", dark: "Dark", light: "Neon Green",
+    "alert-red": "Alert Red", midnight: "Midnight",
+    "safe-green": "Safe Green", ocean: "Ocean", "purple-haze": "Purple Haze",
   };
+  const themeLabel = themeLabels[mode] ?? mode;
 
   const handleLogout = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -118,8 +120,8 @@ export default function SettingsScreen() {
         {/* Appearance */}
         <Text style={[styles.section, { color: colors.textMuted }]}>Appearance</Text>
         <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <TouchableOpacity style={styles.row} onPress={handleThemeToggle}>
-            <Feather name={isDark ? "moon" : "sun"} size={18} color={colors.primary} />
+          <TouchableOpacity style={styles.row} onPress={() => { Haptics.selectionAsync(); setShowThemePicker(true); }}>
+            <Feather name="droplet" size={18} color={colors.primary} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Theme</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>{themeLabel}</Text>
@@ -223,6 +225,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <CustomThemePicker visible={showThemePicker} onClose={() => setShowThemePicker(false)} />
     </View>
   );
 }

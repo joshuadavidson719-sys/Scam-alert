@@ -28,11 +28,13 @@ import { useAuth, CATEGORIES, type CategoryId } from "@/context/AuthContext";
 import { CategoryPill } from "@/components/CategoryPill";
 import { router, useLocalSearchParams } from "expo-router";
 import { awardPoints, POINTS } from "@/hooks/usePoints";
+import { useAchievements } from "@/hooks/useAchievements";
 
 export default function CreateScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
+  const { unlock } = useAchievements(user?.uid);
 
   const params = useLocalSearchParams<{
     prefillTitle?: string;
@@ -188,6 +190,7 @@ export default function CreateScreen() {
       });
       // Award points for creating a post
       await awardPoints(user.uid, POINTS.POST_CREATED);
+      unlock("first_post");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTitle("");
       setDescription("");
@@ -232,6 +235,22 @@ export default function CreateScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Poll shortcut */}
+      <TouchableOpacity
+        style={[styles.pollShortcut, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/create-poll" as never); }}
+        activeOpacity={0.8}
+      >
+        <View style={[styles.pollIcon, { backgroundColor: "#3B82F620" }]}>
+          <Feather name="bar-chart-2" size={18} color="#3B82F6" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.pollShortcutTitle, { color: colors.text }]}>Create Community Poll</Text>
+          <Text style={[styles.pollShortcutSub, { color: colors.textMuted }]}>Ask the community anything</Text>
+        </View>
+        <Feather name="chevron-right" size={16} color={colors.textMuted} />
+      </TouchableOpacity>
 
       {isPrefilled && (
         <View style={[styles.prefillBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}>
@@ -381,6 +400,18 @@ const styles = StyleSheet.create({
   pageTitle: { fontFamily: "Inter_700Bold", fontSize: 24 },
   postBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
   postBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 15 },
+  pollShortcut: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  pollIcon: { width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  pollShortcutTitle: { fontFamily: "Inter_600SemiBold", fontSize: 14, marginBottom: 2 },
+  pollShortcutSub: { fontFamily: "Inter_400Regular", fontSize: 12 },
   glowInput: { borderWidth: 1.5 },
   prefillBanner: {
     flexDirection: "row",

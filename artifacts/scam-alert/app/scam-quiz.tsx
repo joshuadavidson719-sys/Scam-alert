@@ -15,6 +15,9 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { doc, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { Confetti } from "@/components/Confetti";
+import { AchievementToast } from "@/components/AchievementToast";
+import { useAchievements } from "@/hooks/useAchievements";
 
 interface Question {
   q: string;
@@ -90,10 +93,12 @@ export default function ScamQuizScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { unlock, newlyUnlocked, clearNewlyUnlocked } = useAchievements(user?.uid);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [answers, setAnswers] = useState<(number | null)[]>(new Array(QUESTIONS.length).fill(null));
 
   const q = QUESTIONS[current];
@@ -115,9 +120,11 @@ export default function ScamQuizScreen() {
       setSelected(null);
     } else {
       setDone(true);
-      // Award points for completing quiz
+      setShowConfetti(true);
       if (user) {
         updateDoc(doc(db, "users", user.uid), { points: increment(score * 5) }).catch(() => {});
+        unlock("quiz_done");
+        if (score === totalQ) unlock("quiz_perfect");
       }
     }
   };
@@ -136,6 +143,8 @@ export default function ScamQuizScreen() {
   if (done) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Confetti visible={showConfetti} onComplete={() => setShowConfetti(false)} />
+        <AchievementToast achievement={newlyUnlocked} onHide={clearNewlyUnlocked} />
         <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
             <Feather name="arrow-left" size={22} color={colors.text} />

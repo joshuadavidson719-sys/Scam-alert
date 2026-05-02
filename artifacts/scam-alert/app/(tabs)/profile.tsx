@@ -13,6 +13,7 @@ import {
   Modal,
   Pressable,
   Switch,
+  ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -35,6 +36,10 @@ import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { router } from "expo-router";
 import { pickAndUploadImage } from "@/lib/uploadImage";
+import { useStreak } from "@/hooks/useStreak";
+import { useAchievements, getRarityColor, ALL_ACHIEVEMENTS } from "@/hooks/useAchievements";
+import { AchievementToast } from "@/components/AchievementToast";
+import { CustomThemePicker } from "@/components/CustomThemePicker";
 
 type TabType = "posts" | "bookmarks";
 
@@ -44,6 +49,9 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { user, profile, logout, updateUserProfile } = useAuth();
   const { bookmarks } = useBookmarks();
+  const streak = useStreak();
+  const { unlocked: achievements, newlyUnlocked, clearNewlyUnlocked } = useAchievements(user?.uid);
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const [posts, setPosts] = useState<PostData[]>([]);
   const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,6 +222,25 @@ export default function ProfileScreen() {
                   {profile.niche || "Scam Alert Community"}
                 </Text>
 
+                {/* Streak pill */}
+                {streak.streak > 0 && (
+                  <View style={[
+                    styles.streakPill,
+                    { backgroundColor: streak.streak >= 7 ? "#FF3B3B20" : "#F59E0B15",
+                      borderColor: streak.streak >= 7 ? "#FF3B3B60" : "#F59E0B50" }
+                  ]}>
+                    <Text style={styles.streakFire}>{streak.streak >= 30 ? "💎" : streak.streak >= 7 ? "🔥" : "⚡"}</Text>
+                    <Text style={[styles.streakNum, { color: streak.streak >= 7 ? "#FF3B3B" : "#F59E0B" }]}>
+                      {streak.streak} day{streak.streak !== 1 ? "s" : ""} streak
+                    </Text>
+                    {streak.longestStreak > streak.streak && (
+                      <Text style={[styles.streakBest, { color: colors.textMuted }]}>
+                        best {streak.longestStreak}
+                      </Text>
+                    )}
+                  </View>
+                )}
+
                 {editingBio ? (
                   <View style={styles.bioEdit}>
                     <TextInput
@@ -260,6 +287,37 @@ export default function ProfileScreen() {
                   <Text style={[styles.statLabel, { color: colors.textMuted }]}>Following</Text>
                 </View>
               </View>
+
+              {/* Achievement badges row */}
+              {achievements.length > 0 && (
+                <View style={styles.achieveSection}>
+                  <Text style={[styles.achieveTitle, { color: colors.textMuted }]}>
+                    🏅 Achievements ({achievements.length}/{ALL_ACHIEVEMENTS.length})
+                  </Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.achieveRow}>
+                    {ALL_ACHIEVEMENTS.map((a) => {
+                      const earned = achievements.some((u) => u.id === a.id);
+                      const color = getRarityColor(a.rarity);
+                      return (
+                        <View
+                          key={a.id}
+                          style={[
+                            styles.achieveChip,
+                            earned
+                              ? { backgroundColor: color + "18", borderColor: color + "60" }
+                              : { backgroundColor: colors.muted, borderColor: colors.border, opacity: 0.45 },
+                          ]}
+                        >
+                          <Text style={styles.achieveEmoji}>{a.emoji}</Text>
+                          <Text style={[styles.achieveLabel, { color: earned ? color : colors.textMuted }]} numberOfLines={1}>
+                            {a.title}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
             </View>
 
             {/* Quick Actions */}
@@ -284,17 +342,17 @@ export default function ProfileScreen() {
 
               <TouchableOpacity
                 style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
-                onPress={cycleDarkMode}
+                onPress={() => setShowThemePicker(true)}
               >
                 <Feather
-                  name={isDark ? "moon" : mode === "light" ? "sun" : "sunset"}
+                  name="droplet"
                   size={16}
-                  color={colors.textSecondary}
+                  color={colors.tint ?? colors.primary}
                 />
                 <Text style={[styles.quickLinkText, { color: colors.text }]}>Theme</Text>
                 <View style={[styles.themePill, { backgroundColor: colors.primary + "20" }]}>
                   <Text style={[styles.themePillText, { color: colors.primary }]}>
-                    {themeModeLabel[mode]}
+                    {themeModeLabel[mode] ?? mode}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -413,6 +471,9 @@ export default function ProfileScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      <AchievementToast achievement={newlyUnlocked} onHide={clearNewlyUnlocked} />
+      <CustomThemePicker visible={showThemePicker} onClose={() => setShowThemePicker(false)} />
     </View>
   );
 }
@@ -589,4 +650,48 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sheetCancelText: { fontFamily: "Inter_600SemiBold", fontSize: 15 },
+  // Streak
+  streakPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    marginTop: 6,
+  },
+  streakFire: { fontSize: 16 },
+  streakNum: { fontFamily: "Inter_700Bold", fontSize: 14 },
+  streakBest: { fontFamily: "Inter_400Regular", fontSize: 12, marginLeft: 2 },
+  // Achievements
+  achieveSection: {
+    paddingTop: 16,
+    paddingHorizontal: 0,
+    gap: 10,
+  },
+  achieveTitle: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    paddingHorizontal: 16,
+  },
+  achieveRow: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    gap: 8,
+    paddingBottom: 4,
+  },
+  achieveChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  achieveEmoji: { fontSize: 15 },
+  achieveLabel: { fontFamily: "Inter_600SemiBold", fontSize: 12 },
 });

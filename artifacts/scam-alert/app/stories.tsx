@@ -78,6 +78,8 @@ export default function StoriesScreen() {
   const [loading, setLoading] = useState(true);
   const [activeGroup, setActiveGroup] = useState<StoryGroup | null>(null);
   const [activeStoryIdx, setActiveStoryIdx] = useState(0);
+  const [storyReactions, setStoryReactions] = useState<Record<string, string[]>>({});
+  const [showReactionBar, setShowReactionBar] = useState(false);
 
   // Create mode
   const [createType, setCreateType] = useState<"text" | "image">("text");
@@ -134,7 +136,14 @@ export default function StoriesScreen() {
     setActiveGroup(group);
     setActiveStoryIdx(idx);
     setMode("view");
+    setShowReactionBar(false);
     startProgress();
+    // Load current story reactions
+    const story = group.stories[idx];
+    if (story) {
+      const data = (story as Story & { reactions?: Record<string, string[]> }).reactions ?? {};
+      setStoryReactions(data);
+    }
   };
 
   const startProgress = () => {
@@ -288,6 +297,54 @@ export default function StoriesScreen() {
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           <TouchableOpacity style={styles.tapLeft} onPress={prevStory} />
           <TouchableOpacity style={styles.tapRight} onPress={nextStory} />
+        </View>
+
+        {/* Story Reactions */}
+        <View style={[styles.reactionsContainer, { bottom: insets.bottom + 20 }]}>
+          {showReactionBar ? (
+            <View style={styles.reactionBar}>
+              {["😱", "🔥", "👀", "💪", "🚨", "😂", "💔", "👍"].map((emoji) => {
+                const key = `${story?.id}_${emoji}`;
+                const reactors = storyReactions[emoji] ?? [];
+                const hasReacted = user ? reactors.includes(user.uid) : false;
+                return (
+                  <TouchableOpacity
+                    key={emoji}
+                    onPress={async () => {
+                      if (!user || !story) return;
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const updated = hasReacted
+                        ? reactors.filter((id) => id !== user.uid)
+                        : [...reactors, user.uid];
+                      setStoryReactions((prev) => ({ ...prev, [emoji]: updated }));
+                      try {
+                        await updateDoc(doc(db, "stories", story.id), {
+                          [`reactions.${emoji}`]: updated,
+                        });
+                      } catch {}
+                      setShowReactionBar(false);
+                    }}
+                    style={[
+                      styles.reactionBtn,
+                      hasReacted && { backgroundColor: "rgba(255,255,255,0.3)" },
+                    ]}
+                  >
+                    <Text style={styles.reactionEmoji}>{emoji}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.reactBtn}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowReactionBar(true);
+              }}
+            >
+              <Text style={styles.reactBtnText}>😊 React</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
@@ -474,6 +531,12 @@ const styles = StyleSheet.create({
   textStoryText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 24, textAlign: "center", lineHeight: 34 },
   tapLeft: { position: "absolute", left: 0, top: 0, bottom: 0, width: "40%" },
   tapRight: { position: "absolute", right: 0, top: 0, bottom: 0, width: "60%" },
+  reactionsContainer: { position: "absolute", left: 0, right: 0, alignItems: "center", zIndex: 20 },
+  reactionBar: { flexDirection: "row", gap: 8, backgroundColor: "rgba(0,0,0,0.65)", borderRadius: 32, paddingHorizontal: 16, paddingVertical: 10 },
+  reactionBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  reactionEmoji: { fontSize: 24 },
+  reactBtn: { backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 24, paddingHorizontal: 20, paddingVertical: 10 },
+  reactBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 },
   // Create mode
   typeToggle: { flexDirection: "row", gap: 10 },
   typeBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, borderRadius: 12, backgroundColor: "rgba(0,0,0,0.06)" },

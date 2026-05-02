@@ -36,11 +36,40 @@ The app requires Firebase credentials as environment secrets:
 - `chats/{chatId}/messages/{id}` — Message (senderId, text)
 - `reports/{id}` — Report (reporterId, targetId, reason, status)
 
-## Theme
-- Dark red-alert theme: primary `#FF3B3B`
-- Dark mode background: `#0D0D0D`
-- Light mode background: `#F8F8F8`
-- Full dark/light/system theme support via `ThemeContext` + `useColors()`
+## Theme System (8 Themes)
+- `ThemeContext` + `useColors()` support 8 modes: `dark`, `light` (neon green), `alert-red`, `midnight`, `ocean`, `safe-green`, `purple-haze`, `system`
+- `CustomThemePicker` modal is accessible from Profile (Theme button) and Settings → Appearance
+- Full color palettes for every mode in `constants/colors.ts`
+
+## Gamification & Social Features
+- **Streaks** — daily login streaks via `hooks/useStreak.ts`, shown as a pill on Profile
+- **Achievements** — 12 unlockable achievements (4 rarities) via `hooks/useAchievements.ts`
+- **Confetti** — 60-particle Reanimated animation (`components/Confetti.tsx`) fires on quiz/post events
+- **AchievementToast** — slide-up unlock toast (`components/AchievementToast.tsx`)
+- **ProfileFrame** — colored avatar ring based on badge rank (`components/ProfileFrame.tsx`)
+- **Verified EXPERT Badge** — blue EXPERT chip on PostCard for verified authors
+
+## Home Feed Components
+- `components/TrendingScamsToday.tsx` — today's most-reported categories
+- `components/ScamOfTheDay.tsx` — 12 rotating daily cards with expandable tips
+- `components/NearbyAlerts.tsx` — expo-location + haversine, 200km radius
+- `components/CommunityPoll.tsx` — live polls with animated progress bars + "Create Poll" CTA
+- `components/LiveScamCounter.tsx` — real-time animated Firestore counter
+- `components/ScamRadar.tsx` — Reanimated rotating radar sweep with alert levels
+
+## Voice Notes (Chat)
+- `expo-audio` installed; `components/VoiceNote.tsx` has `VoiceNoteRecorder` + `VoiceNotePlayer`
+- Chat screen has a mic button → starts recording → sends as Firebase Storage file
+- Messages with `type: "voice"` render as an audio player bubble
+
+## Stories
+- Emoji Story Reactions — tap "React" overlay while viewing, saves to Firestore `reactions` map
+- 8 reaction emojis: 😱 🔥 👀 💪 🚨 😂 💔 👍
+
+## Community Polls
+- `app/create-poll.tsx` — full create-poll screen (question + up to 5 options + duration picker)
+- Accessible from Create tab shortcut and CommunityPoll "No active poll" CTA
+- Polls stored in `polls` Firestore collection
 
 ## App Screens
 

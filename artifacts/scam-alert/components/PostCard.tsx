@@ -275,8 +275,9 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
             <View style={styles.nameRow}>
               <Text style={[styles.authorName, { color: colors.text }]}>{post.authorName}</Text>
               {post.authorVerified && (
-                <View style={[styles.verifiedBadge, { backgroundColor: colors.primary }]}>
-                  <Feather name="check" size={9} color="#fff" />
+                <View style={[styles.verifiedBadge, { backgroundColor: "#2563EB" }]}>
+                  <Feather name="check" size={8} color="#fff" />
+                  <Text style={styles.verifiedText}>EXPERT</Text>
                 </View>
               )}
             </View>
@@ -434,11 +435,18 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   authorName: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   verifiedBadge: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  verifiedText: {
+    color: "#fff",
+    fontFamily: "Inter_700Bold",
+    fontSize: 9,
+    letterSpacing: 0.5,
   },
   time: { fontFamily: "Inter_400Regular", fontSize: 11, marginTop: 1 },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },

@@ -31,6 +31,12 @@ import { ReportModal } from "@/components/ReportModal";
 import { TrendingCarousel } from "@/components/TrendingCarousel";
 import { FollowSuggestions } from "@/components/FollowSuggestions";
 import { SmartBanner } from "@/components/SmartBanner";
+import { TrendingScamsToday } from "@/components/TrendingScamsToday";
+import { ScamOfTheDay } from "@/components/ScamOfTheDay";
+import { NearbyAlerts } from "@/components/NearbyAlerts";
+import { ActivePoll } from "@/components/CommunityPoll";
+import { LiveScamCounter } from "@/components/LiveScamCounter";
+import { ScamRadar } from "@/components/ScamRadar";
 import { router } from "expo-router";
 
 const HEADER_HEIGHT = 60;
@@ -175,7 +181,17 @@ export default function HomeScreen() {
           keyExtractor={(item) => item.id}
           ListHeaderComponent={
             <>
-              {activeCategory === "all" && <TrendingCarousel />}
+              {activeCategory === "all" && (
+                <>
+                  <ScamOfTheDay />
+                  <LiveScamCounter />
+                  <TrendingScamsToday />
+                  <ScamRadar alertLevel="medium" count={0} />
+                  <ActivePoll />
+                  <NearbyAlerts />
+                  <TrendingCarousel />
+                </>
+              )}
               <FollowSuggestions />
             </>
           }
