@@ -1,16 +1,12 @@
-import { BlurView } from "expo-blur";
 import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
 import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { SymbolView } from "expo-symbols";
-import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { Platform, StyleSheet, View } from "react-native";
 
-import { useColors } from "@/hooks/useColors";
-import { useTheme } from "@/context/ThemeContext";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { CustomTabBar } from "@/components/CustomTabBar";
 
 function NativeTabLayout() {
   const unread = useUnreadMessages();
@@ -46,89 +42,33 @@ function NativeTabLayout() {
 }
 
 function ClassicTabLayout() {
-  const colors = useColors();
-  const { isDark } = useTheme();
   const unread = useUnreadMessages();
   const unreadNotif = useUnreadNotifications();
-  const isIOS = Platform.OS === "ios";
-  const isWeb = Platform.OS === "web";
 
   return (
     <Tabs
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.mutedForeground,
         headerShown: false,
-        tabBarStyle: {
-          position: "absolute",
-          backgroundColor: isIOS ? "transparent" : colors.surface,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          elevation: 0,
-          height: isWeb ? 84 : undefined,
-        },
-        tabBarBackground: () =>
-          isIOS ? (
-            <BlurView
-              intensity={90}
-              tint={isDark ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
-          ) : isWeb ? (
-            <View
-              style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface }]}
-            />
-          ) : null,
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="house" tintColor={color} size={24} />
-            ) : (
-              <Feather name="home" size={22} color={color} />
-            ),
-        }}
+        options={{ title: "Home" }}
       />
       <Tabs.Screen
         name="explore"
-        options={{
-          title: "Explore",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="safari" tintColor={color} size={24} />
-            ) : (
-              <Feather name="compass" size={22} color={color} />
-            ),
-        }}
+        options={{ title: "Explore" }}
       />
       <Tabs.Screen
         name="create"
-        options={{
-          title: "Post",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="plus.circle" tintColor={color} size={24} />
-            ) : (
-              <Feather name="plus-circle" size={22} color={color} />
-            ),
-        }}
+        options={{ title: "Post" }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
           title: "Alerts",
           tabBarBadge: unreadNotif > 0 ? (unreadNotif > 99 ? "99+" : unreadNotif) : undefined,
-          tabBarBadgeStyle: { backgroundColor: "#FF3B3B", fontSize: 10, minWidth: 18, height: 18, borderRadius: 9 },
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="bell" tintColor={color} size={24} />
-            ) : (
-              <Feather name="bell" size={22} color={color} />
-            ),
         }}
       />
       <Tabs.Screen
@@ -136,26 +76,11 @@ function ClassicTabLayout() {
         options={{
           title: "Messages",
           tabBarBadge: unread > 0 ? (unread > 99 ? "99+" : unread) : undefined,
-          tabBarBadgeStyle: { backgroundColor: "#FF3B3B", fontSize: 10, minWidth: 18, height: 18, borderRadius: 9 },
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="bubble.left" tintColor={color} size={24} />
-            ) : (
-              <Feather name="message-circle" size={22} color={color} />
-            ),
         }}
       />
       <Tabs.Screen
         name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="person.circle" tintColor={color} size={24} />
-            ) : (
-              <Feather name="user" size={22} color={color} />
-            ),
-        }}
+        options={{ title: "Profile" }}
       />
     </Tabs>
   );
