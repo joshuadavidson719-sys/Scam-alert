@@ -1,8 +1,8 @@
 const colors = {
   dark: {
-    background: "#0D0D0D",
-    surface: "#1A1A1A",
-    card: "#1E1E1E",
+    background: "#000000",
+    surface: "#0D0D0D",
+    card: "#1A1A1A",
     cardElevated: "#252525",
 
     text: "#FFFFFF",
@@ -17,10 +17,10 @@ const colors = {
     secondary: "#252525",
     secondaryForeground: "#FFFFFF",
 
-    muted: "#2D2D2D",
+    muted: "#1A1A1A",
     mutedForeground: "#9CA3AF",
 
-    accent: "#1E1E1E",
+    accent: "#1A1A1A",
     accentForeground: "#FF3B3B",
 
     border: "#2D2D2D",
@@ -37,14 +37,14 @@ const colors = {
   },
 
   light: {
-    background: "#F8F8F8",
-    surface: "#FFFFFF",
+    background: "#39FF14",
+    surface: "#2EE010",
     card: "#FFFFFF",
     cardElevated: "#F0F0F0",
 
     text: "#0D0D0D",
-    textSecondary: "#6B7280",
-    textMuted: "#9CA3AF",
+    textSecondary: "#1A1A1A",
+    textMuted: "#4B5563",
 
     primary: "#FF3B3B",
     primaryForeground: "#FFFFFF",
@@ -54,14 +54,14 @@ const colors = {
     secondary: "#F0F0F0",
     secondaryForeground: "#0D0D0D",
 
-    muted: "#F0F0F0",
-    mutedForeground: "#6B7280",
+    muted: "#D4FF00",
+    mutedForeground: "#374151",
 
-    accent: "#FFF0F0",
+    accent: "#C5FF00",
     accentForeground: "#FF3B3B",
 
-    border: "#E5E5E5",
-    input: "#E5E5E5",
+    border: "#1A1A1A",
+    input: "#1A1A1A",
 
     destructive: "#FF3B3B",
     destructiveForeground: "#FFFFFF",

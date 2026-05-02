@@ -150,7 +150,7 @@ export default function RootLayout() {
 
   if (!fontsLoaded && !fontError && !fontTimedOut) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#0D0D0D" }}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#000000" }}>
         <ActivityIndicator color="#FF3B3B" size="large" />
       </View>
     );
