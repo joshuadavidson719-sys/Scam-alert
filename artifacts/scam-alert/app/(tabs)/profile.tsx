@@ -3,14 +3,15 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
   Alert,
   Platform,
-  Image,
   TextInput,
+  ActionSheetIOS,
+  Modal,
+  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -20,8 +21,6 @@ import {
   where,
   orderBy,
   onSnapshot,
-  updateDoc,
-  doc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
@@ -31,6 +30,7 @@ import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { router } from "expo-router";
+import { pickAndUploadImage } from "@/lib/uploadImage";
 
 export default function ProfileScreen() {
   const colors = useColors();
@@ -42,6 +42,8 @@ export default function ProfileScreen() {
   const [reportPostId, setReportPostId] = useState<string | null>(null);
   const [editingBio, setEditingBio] = useState(false);
   const [bioText, setBioText] = useState(profile?.bio ?? "");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showPhotoSheet, setShowPhotoSheet] = useState(false);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   useEffect(() => {
@@ -79,6 +81,39 @@ export default function ProfileScreen() {
   const handleSaveBio = async () => {
     await updateUserProfile({ bio: bioText });
     setEditingBio(false);
+  };
+
+  const handlePickPhoto = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", "Take Photo", "Choose from Gallery"],
+          cancelButtonIndex: 0,
+        },
+        async (idx) => {
+          if (idx === 1) await doUpload("camera");
+          if (idx === 2) await doUpload("gallery");
+        }
+      );
+    } else {
+      setShowPhotoSheet(true);
+    }
+  };
+
+  const doUpload = async (source: "camera" | "gallery") => {
+    if (!user) return;
+    setUploadingPhoto(true);
+    setShowPhotoSheet(false);
+    try {
+      const url = await pickAndUploadImage(user.uid, source);
+      if (url) {
+        await updateUserProfile({ profilePhoto: url });
+      }
+    } catch {
+      Alert.alert("Error", "Failed to upload photo. Please try again.");
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   if (!profile) return null;
@@ -120,11 +155,32 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.avatarSection}>
-                <UserAvatar
-                  uri={profile.profilePhoto}
-                  name={profile.username}
-                  size={90}
-                />
+                {/* Tappable avatar with camera overlay */}
+                <TouchableOpacity
+                  onPress={handlePickPhoto}
+                  disabled={uploadingPhoto}
+                  activeOpacity={0.8}
+                  style={styles.avatarWrapper}
+                >
+                  <UserAvatar
+                    uri={profile.profilePhoto}
+                    name={profile.username}
+                    size={90}
+                  />
+                  <View
+                    style={[
+                      styles.cameraOverlay,
+                      { backgroundColor: colors.primary },
+                    ]}
+                  >
+                    {uploadingPhoto ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Feather name="camera" size={14} color="#fff" />
+                    )}
+                  </View>
+                </TouchableOpacity>
+
                 <Text style={[styles.username, { color: colors.text }]}>
                   {profile.username}
                 </Text>
@@ -163,7 +219,7 @@ export default function ProfileScreen() {
                     </View>
                   </View>
                 ) : (
-                  <TouchableOpacity onPress={() => { setBioText(profile.bio); setEditingBio(true); }}>
+                  <TouchableOpacity onPress={() => { setBioText(profile.bio ?? ""); setEditingBio(true); }}>
                     <Text style={[styles.bio, { color: colors.textSecondary }]}>
                       {profile.bio || "Tap to add a bio..."}
                     </Text>
@@ -254,6 +310,45 @@ export default function ProfileScreen() {
           onClose={() => setReportPostId(null)}
         />
       )}
+
+      {/* Android / Web photo source picker */}
+      <Modal
+        visible={showPhotoSheet}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPhotoSheet(false)}
+      >
+        <Pressable
+          style={styles.sheetBackdrop}
+          onPress={() => setShowPhotoSheet(false)}
+        >
+          <View style={[styles.sheet, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>
+              Change Profile Photo
+            </Text>
+            <TouchableOpacity
+              style={[styles.sheetOption, { borderBottomColor: colors.border }]}
+              onPress={() => doUpload("camera")}
+            >
+              <Feather name="camera" size={20} color={colors.primary} />
+              <Text style={[styles.sheetOptionText, { color: colors.text }]}>Take Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.sheetOption}
+              onPress={() => doUpload("gallery")}
+            >
+              <Feather name="image" size={20} color={colors.primary} />
+              <Text style={[styles.sheetOptionText, { color: colors.text }]}>Choose from Gallery</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.sheetCancel, { backgroundColor: colors.muted }]}
+              onPress={() => setShowPhotoSheet(false)}
+            >
+              <Text style={[styles.sheetCancelText, { color: colors.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -283,10 +378,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     gap: 6,
   },
+  avatarWrapper: {
+    position: "relative",
+    marginBottom: 4,
+  },
+  cameraOverlay: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
   username: {
     fontFamily: "Inter_700Bold",
     fontSize: 22,
-    marginTop: 10,
+    marginTop: 6,
   },
   niche: {
     fontFamily: "Inter_500Medium",
@@ -385,5 +496,43 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: "Inter_400Regular",
     fontSize: 14,
+  },
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    gap: 4,
+  },
+  sheetTitle: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  sheetOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  sheetOptionText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 16,
+  },
+  sheetCancel: {
+    marginTop: 12,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  sheetCancelText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
   },
 });
