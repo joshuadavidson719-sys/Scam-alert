@@ -10,7 +10,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, router } from "expo-router";
-import { collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { collection, query, where, limit, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { PostCard, type PostData } from "@/components/PostCard";
@@ -33,11 +33,13 @@ export default function HashtagScreen() {
     const q = query(
       collection(db, "posts"),
       where("hashtags", "array-contains", normalizedTag),
-      orderBy("createdAt", "desc"),
       limit(50)
     );
     const unsub = onSnapshot(q, (snap) => {
-      setPosts(snap.docs.map((d) => ({ ...(d.data() as Omit<PostData, "id">), id: d.id })));
+      const sorted = snap.docs
+        .map((d) => ({ ...(d.data() as Omit<PostData, "id">), id: d.id }))
+        .sort((a, b) => (b.createdAt as number) - (a.createdAt as number));
+      setPosts(sorted);
       setLoading(false);
     }, () => setLoading(false));
     return unsub;

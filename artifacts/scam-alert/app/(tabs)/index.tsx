@@ -54,19 +54,18 @@ export default function HomeScreen() {
     const q =
       activeCategory === "all"
         ? query(base, orderBy("createdAt", "desc"), limit(30))
-        : query(
-            base,
-            where("category", "==", activeCategory),
-            orderBy("createdAt", "desc"),
-            limit(30)
-          );
+        : query(base, where("category", "==", activeCategory), limit(30));
     const unsub = onSnapshot(
       q,
       (snap) => {
-        const data = snap.docs.map((d) => ({
+        const raw = snap.docs.map((d) => ({
           ...(d.data() as Omit<PostData, "id">),
           id: d.id,
         }));
+        const data =
+          activeCategory === "all"
+            ? raw
+            : raw.sort((a, b) => (b.createdAt as number) - (a.createdAt as number));
         setPosts(data);
         setLoading(false);
         setRefreshing(false);

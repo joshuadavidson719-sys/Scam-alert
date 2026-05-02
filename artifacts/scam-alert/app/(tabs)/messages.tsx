@@ -14,7 +14,6 @@ import { Feather } from "@expo/vector-icons";
 import {
   collection,
   query,
-  orderBy,
   onSnapshot,
   where,
 } from "firebase/firestore";
@@ -47,16 +46,17 @@ export default function MessagesScreen() {
     if (!user) return;
     const q = query(
       collection(db, "chats"),
-      where("participants", "array-contains", user.uid),
-      orderBy("lastMessageAt", "desc")
+      where("participants", "array-contains", user.uid)
     );
     const unsub = onSnapshot(
       q,
       (snap) => {
-        const data = snap.docs.map((d) => ({
-          ...(d.data() as Omit<Chat, "id">),
-          id: d.id,
-        }));
+        const data = snap.docs
+          .map((d) => ({
+            ...(d.data() as Omit<Chat, "id">),
+            id: d.id,
+          }))
+          .sort((a, b) => (b.lastMessageAt as number) - (a.lastMessageAt as number));
         setChats(data);
         setLoading(false);
       },

@@ -18,7 +18,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   getDocs,
   updateDoc,
   arrayUnion,
@@ -62,15 +61,16 @@ export default function UserProfileScreen() {
       }
       const q = query(
         collection(db, "posts"),
-        where("authorId", "==", id),
-        orderBy("createdAt", "desc")
+        where("authorId", "==", id)
       );
       const postsSnap = await getDocs(q);
       setPosts(
-        postsSnap.docs.map((d) => ({
-          ...(d.data() as Omit<PostData, "id">),
-          id: d.id,
-        }))
+        postsSnap.docs
+          .map((d) => ({
+            ...(d.data() as Omit<PostData, "id">),
+            id: d.id,
+          }))
+          .sort((a, b) => (b.createdAt as number) - (a.createdAt as number))
       );
       setLoading(false);
     };

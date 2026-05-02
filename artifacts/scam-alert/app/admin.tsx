@@ -15,7 +15,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   onSnapshot,
   updateDoc,
   doc,
@@ -49,14 +48,15 @@ export default function AdminScreen() {
   useEffect(() => {
     const q = query(
       collection(db, "reports"),
-      where("status", "==", filter),
-      orderBy("createdAt", "desc")
+      where("status", "==", filter)
     );
     const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map((d) => ({
-        ...(d.data() as Omit<Report, "id">),
-        id: d.id,
-      }));
+      const data = snap.docs
+        .map((d) => ({
+          ...(d.data() as Omit<Report, "id">),
+          id: d.id,
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt);
       setReports(data);
       setLoading(false);
     });

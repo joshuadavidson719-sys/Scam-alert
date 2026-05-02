@@ -20,7 +20,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   onSnapshot,
   doc,
   getDoc,
@@ -63,14 +62,15 @@ export default function ProfileScreen() {
     if (!user) return;
     const q = query(
       collection(db, "posts"),
-      where("authorId", "==", user.uid),
-      orderBy("createdAt", "desc")
+      where("authorId", "==", user.uid)
     );
     const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map((d) => ({
-        ...(d.data() as Omit<PostData, "id">),
-        id: d.id,
-      }));
+      const data = snap.docs
+        .map((d) => ({
+          ...(d.data() as Omit<PostData, "id">),
+          id: d.id,
+        }))
+        .sort((a, b) => (b.createdAt as number) - (a.createdAt as number));
       setPosts(data);
       setLoading(false);
     });
