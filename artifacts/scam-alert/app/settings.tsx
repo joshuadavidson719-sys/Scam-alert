@@ -201,6 +201,15 @@ export default function SettingsScreen() {
             </View>
           </View>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          <TouchableOpacity style={styles.row} onPress={() => router.push("/community-guidelines" as never)}>
+            <Feather name="users" size={18} color={colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowTitle, { color: colors.text }]}>Community Guidelines</Text>
+              <Text style={[styles.rowSub, { color: colors.textMuted }]}>Our 8 community rules</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={styles.row}>
             <Feather name="shield" size={18} color={colors.primary} />
             <View style={{ flex: 1 }}>

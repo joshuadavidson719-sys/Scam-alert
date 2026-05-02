@@ -38,16 +38,61 @@ interface UserResult {
   followerCount?: number;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  "scam-alert": "#FF3B3B",
-  news: "#3B82F6",
-  motivation: "#F59E0B",
-  health: "#22C55E",
-  finance: "#8B5CF6",
-  "crime-awareness": "#EF4444",
-  technology: "#06B6D4",
-  education: "#F97316",
-  entertainment: "#EC4899",
+const CATEGORY_META: Record<string, { color: string; emoji: string; gradient: string[]; tagline: string }> = {
+  "scam-alert": {
+    color: "#FF3B3B",
+    emoji: "🚨",
+    gradient: ["#FF3B3B", "#CC0000"],
+    tagline: "Real-time fraud alerts",
+  },
+  news: {
+    color: "#3B82F6",
+    emoji: "📰",
+    gradient: ["#3B82F6", "#1D4ED8"],
+    tagline: "Latest community news",
+  },
+  motivation: {
+    color: "#F59E0B",
+    emoji: "💪",
+    gradient: ["#F59E0B", "#D97706"],
+    tagline: "Stay inspired & strong",
+  },
+  health: {
+    color: "#22C55E",
+    emoji: "🏥",
+    gradient: ["#22C55E", "#15803D"],
+    tagline: "Wellness & safety tips",
+  },
+  finance: {
+    color: "#8B5CF6",
+    emoji: "💰",
+    gradient: ["#8B5CF6", "#6D28D9"],
+    tagline: "Money scam watch",
+  },
+  "crime-awareness": {
+    color: "#EF4444",
+    emoji: "🔍",
+    gradient: ["#EF4444", "#B91C1C"],
+    tagline: "Know your rights",
+  },
+  technology: {
+    color: "#06B6D4",
+    emoji: "💻",
+    gradient: ["#06B6D4", "#0E7490"],
+    tagline: "Digital & cyber threats",
+  },
+  education: {
+    color: "#F97316",
+    emoji: "📚",
+    gradient: ["#F97316", "#C2410C"],
+    tagline: "Learn to spot fraud",
+  },
+  entertainment: {
+    color: "#EC4899",
+    emoji: "🎬",
+    gradient: ["#EC4899", "#BE185D"],
+    tagline: "Safe fun & culture",
+  },
 };
 
 export default function ExploreScreen() {
@@ -159,25 +204,42 @@ export default function ExploreScreen() {
     inputRef.current?.blur();
   };
 
-  // ── Category tile ────────────────────────────────────
+  // ── Category tile (2-col grid) ────────────────────────────────────
   const renderCategory = ({ item }: { item: (typeof CATEGORIES)[0] }) => {
-    const color = CATEGORY_COLORS[item.id] ?? colors.primary;
+    const meta = CATEGORY_META[item.id] ?? { color: colors.primary, emoji: "📌", tagline: "Browse posts" };
+    const count = countsLoading ? null : (categoryCounts[item.id] ?? 0);
+
     return (
       <TouchableOpacity
-        style={[styles.catCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        style={[styles.catCard, { backgroundColor: colors.card, borderColor: meta.color + "50" }]}
         onPress={() => router.push("/(tabs)/" as never)}
-        activeOpacity={0.8}
+        activeOpacity={0.82}
       >
-        <View style={[styles.catIcon, { backgroundColor: color + "20" }]}>
-          <Feather name={item.icon as keyof typeof Feather.glyphMap} size={22} color={color} />
-        </View>
-        <View style={styles.catContent}>
+        {/* Colour accent strip across the top */}
+        <View style={[styles.catStrip, { backgroundColor: meta.color }]} />
+
+        <View style={styles.catBody}>
+          {/* Big emoji bubble */}
+          <View style={[styles.catEmojiWrap, { backgroundColor: meta.color + "1A" }]}>
+            <Text style={styles.catEmoji}>{meta.emoji}</Text>
+          </View>
+
+          {/* Name + tagline */}
           <Text style={[styles.catTitle, { color: colors.text }]}>{item.label}</Text>
-          <Text style={[styles.catCount, { color: colors.textMuted }]}>
-            {countsLoading ? "..." : `${categoryCounts[item.id] ?? 0} posts`}
+          <Text style={[styles.catTagline, { color: colors.textMuted }]} numberOfLines={2}>
+            {meta.tagline}
           </Text>
+
+          {/* Count pill */}
+          <View style={[styles.catCountChip, { backgroundColor: meta.color + "1A" }]}>
+            <Text style={[styles.catCountNum, { color: meta.color }]}>
+              {count === null ? "—" : count > 999 ? `${(count / 1000).toFixed(1)}k` : String(count)}
+            </Text>
+            {count !== null && (
+              <Text style={[styles.catCountLabel, { color: meta.color + "BB" }]}> posts</Text>
+            )}
+          </View>
         </View>
-        <Feather name="chevron-right" size={16} color={colors.textMuted} />
       </TouchableOpacity>
     );
   };
@@ -313,6 +375,8 @@ export default function ExploreScreen() {
           data={CATEGORIES}
           keyExtractor={(item) => item.id}
           renderItem={renderCategory}
+          numColumns={2}
+          columnWrapperStyle={styles.catRow}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={() => (
             <>
@@ -389,32 +453,66 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   // Category browse
-  catList: { padding: 14, gap: 0 },
-  catCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
+  catList: { padding: 12, paddingTop: 8 },
+  catRow: {
+    justifyContent: "space-between",
     marginBottom: 10,
   },
-  catIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 13,
+  catCard: {
+    borderRadius: 18,
+    borderWidth: 1.5,
+    overflow: "hidden",
+    marginBottom: 0,
+    position: "relative",
+  },
+  catStrip: {
+    height: 4,
+    width: "100%",
+  },
+  catBody: {
+    padding: 14,
+    gap: 10,
+    flex: 1,
+  },
+  catEmojiWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  catContent: { flex: 1 },
-  catTitle: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 15,
+  catEmoji: {
+    fontSize: 26,
   },
-  catCount: {
+  catTextGroup: {
+    gap: 3,
+    flex: 1,
+  },
+  catTitle: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 14,
+  },
+  catTagline: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  catCountChip: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "baseline",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    marginTop: 4,
+  },
+  catCountNum: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 14,
+  },
+  catCountLabel: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 10,
   },
   // AI banner
   aiBanner: {
