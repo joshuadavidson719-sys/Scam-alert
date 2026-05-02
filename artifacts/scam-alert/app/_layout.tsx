@@ -9,8 +9,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import Constants from "expo-constants";
-import React, { useEffect, useRef } from "react";
-import { Platform } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -103,12 +103,16 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
+  const [nativeFontsLoaded, nativeFontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  // On web, the browser handles fonts natively — don't block rendering
+  const fontsLoaded = Platform.OS === "web" ? true : nativeFontsLoaded;
+  const fontError = Platform.OS === "web" ? null : nativeFontError;
+  const [fontTimedOut, setFontTimedOut] = useState(false);
 
   const notificationListener = useRef<{ remove: () => void } | null>(null);
 
@@ -131,13 +135,25 @@ export default function RootLayout() {
     return () => { notificationListener.current?.remove(); };
   }, []);
 
+  // Safety timeout — if fonts never resolve, proceed anyway after 3s
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
+    const t = setTimeout(() => setFontTimedOut(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
 
-  if (!fontsLoaded && !fontError) return null;
+  useEffect(() => {
+    if (fontsLoaded || fontError || fontTimedOut) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, fontError, fontTimedOut]);
+
+  if (!fontsLoaded && !fontError && !fontTimedOut) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#0D0D0D" }}>
+        <ActivityIndicator color="#FF3B3B" size="large" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaProvider>
