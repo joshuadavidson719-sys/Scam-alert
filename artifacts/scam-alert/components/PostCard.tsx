@@ -35,6 +35,8 @@ export interface PostData {
   images: string[];
   category: CategoryId;
   likes: string[];
+  reactions?: Record<string, string[]>;
+  hashtags?: string[];
   commentCount: number;
   shareCount: number;
   reports: string[];
@@ -48,6 +50,14 @@ interface Props {
   onDelete?: (id: string) => void;
 }
 
+const REACTIONS = [
+  { emoji: "🚨", key: "alert" },
+  { emoji: "😱", key: "shocked" },
+  { emoji: "😡", key: "angry" },
+  { emoji: "👍", key: "helpful" },
+  { emoji: "💪", key: "strong" },
+];
+
 export function PostCard({ post, onComment, onReport, onDelete }: Props) {
   const colors = useColors();
   const { user, profile } = useAuth();
@@ -56,6 +66,8 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
   const [likeCount, setLikeCount] = useState(post.likes.length);
   const [shareCount, setShareCount] = useState(post.shareCount);
   const [saved, setSaved] = useState(isBookmarked(post.id));
+  const [reactions, setReactions] = useState<Record<string, string[]>>(post.reactions ?? {});
+  const [showReactions, setShowReactions] = useState(false);
 
   const isOwner = !!user && user.uid === post.authorId;
 
@@ -151,6 +163,22 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     onReport?.();
   };
+
+  const handleReaction = async (key: string) => {
+    if (!user) return;
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowReactions(false);
+    const current = reactions[key] ?? [];
+    const hasReacted = current.includes(user.uid);
+    const updated = hasReacted
+      ? { ...reactions, [key]: current.filter((id) => id !== user.uid) }
+      : { ...reactions, [key]: [...current, user.uid] };
+    setReactions(updated);
+    await updateDoc(doc(db, "posts", post.id), { [`reactions.${key}`]: updated[key] });
+  };
+
+  const totalReactions = Object.values(reactions).reduce((s, arr) => s + arr.length, 0);
+  const myReaction = user ? REACTIONS.find((r) => (reactions[r.key] ?? []).includes(user.uid)) : null;
 
   const handleMore = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -253,6 +281,36 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
         />
       )}
 
+      {/* Hashtags */}
+      {post.hashtags && post.hashtags.length > 0 && (
+        <View style={styles.hashtagRow}>
+          {post.hashtags.slice(0, 5).map((tag) => (
+            <TouchableOpacity
+              key={tag}
+              onPress={() => router.push(`/hashtag/${tag}` as never)}
+              hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+            >
+              <Text style={[styles.hashtag, { color: colors.primary }]}>#{tag}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* Reaction picker popup */}
+      {showReactions && (
+        <View style={[styles.reactionPopup, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.text }]}>
+          {REACTIONS.map((r) => {
+            const count = (reactions[r.key] ?? []).length;
+            return (
+              <TouchableOpacity key={r.key} style={styles.reactionOption} onPress={() => handleReaction(r.key)}>
+                <Text style={styles.reactionEmoji}>{r.emoji}</Text>
+                {count > 0 && <Text style={[styles.reactionCount, { color: colors.textMuted }]}>{count}</Text>}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
       <View style={styles.actions}>
@@ -272,6 +330,16 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
           </Text>
         </TouchableOpacity>
 
+        {/* Emoji reaction button */}
+        <TouchableOpacity style={styles.action} onPress={() => setShowReactions((v) => !v)}>
+          <Text style={styles.reactionBtnEmoji}>{myReaction ? myReaction.emoji : "🚨"}</Text>
+          {totalReactions > 0 && (
+            <Text style={[styles.actionText, { color: myReaction ? colors.primary : colors.textSecondary }]}>
+              {totalReactions}
+            </Text>
+          )}
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.action} onPress={onComment}>
           <Feather name="message-circle" size={18} color={colors.textSecondary} />
           <Text style={[styles.actionText, { color: colors.textSecondary }]}>
@@ -282,7 +350,7 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
         <TouchableOpacity style={styles.action} onPress={handleShare}>
           <Feather name="share-2" size={18} color={colors.textSecondary} />
           <Text style={[styles.actionText, { color: colors.textSecondary }]}>
-            {shareCount > 0 ? shareCount : "Share"}
+            {shareCount > 0 ? shareCount : ""}
           </Text>
         </TouchableOpacity>
 
@@ -373,6 +441,40 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
   },
+  hashtagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingBottom: 8,
+  },
+  hashtag: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 13,
+  },
+  reactionPopup: {
+    position: "absolute",
+    bottom: 52,
+    left: 14,
+    flexDirection: "row",
+    gap: 4,
+    borderRadius: 28,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    zIndex: 100,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  reactionOption: {
+    alignItems: "center",
+    paddingHorizontal: 6,
+  },
+  reactionEmoji: { fontSize: 24 },
+  reactionCount: { fontFamily: "Inter_500Medium", fontSize: 10, marginTop: 2 },
+  reactionBtnEmoji: { fontSize: 16 },
   divider: {
     height: 1,
     marginHorizontal: 14,

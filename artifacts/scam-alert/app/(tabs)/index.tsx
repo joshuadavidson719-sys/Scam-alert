@@ -108,6 +108,18 @@ export default function HomeScreen() {
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity
+              onPress={() => router.push("/stories" as never)}
+              style={[styles.iconBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+            >
+              <Feather name="camera" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/chatbot" as never)}
+              style={[styles.iconBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+            >
+              <Feather name="cpu" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={() => router.push("/scam-checker" as never)}
               style={[styles.iconBtn, { backgroundColor: colors.primary + "20" }]}
             >

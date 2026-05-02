@@ -307,9 +307,14 @@ export default function ProfileScreen() {
             <View style={styles.toolsGrid}>
               {[
                 { label: "AI Scam Check", icon: "cpu", route: "/scam-checker", color: "#FF3B3B" },
+                { label: "ScamBot AI", icon: "message-circle", route: "/chatbot", color: "#FF3B3B" },
                 { label: "Link Checker", icon: "link", route: "/link-checker", color: "#3B82F6" },
                 { label: "Phone Check", icon: "phone", route: "/phone-checker", color: "#10B981" },
                 { label: "QR Scanner", icon: "camera", route: "/qr-scanner", color: "#F59E0B" },
+                { label: "Dark Web", icon: "eye-off", route: "/dark-web-checker", color: "#7C3AED" },
+                { label: "Scam Map", icon: "map", route: "/scam-map", color: "#3B82F6" },
+                { label: "Scam Quiz", icon: "help-circle", route: "/scam-quiz", color: "#EC4899" },
+                { label: "Contacts", icon: "alert-triangle", route: "/emergency-contacts", color: "#EF4444" },
                 { label: "Leaderboard", icon: "award", route: "/leaderboard", color: "#8B5CF6" },
               ].map((item) => (
                 <TouchableOpacity

@@ -45,6 +45,7 @@ export default function CreateScreen() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>("scam-alert");
   const [loading, setLoading] = useState(false);
   const [isPrefilled, setIsPrefilled] = useState(false);
+  const [hashtags, setHashtags] = useState("");
 
   // Image state
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -165,6 +166,10 @@ export default function CreateScreen() {
     setLoading(true);
     try {
       const images = uploadedImageUrl ? [uploadedImageUrl] : [];
+      // Parse hashtags from dedicated field + auto-detect in title/description
+      const rawTags = hashtags.split(/[\s,]+/).map((t) => t.replace(/^#/, "").toLowerCase().trim()).filter(Boolean);
+      const autoTags = [...title, " ", description].join("").match(/#(\w+)/g)?.map((t) => t.slice(1).toLowerCase()) ?? [];
+      const allTags = Array.from(new Set([...rawTags, ...autoTags])).slice(0, 10);
       await addDoc(collection(db, "posts"), {
         authorId: user.uid,
         authorName: profile.username,
@@ -173,7 +178,9 @@ export default function CreateScreen() {
         description: description.trim(),
         images,
         category: selectedCategory,
+        hashtags: allTags,
         likes: [],
+        reactions: {},
         commentCount: 0,
         shareCount: 0,
         reports: [],
@@ -184,6 +191,7 @@ export default function CreateScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTitle("");
       setDescription("");
+      setHashtags("");
       setImageUri(null);
       setUploadedImageUrl(null);
       setSelectedCategory("scam-alert");
@@ -303,6 +311,18 @@ export default function CreateScreen() {
         maxLength={2000}
         textAlignVertical="top"
       />
+
+      <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Hashtags (optional)</Text>
+      <TextInput
+        style={[styles.titleInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card, minHeight: 44 }]}
+        placeholder="#phishing #cryptoscam #warning"
+        placeholderTextColor={colors.textMuted}
+        value={hashtags}
+        onChangeText={setHashtags}
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
+      <Text style={[styles.charCount, { color: colors.textMuted }]}>Separate with spaces or commas · max 10 tags</Text>
 
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Image (optional)</Text>
 

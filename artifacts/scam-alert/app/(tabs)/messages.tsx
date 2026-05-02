@@ -91,12 +91,20 @@ export default function MessagesScreen() {
       >
         <View style={styles.headerTop}>
           <Text style={[styles.title, { color: colors.text }]}>Messages</Text>
-          <TouchableOpacity
-            style={[styles.newMsgBtn, { backgroundColor: colors.primary }]}
-            onPress={() => router.push("/new-message" as never)}
-          >
-            <Feather name="edit" size={16} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerBtns}>
+            <TouchableOpacity
+              style={[styles.newMsgBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+              onPress={() => router.push("/new-group" as never)}
+            >
+              <Feather name="users" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.newMsgBtn, { backgroundColor: colors.primary }]}
+              onPress={() => router.push("/new-message" as never)}
+            >
+              <Feather name="edit" size={16} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
         <View
           style={[
@@ -196,6 +204,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 12,
     height: 50,
+  },
+  headerBtns: {
+    flexDirection: "row",
+    gap: 8,
   },
   title: {
     fontFamily: "Inter_700Bold",

@@ -160,9 +160,15 @@ export default function SettingsScreen() {
         <Text style={[styles.section, { color: colors.textMuted }]}>Safety Tools</Text>
         <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {[
+            { label: "AI Scam Checker", sub: "Analyze suspicious messages", icon: "cpu", route: "/scam-checker" },
             { label: "Link Checker", sub: "Check if a URL is safe", icon: "link", route: "/link-checker" },
             { label: "Phone Checker", sub: "Check suspicious numbers", icon: "phone", route: "/phone-checker" },
             { label: "QR Scanner", sub: "Scan QR codes safely", icon: "camera", route: "/qr-scanner" },
+            { label: "Dark Web Checker", sub: "See if your email was breached", icon: "eye-off", route: "/dark-web-checker" },
+            { label: "ScamBot AI", sub: "24/7 scam advice chatbot", icon: "message-circle", route: "/chatbot" },
+            { label: "Scam Map", sub: "Global scam heat map", icon: "map", route: "/scam-map" },
+            { label: "Scam Quiz", sub: "Test your scam awareness", icon: "help-circle", route: "/scam-quiz" },
+            { label: "Emergency Contacts", sub: "Report to authorities", icon: "alert-triangle", route: "/emergency-contacts" },
             { label: "Leaderboard", sub: "Top community contributors", icon: "award", route: "/leaderboard" },
           ].map((item, i, arr) => (
             <React.Fragment key={item.label}>
