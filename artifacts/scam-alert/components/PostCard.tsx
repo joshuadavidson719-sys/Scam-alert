@@ -6,11 +6,14 @@ import {
   TouchableOpacity,
   Image,
   Share,
+  Alert,
+  Platform,
+  ActionSheetIOS,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { doc, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
@@ -42,9 +45,10 @@ interface Props {
   post: PostData;
   onComment?: () => void;
   onReport?: () => void;
+  onDelete?: (id: string) => void;
 }
 
-export function PostCard({ post, onComment, onReport }: Props) {
+export function PostCard({ post, onComment, onReport, onDelete }: Props) {
   const colors = useColors();
   const { user, profile } = useAuth();
   const { toggle, isBookmarked } = useBookmarks();
@@ -52,6 +56,8 @@ export function PostCard({ post, onComment, onReport }: Props) {
   const [likeCount, setLikeCount] = useState(post.likes.length);
   const [shareCount, setShareCount] = useState(post.shareCount);
   const [saved, setSaved] = useState(isBookmarked(post.id));
+
+  const isOwner = !!user && user.uid === post.authorId;
 
   const handleLike = async () => {
     if (!user) return;
@@ -113,9 +119,7 @@ export function PostCard({ post, onComment, onReport }: Props) {
 
       if (didShare) {
         setShareCount((n) => n + 1);
-        await updateDoc(doc(db, "posts", post.id), {
-          shareCount: increment(1),
-        });
+        await updateDoc(doc(db, "posts", post.id), { shareCount: increment(1) });
         if (post.authorId !== user?.uid) {
           sendPushNotification(
             post.authorId,
@@ -148,6 +152,48 @@ export function PostCard({ post, onComment, onReport }: Props) {
     onReport?.();
   };
 
+  const handleMore = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Cancel", "Edit Post", "Delete Post"],
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: 2,
+        },
+        (i) => {
+          if (i === 1) router.push(`/edit-post/${post.id}` as never);
+          else if (i === 2) confirmDelete();
+        }
+      );
+    } else {
+      Alert.alert("Post Options", undefined, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Edit Post", onPress: () => router.push(`/edit-post/${post.id}` as never) },
+        { text: "Delete Post", style: "destructive", onPress: confirmDelete },
+      ]);
+    }
+  };
+
+  const confirmDelete = () => {
+    Alert.alert("Delete Post", "Are you sure you want to delete this post? This cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteDoc(doc(db, "posts", post.id));
+            onDelete?.(post.id);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch {
+            Alert.alert("Error", "Could not delete post. Please try again.");
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={0.95}
@@ -176,7 +222,19 @@ export function PostCard({ post, onComment, onReport }: Props) {
             </Text>
           </View>
         </TouchableOpacity>
-        <CategoryPill categoryId={post.category} size="sm" />
+
+        <View style={styles.headerRight}>
+          <CategoryPill categoryId={post.category} size="sm" />
+          {isOwner && (
+            <TouchableOpacity
+              onPress={handleMore}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.moreBtn}
+            >
+              <Feather name="more-horizontal" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <Text style={[styles.title, { color: colors.text }]}>{post.title}</Text>
@@ -236,9 +294,11 @@ export function PostCard({ post, onComment, onReport }: Props) {
           />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.action} onPress={handleReport}>
-          <Feather name="flag" size={18} color={colors.textMuted} />
-        </TouchableOpacity>
+        {!isOwner && (
+          <TouchableOpacity style={styles.action} onPress={handleReport}>
+            <Feather name="flag" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -265,9 +325,7 @@ const styles = StyleSheet.create({
     gap: 10,
     flex: 1,
   },
-  authorInfo: {
-    flex: 1,
-  },
+  authorInfo: { flex: 1 },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -288,6 +346,14 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     fontSize: 11,
     marginTop: 1,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  moreBtn: {
+    padding: 2,
   },
   title: {
     fontFamily: "Inter_700Bold",

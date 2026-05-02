@@ -89,7 +89,15 @@ export default function MessagesScreen() {
           { borderBottomColor: colors.border, paddingTop: topPad },
         ]}
       >
-        <Text style={[styles.title, { color: colors.text }]}>Messages</Text>
+        <View style={styles.headerTop}>
+          <Text style={[styles.title, { color: colors.text }]}>Messages</Text>
+          <TouchableOpacity
+            style={[styles.newMsgBtn, { backgroundColor: colors.primary }]}
+            onPress={() => router.push("/new-message" as never)}
+          >
+            <Feather name="edit" size={16} color="#fff" />
+          </TouchableOpacity>
+        </View>
         <View
           style={[
             styles.searchBar,
@@ -104,6 +112,11 @@ export default function MessagesScreen() {
             value={search}
             onChangeText={setSearch}
           />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch("")}>
+              <Feather name="x" size={15} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -118,8 +131,15 @@ export default function MessagesScreen() {
             No conversations yet
           </Text>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            Visit a user's profile to start a conversation
+            Tap the compose button above to start a new chat
           </Text>
+          <TouchableOpacity
+            style={[styles.newChatBtn, { backgroundColor: colors.primary }]}
+            onPress={() => router.push("/new-message" as never)}
+          >
+            <Feather name="edit" size={16} color="#fff" />
+            <Text style={styles.newChatBtnText}>New Message</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -170,12 +190,23 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    height: 50,
+  },
   title: {
     fontFamily: "Inter_700Bold",
     fontSize: 28,
-    marginBottom: 12,
-    height: 50,
-    textAlignVertical: "center",
+  },
+  newMsgBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
   },
   searchBar: {
     flexDirection: "row",
@@ -206,6 +237,20 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     fontSize: 14,
     textAlign: "center",
+  },
+  newChatBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  newChatBtnText: {
+    color: "#fff",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
   },
   chatRow: {
     flexDirection: "row",

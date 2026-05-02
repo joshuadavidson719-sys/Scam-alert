@@ -262,9 +262,26 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Settings */}
+            {/* Quick Actions */}
             <View style={styles.quickLinks}>
-              {/* Dark mode toggle */}
+              <TouchableOpacity
+                style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
+                onPress={() => router.push("/edit-profile" as never)}
+              >
+                <Feather name="edit-2" size={16} color={colors.primary} />
+                <Text style={[styles.quickLinkText, { color: colors.text }]}>Edit Profile</Text>
+                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
+                onPress={() => router.push("/settings" as never)}
+              >
+                <Feather name="settings" size={16} color={colors.textSecondary} />
+                <Text style={[styles.quickLinkText, { color: colors.text }]}>Settings</Text>
+                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+              </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
                 onPress={cycleDarkMode}
@@ -281,20 +298,27 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </TouchableOpacity>
+            </View>
 
+            {/* Safety Tools */}
+            <View style={[styles.toolsHeader, { paddingHorizontal: 16 }]}>
+              <Text style={[styles.toolsTitle, { color: colors.textMuted }]}>Safety Tools</Text>
+            </View>
+            <View style={styles.toolsGrid}>
               {[
-                { label: "AI Scam Checker", route: "/scam-checker", icon: "shield" },
-                { label: "Privacy Policy", route: "/legal/privacy", icon: "lock" },
-                { label: "Community Guidelines", route: "/legal/guidelines", icon: "book" },
+                { label: "AI Scam Check", icon: "cpu", route: "/scam-checker", color: "#FF3B3B" },
+                { label: "Link Checker", icon: "link", route: "/link-checker", color: "#3B82F6" },
+                { label: "Phone Check", icon: "phone", route: "/phone-checker", color: "#10B981" },
+                { label: "QR Scanner", icon: "camera", route: "/qr-scanner", color: "#F59E0B" },
+                { label: "Leaderboard", icon: "award", route: "/leaderboard", color: "#8B5CF6" },
               ].map((item) => (
                 <TouchableOpacity
                   key={item.route}
-                  style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
+                  style={[styles.toolCard, { backgroundColor: item.color + "15", borderColor: item.color + "30" }]}
                   onPress={() => router.push(item.route as never)}
                 >
-                  <Feather name={item.icon as keyof typeof Feather.glyphMap} size={16} color={colors.textSecondary} />
-                  <Text style={[styles.quickLinkText, { color: colors.text }]}>{item.label}</Text>
-                  <Feather name="chevron-right" size={14} color={colors.textMuted} />
+                  <Feather name={item.icon as keyof typeof Feather.glyphMap} size={20} color={item.color} />
+                  <Text style={[styles.toolLabel, { color: colors.text }]}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -504,6 +528,30 @@ const styles = StyleSheet.create({
   emptyPosts: { alignItems: "center", paddingVertical: 40, gap: 10 },
   emptyText: { fontFamily: "Inter_400Regular", fontSize: 14 },
   emptyHint: { fontFamily: "Inter_400Regular", fontSize: 12, textAlign: "center", paddingHorizontal: 32 },
+  toolsHeader: { marginTop: 4, marginBottom: 6 },
+  toolsTitle: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  toolsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
+    gap: 10,
+    marginBottom: 8,
+  },
+  toolCard: {
+    width: "47%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  toolLabel: { fontFamily: "Inter_500Medium", fontSize: 13, flex: 1 },
   sheetBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.55)",
