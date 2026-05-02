@@ -23,6 +23,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/context/ThemeContext";
 import { useAuth, CATEGORIES, type CategoryId } from "@/context/AuthContext";
 import { PostCard, type PostData } from "@/components/PostCard";
 import { CategoryPill } from "@/components/CategoryPill";
@@ -35,8 +36,13 @@ import { router } from "expo-router";
 
 const HEADER_HEIGHT = 60;
 
+const HOME_BG_LIGHT = "#39FF14";
+const HOME_BG_DARK = "#000000";
+
 export default function HomeScreen() {
   const colors = useColors();
+  const { isDark } = useTheme();
+  const homeBackground = isDark ? HOME_BG_DARK : HOME_BG_LIGHT;
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const [activeCategory, setActiveCategory] = useState<CategoryId | "all">("all");
@@ -83,12 +89,12 @@ export default function HomeScreen() {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: homeBackground }]}>
       <View
         style={[
           styles.header,
           {
-            backgroundColor: colors.background,
+            backgroundColor: homeBackground,
             borderBottomColor: colors.border,
             paddingTop: topPad,
           },
