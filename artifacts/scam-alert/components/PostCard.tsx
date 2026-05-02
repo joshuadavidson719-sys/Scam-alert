@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   ActionSheetIOS,
+  Animated,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -51,12 +52,57 @@ interface Props {
 }
 
 const REACTIONS = [
-  { emoji: "🚨", key: "alert" },
-  { emoji: "😱", key: "shocked" },
-  { emoji: "😡", key: "angry" },
-  { emoji: "👍", key: "helpful" },
-  { emoji: "💪", key: "strong" },
+  { emoji: "🌹", key: "rose",    color: "#FF3B3B" },
+  { emoji: "❤️",  key: "heart",   color: "#FF6B6B" },
+  { emoji: "🐱",  key: "cat",     color: "#F59E0B" },
+  { emoji: "🐶",  key: "dog",     color: "#10B981" },
+  { emoji: "🔥",  key: "fire",    color: "#F97316" },
+  { emoji: "😱",  key: "shocked", color: "#8B5CF6" },
+  { emoji: "😡",  key: "angry",   color: "#EF4444" },
+  { emoji: "💪",  key: "strong",  color: "#3B82F6" },
 ];
+
+function ActionPill({
+  emoji,
+  label,
+  count,
+  active,
+  activeColor,
+  bgColor,
+  onPress,
+}: {
+  emoji: string;
+  label?: string;
+  count?: number | string;
+  active?: boolean;
+  activeColor: string;
+  bgColor: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.75}
+      style={[
+        styles.pill,
+        { backgroundColor: active ? activeColor + "22" : bgColor },
+        active && { borderColor: activeColor + "66", borderWidth: 1 },
+      ]}
+    >
+      <Text style={styles.pillEmoji}>{emoji}</Text>
+      {(count !== undefined && count !== "" && count !== 0) && (
+        <Text style={[styles.pillCount, { color: active ? activeColor : "#9CA3AF" }]}>
+          {count}
+        </Text>
+      )}
+      {label && !count && (
+        <Text style={[styles.pillCount, { color: active ? activeColor : "#9CA3AF" }]}>
+          {label}
+        </Text>
+      )}
+    </TouchableOpacity>
+  );
+}
 
 export function PostCard({ post, onComment, onReport, onDelete }: Props) {
   const colors = useColors();
@@ -86,7 +132,7 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
       if (post.authorId !== user.uid) {
         sendPushNotification(
           post.authorId,
-          "❤️ New Like",
+          "🌹 New Like",
           `${profile?.username ?? "Someone"} liked your post: "${post.title}"`,
           {
             type: "like",
@@ -119,23 +165,17 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
           ].join("\n"),
           url: "https://scam-alert.app",
         },
-        {
-          dialogTitle: "Share this scam alert",
-          subject: `Scam Alert: ${post.title}`,
-        }
+        { dialogTitle: "Share this scam alert", subject: `Scam Alert: ${post.title}` }
       );
-
       const didShare =
-        result.action === Share.sharedAction ||
-        result.action === "sharedAction";
-
+        result.action === Share.sharedAction || result.action === "sharedAction";
       if (didShare) {
         setShareCount((n) => n + 1);
         await updateDoc(doc(db, "posts", post.id), { shareCount: increment(1) });
         if (post.authorId !== user?.uid) {
           sendPushNotification(
             post.authorId,
-            "🔁 Someone shared your alert",
+            "📢 Someone shared your alert",
             `${profile?.username ?? "Someone"} shared "${post.title}" — spreading awareness!`,
             {
               type: "share",
@@ -148,9 +188,7 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
           );
         }
       }
-    } catch {
-      // Sheet cancelled — no-op
-    }
+    } catch {}
   };
 
   const handleBookmark = async () => {
@@ -178,17 +216,15 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
   };
 
   const totalReactions = Object.values(reactions).reduce((s, arr) => s + arr.length, 0);
-  const myReaction = user ? REACTIONS.find((r) => (reactions[r.key] ?? []).includes(user.uid)) : null;
+  const myReaction = user
+    ? REACTIONS.find((r) => (reactions[r.key] ?? []).includes(user.uid))
+    : null;
 
   const handleMore = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", "Edit Post", "Delete Post"],
-          cancelButtonIndex: 0,
-          destructiveButtonIndex: 2,
-        },
+        { options: ["Cancel", "Edit Post", "Delete Post"], cancelButtonIndex: 0, destructiveButtonIndex: 2 },
         (i) => {
           if (i === 1) router.push(`/edit-post/${post.id}` as never);
           else if (i === 2) confirmDelete();
@@ -228,6 +264,7 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
       onPress={() => router.push(`/post/${post.id}` as never)}
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
     >
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.authorRow}
@@ -236,60 +273,42 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
           <UserAvatar uri={post.authorAvatar} name={post.authorName} size={38} />
           <View style={styles.authorInfo}>
             <View style={styles.nameRow}>
-              <Text style={[styles.authorName, { color: colors.text }]}>
-                {post.authorName}
-              </Text>
+              <Text style={[styles.authorName, { color: colors.text }]}>{post.authorName}</Text>
               {post.authorVerified && (
                 <View style={[styles.verifiedBadge, { backgroundColor: colors.primary }]}>
                   <Feather name="check" size={9} color="#fff" />
                 </View>
               )}
             </View>
-            <Text style={[styles.time, { color: colors.textMuted }]}>
-              {formatTimeAgo(post.createdAt)}
-            </Text>
+            <Text style={[styles.time, { color: colors.textMuted }]}>{formatTimeAgo(post.createdAt)}</Text>
           </View>
         </TouchableOpacity>
 
         <View style={styles.headerRight}>
           <CategoryPill categoryId={post.category} size="sm" />
           {isOwner && (
-            <TouchableOpacity
-              onPress={handleMore}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.moreBtn}
-            >
+            <TouchableOpacity onPress={handleMore} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.moreBtn}>
               <Feather name="more-horizontal" size={18} color={colors.textMuted} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
+      {/* Content */}
       <Text style={[styles.title, { color: colors.text }]}>{post.title}</Text>
-      <Text
-        style={[styles.description, { color: colors.textSecondary }]}
-        numberOfLines={3}
-      >
+      <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={3}>
         {post.description}
       </Text>
 
       {post.images.length > 0 && (
-        <Image
-          source={{ uri: post.images[0] }}
-          style={[styles.image, { backgroundColor: colors.muted }]}
-          resizeMode="cover"
-        />
+        <Image source={{ uri: post.images[0] }} style={[styles.image, { backgroundColor: colors.muted }]} resizeMode="cover" />
       )}
 
       {/* Hashtags */}
       {post.hashtags && post.hashtags.length > 0 && (
         <View style={styles.hashtagRow}>
           {post.hashtags.slice(0, 5).map((tag) => (
-            <TouchableOpacity
-              key={tag}
-              onPress={() => router.push(`/hashtag/${tag}` as never)}
-              hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-            >
+            <TouchableOpacity key={tag} onPress={() => router.push(`/hashtag/${tag}` as never)} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
               <Text style={[styles.hashtag, { color: colors.primary }]}>#{tag}</Text>
             </TouchableOpacity>
           ))}
@@ -298,74 +317,92 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
 
       {/* Reaction picker popup */}
       {showReactions && (
-        <View style={[styles.reactionPopup, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.text }]}>
-          {REACTIONS.map((r) => {
-            const count = (reactions[r.key] ?? []).length;
-            return (
-              <TouchableOpacity key={r.key} style={styles.reactionOption} onPress={() => handleReaction(r.key)}>
-                <Text style={styles.reactionEmoji}>{r.emoji}</Text>
-                {count > 0 && <Text style={[styles.reactionCount, { color: colors.textMuted }]}>{count}</Text>}
-              </TouchableOpacity>
-            );
-          })}
+        <View style={[styles.reactionPopup, { backgroundColor: colors.cardElevated, borderColor: colors.border }]}>
+          <Text style={[styles.reactionHint, { color: colors.textMuted }]}>React with</Text>
+          <View style={styles.reactionGrid}>
+            {REACTIONS.map((r) => {
+              const count = (reactions[r.key] ?? []).length;
+              const mine = !!user && (reactions[r.key] ?? []).includes(user.uid);
+              return (
+                <TouchableOpacity
+                  key={r.key}
+                  onPress={() => handleReaction(r.key)}
+                  style={[styles.reactionChip, { backgroundColor: mine ? r.color + "25" : colors.muted }]}
+                >
+                  <Text style={styles.reactionEmoji}>{r.emoji}</Text>
+                  {count > 0 && (
+                    <Text style={[styles.reactionCount, { color: mine ? r.color : colors.textMuted }]}>{count}</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       )}
 
+      {/* Divider */}
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
+      {/* Action row */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.action} onPress={handleLike}>
-          <Feather
-            name="heart"
-            size={18}
-            color={liked ? colors.primary : colors.textSecondary}
-          />
-          <Text
-            style={[
-              styles.actionText,
-              { color: liked ? colors.primary : colors.textSecondary },
-            ]}
-          >
-            {likeCount}
-          </Text>
-        </TouchableOpacity>
+        {/* Like */}
+        <ActionPill
+          emoji={liked ? "🌹" : "🤍"}
+          count={likeCount || undefined}
+          active={liked}
+          activeColor="#FF3B3B"
+          bgColor={colors.muted}
+          onPress={handleLike}
+        />
 
-        {/* Emoji reaction button */}
-        <TouchableOpacity style={styles.action} onPress={() => setShowReactions((v) => !v)}>
-          <Text style={styles.reactionBtnEmoji}>{myReaction ? myReaction.emoji : "🚨"}</Text>
-          {totalReactions > 0 && (
-            <Text style={[styles.actionText, { color: myReaction ? colors.primary : colors.textSecondary }]}>
-              {totalReactions}
-            </Text>
-          )}
-        </TouchableOpacity>
+        {/* Reactions */}
+        <ActionPill
+          emoji={myReaction ? myReaction.emoji : "🐱"}
+          count={totalReactions || undefined}
+          active={!!myReaction}
+          activeColor={myReaction?.color ?? "#F59E0B"}
+          bgColor={colors.muted}
+          onPress={() => setShowReactions((v) => !v)}
+        />
 
-        <TouchableOpacity style={styles.action} onPress={onComment}>
-          <Feather name="message-circle" size={18} color={colors.textSecondary} />
-          <Text style={[styles.actionText, { color: colors.textSecondary }]}>
-            {post.commentCount}
-          </Text>
-        </TouchableOpacity>
+        {/* Comment */}
+        <ActionPill
+          emoji="💬"
+          count={post.commentCount || undefined}
+          active={false}
+          activeColor="#3B82F6"
+          bgColor={colors.muted}
+          onPress={() => onComment?.()}
+        />
 
-        <TouchableOpacity style={styles.action} onPress={handleShare}>
-          <Feather name="share-2" size={18} color={colors.textSecondary} />
-          <Text style={[styles.actionText, { color: colors.textSecondary }]}>
-            {shareCount > 0 ? shareCount : ""}
-          </Text>
-        </TouchableOpacity>
+        {/* Share */}
+        <ActionPill
+          emoji="📢"
+          count={shareCount || undefined}
+          active={false}
+          activeColor="#10B981"
+          bgColor={colors.muted}
+          onPress={handleShare}
+        />
 
-        <TouchableOpacity style={styles.action} onPress={handleBookmark}>
-          <Feather
-            name="bookmark"
-            size={18}
-            color={saved ? colors.primary : colors.textSecondary}
-          />
-        </TouchableOpacity>
+        {/* Bookmark */}
+        <ActionPill
+          emoji={saved ? "🔖" : "📌"}
+          active={saved}
+          activeColor="#F59E0B"
+          bgColor={colors.muted}
+          onPress={handleBookmark}
+        />
 
+        {/* Report — only for others' posts */}
         {!isOwner && (
-          <TouchableOpacity style={styles.action} onPress={handleReport}>
-            <Feather name="flag" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
+          <ActionPill
+            emoji="🚩"
+            active={false}
+            activeColor="#EF4444"
+            bgColor={colors.muted}
+            onPress={handleReport}
+          />
         )}
       </View>
     </TouchableOpacity>
@@ -374,7 +411,7 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
     marginBottom: 12,
     overflow: "hidden",
@@ -394,15 +431,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   authorInfo: { flex: 1 },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  authorName: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 14,
-  },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  authorName: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   verifiedBadge: {
     width: 16,
     height: 16,
@@ -410,19 +440,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  time: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 11,
-    marginTop: 1,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  moreBtn: {
-    padding: 2,
-  },
+  time: { fontFamily: "Inter_400Regular", fontSize: 11, marginTop: 1 },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  moreBtn: { padding: 2 },
   title: {
     fontFamily: "Inter_700Bold",
     fontSize: 16,
@@ -437,10 +457,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 10,
   },
-  image: {
-    width: "100%",
-    height: 200,
-  },
+  image: { width: "100%", height: 200 },
   hashtagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -448,55 +465,61 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingBottom: 8,
   },
-  hashtag: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 13,
-  },
+  hashtag: { fontFamily: "Inter_500Medium", fontSize: 13 },
+
   reactionPopup: {
-    position: "absolute",
-    bottom: 52,
-    left: 14,
-    flexDirection: "row",
-    gap: 4,
-    borderRadius: 28,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    zIndex: 100,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  reactionOption: {
-    alignItems: "center",
-    paddingHorizontal: 6,
-  },
-  reactionEmoji: { fontSize: 24 },
-  reactionCount: { fontFamily: "Inter_500Medium", fontSize: 10, marginTop: 2 },
-  reactionBtnEmoji: { fontSize: 16 },
-  divider: {
-    height: 1,
     marginHorizontal: 14,
-    marginTop: 10,
+    marginBottom: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
   },
+  reactionHint: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  reactionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  reactionChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  reactionEmoji: { fontSize: 20 },
+  reactionCount: { fontFamily: "Inter_600SemiBold", fontSize: 12 },
+
+  divider: { height: 1, marginHorizontal: 14, marginTop: 4 },
+
   actions: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingVertical: 10,
-    gap: 4,
+    gap: 6,
   },
-  action: {
+
+  pill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    flex: 1,
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "transparent",
   },
-  actionText: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 13,
+  pillEmoji: { fontSize: 16 },
+  pillCount: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
   },
 });
