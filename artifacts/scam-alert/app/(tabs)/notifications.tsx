@@ -14,7 +14,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   onSnapshot,
   writeBatch,
   doc,
@@ -145,35 +144,36 @@ export default function NotificationsScreen() {
     const q = query(
       collection(db, "notifications"),
       where("recipientId", "==", user.uid),
-      orderBy("createdAt", "desc"),
       limit(80)
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      const items: AppNotification[] = snap.docs.map((d) => {
-        const data = d.data();
-        const ts = data.createdAt as Timestamp | number | null;
-        const createdAt =
-          ts instanceof Timestamp
-            ? ts.toMillis()
-            : typeof ts === "number"
-            ? ts
-            : Date.now();
-        return {
-          id: d.id,
-          recipientId: data.recipientId,
-          type: data.type as NType,
-          actorId: data.actorId ?? null,
-          actorName: data.actorName ?? null,
-          actorAvatar: data.actorAvatar ?? null,
-          postId: data.postId ?? null,
-          postTitle: data.postTitle ?? null,
-          title: data.title ?? "",
-          body: data.body ?? "",
-          read: data.read ?? false,
-          createdAt,
-        };
-      });
+      const items: AppNotification[] = snap.docs
+        .map((d) => {
+          const data = d.data();
+          const ts = data.createdAt as Timestamp | number | null;
+          const createdAt =
+            ts instanceof Timestamp
+              ? ts.toMillis()
+              : typeof ts === "number"
+              ? ts
+              : Date.now();
+          return {
+            id: d.id,
+            recipientId: data.recipientId,
+            type: data.type as NType,
+            actorId: data.actorId ?? null,
+            actorName: data.actorName ?? null,
+            actorAvatar: data.actorAvatar ?? null,
+            postId: data.postId ?? null,
+            postTitle: data.postTitle ?? null,
+            title: data.title ?? "",
+            body: data.body ?? "",
+            read: data.read ?? false,
+            createdAt,
+          };
+        })
+        .sort((a, b) => b.createdAt - a.createdAt);
       setNotifications(items);
       setLoading(false);
       setRefreshing(false);
