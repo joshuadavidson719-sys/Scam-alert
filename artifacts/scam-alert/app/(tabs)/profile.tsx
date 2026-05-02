@@ -12,6 +12,7 @@ import {
   ActionSheetIOS,
   Modal,
   Pressable,
+  Switch,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -21,10 +22,14 @@ import {
   where,
   orderBy,
   onSnapshot,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
+import { useBookmarks } from "@/hooks/useBookmarks";
 import { UserAvatar } from "@/components/UserAvatar";
 import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
@@ -32,12 +37,19 @@ import { ReportModal } from "@/components/ReportModal";
 import { router } from "expo-router";
 import { pickAndUploadImage } from "@/lib/uploadImage";
 
+type TabType = "posts" | "bookmarks";
+
 export default function ProfileScreen() {
   const colors = useColors();
+  const { mode, setMode, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { user, profile, logout, updateUserProfile } = useAuth();
+  const { bookmarks } = useBookmarks();
   const [posts, setPosts] = useState<PostData[]>([]);
+  const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savedLoading, setSavedLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("posts");
   const [commentPost, setCommentPost] = useState<PostData | null>(null);
   const [reportPostId, setReportPostId] = useState<string | null>(null);
   const [editingBio, setEditingBio] = useState(false);
@@ -46,6 +58,7 @@ export default function ProfileScreen() {
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
+  // My posts
   useEffect(() => {
     if (!user) return;
     const q = query(
@@ -63,6 +76,25 @@ export default function ProfileScreen() {
     });
     return unsub;
   }, [user]);
+
+  // Bookmarked posts — fetch when tab switches
+  useEffect(() => {
+    if (activeTab !== "bookmarks" || bookmarks.length === 0) {
+      if (bookmarks.length === 0) setSavedPosts([]);
+      return;
+    }
+    setSavedLoading(true);
+    Promise.all(
+      bookmarks.map((id) =>
+        getDoc(doc(db, "posts", id)).then((d) =>
+          d.exists() ? ({ ...d.data(), id: d.id } as PostData) : null
+        )
+      )
+    ).then((results) => {
+      setSavedPosts(results.filter(Boolean) as PostData[]);
+      setSavedLoading(false);
+    });
+  }, [activeTab, bookmarks]);
 
   const handleLogout = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -86,10 +118,7 @@ export default function ProfileScreen() {
   const handlePickPhoto = () => {
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", "Take Photo", "Choose from Gallery"],
-          cancelButtonIndex: 0,
-        },
+        { options: ["Cancel", "Take Photo", "Choose from Gallery"], cancelButtonIndex: 0 },
         async (idx) => {
           if (idx === 1) await doUpload("camera");
           if (idx === 2) await doUpload("gallery");
@@ -106,9 +135,7 @@ export default function ProfileScreen() {
     setShowPhotoSheet(false);
     try {
       const url = await pickAndUploadImage(user.uid, source);
-      if (url) {
-        await updateUserProfile({ profilePhoto: url });
-      }
+      if (url) await updateUserProfile({ profilePhoto: url });
     } catch {
       Alert.alert("Error", "Failed to upload photo. Please try again.");
     } finally {
@@ -116,21 +143,30 @@ export default function ProfileScreen() {
     }
   };
 
+  const cycleDarkMode = () => {
+    const next = mode === "system" ? "dark" : mode === "dark" ? "light" : "system";
+    setMode(next);
+  };
+
+  const themeModeLabel: Record<string, string> = {
+    system: "Auto",
+    dark: "Dark",
+    light: "Light",
+  };
+
   if (!profile) return null;
+
+  const displayedPosts = activeTab === "posts" ? posts : savedPosts;
+  const displayedLoading = activeTab === "posts" ? loading : savedLoading;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
-        data={posts}
+        data={displayedPosts}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View>
-            <View
-              style={[
-                styles.header,
-                { paddingTop: topPad + 10, borderBottomColor: colors.border },
-              ]}
-            >
+            <View style={[styles.header, { paddingTop: topPad + 10, borderBottomColor: colors.border }]}>
               <View style={styles.headerActions}>
                 {profile.isAdmin && (
                   <TouchableOpacity
@@ -155,24 +191,9 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.avatarSection}>
-                {/* Tappable avatar with camera overlay */}
-                <TouchableOpacity
-                  onPress={handlePickPhoto}
-                  disabled={uploadingPhoto}
-                  activeOpacity={0.8}
-                  style={styles.avatarWrapper}
-                >
-                  <UserAvatar
-                    uri={profile.profilePhoto}
-                    name={profile.username}
-                    size={90}
-                  />
-                  <View
-                    style={[
-                      styles.cameraOverlay,
-                      { backgroundColor: colors.primary },
-                    ]}
-                  >
+                <TouchableOpacity onPress={handlePickPhoto} disabled={uploadingPhoto} activeOpacity={0.8} style={styles.avatarWrapper}>
+                  <UserAvatar uri={profile.profilePhoto} name={profile.username} size={90} />
+                  <View style={[styles.cameraOverlay, { backgroundColor: colors.primary }]}>
                     {uploadingPhoto ? (
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
@@ -181,9 +202,14 @@ export default function ProfileScreen() {
                   </View>
                 </TouchableOpacity>
 
-                <Text style={[styles.username, { color: colors.text }]}>
-                  {profile.username}
-                </Text>
+                <View style={styles.nameRow}>
+                  <Text style={[styles.username, { color: colors.text }]}>{profile.username}</Text>
+                  {(profile.isAdmin) && (
+                    <View style={[styles.verifiedBadge, { backgroundColor: colors.primary }]}>
+                      <Feather name="check" size={10} color="#fff" />
+                    </View>
+                  )}
+                </View>
                 <Text style={[styles.niche, { color: colors.primary }]}>
                   {profile.niche || "Scam Alert Community"}
                 </Text>
@@ -191,10 +217,7 @@ export default function ProfileScreen() {
                 {editingBio ? (
                   <View style={styles.bioEdit}>
                     <TextInput
-                      style={[
-                        styles.bioInput,
-                        { color: colors.text, borderColor: colors.border, backgroundColor: colors.card },
-                      ]}
+                      style={[styles.bioInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
                       value={bioText}
                       onChangeText={setBioText}
                       multiline
@@ -204,16 +227,10 @@ export default function ProfileScreen() {
                       autoFocus
                     />
                     <View style={styles.bioActions}>
-                      <TouchableOpacity
-                        onPress={() => setEditingBio(false)}
-                        style={[styles.bioBtn, { backgroundColor: colors.muted }]}
-                      >
+                      <TouchableOpacity onPress={() => setEditingBio(false)} style={[styles.bioBtn, { backgroundColor: colors.muted }]}>
                         <Text style={[styles.bioBtnText, { color: colors.text }]}>Cancel</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={handleSaveBio}
-                        style={[styles.bioBtn, { backgroundColor: colors.primary }]}
-                      >
+                      <TouchableOpacity onPress={handleSaveBio} style={[styles.bioBtn, { backgroundColor: colors.primary }]}>
                         <Text style={styles.bioBtnText}>Save</Text>
                       </TouchableOpacity>
                     </View>
@@ -229,33 +246,46 @@ export default function ProfileScreen() {
 
               <View style={[styles.statsRow, { borderColor: colors.border }]}>
                 <View style={styles.stat}>
-                  <Text style={[styles.statNum, { color: colors.text }]}>
-                    {posts.length}
-                  </Text>
+                  <Text style={[styles.statNum, { color: colors.text }]}>{posts.length}</Text>
                   <Text style={[styles.statLabel, { color: colors.textMuted }]}>Posts</Text>
                 </View>
                 <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                 <View style={styles.stat}>
-                  <Text style={[styles.statNum, { color: colors.text }]}>
-                    {profile.followers?.length ?? 0}
-                  </Text>
+                  <Text style={[styles.statNum, { color: colors.text }]}>{profile.followers?.length ?? 0}</Text>
                   <Text style={[styles.statLabel, { color: colors.textMuted }]}>Followers</Text>
                 </View>
                 <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                 <View style={styles.stat}>
-                  <Text style={[styles.statNum, { color: colors.text }]}>
-                    {profile.following?.length ?? 0}
-                  </Text>
+                  <Text style={[styles.statNum, { color: colors.text }]}>{profile.following?.length ?? 0}</Text>
                   <Text style={[styles.statLabel, { color: colors.textMuted }]}>Following</Text>
                 </View>
               </View>
             </View>
 
+            {/* Settings */}
             <View style={styles.quickLinks}>
+              {/* Dark mode toggle */}
+              <TouchableOpacity
+                style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
+                onPress={cycleDarkMode}
+              >
+                <Feather
+                  name={isDark ? "moon" : mode === "light" ? "sun" : "sunset"}
+                  size={16}
+                  color={colors.textSecondary}
+                />
+                <Text style={[styles.quickLinkText, { color: colors.text }]}>Theme</Text>
+                <View style={[styles.themePill, { backgroundColor: colors.primary + "20" }]}>
+                  <Text style={[styles.themePillText, { color: colors.primary }]}>
+                    {themeModeLabel[mode]}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
               {[
+                { label: "AI Scam Checker", route: "/scam-checker", icon: "shield" },
                 { label: "Privacy Policy", route: "/legal/privacy", icon: "lock" },
                 { label: "Community Guidelines", route: "/legal/guidelines", icon: "book" },
-                { label: "AI Scam Checker", route: "/scam-checker", icon: "shield" },
               ].map((item) => (
                 <TouchableOpacity
                   key={item.route}
@@ -269,14 +299,38 @@ export default function ProfileScreen() {
               ))}
             </View>
 
-            <Text style={[styles.postsHeader, { color: colors.text }]}>Posts</Text>
-            {loading && <ActivityIndicator color={colors.primary} style={{ margin: 20 }} />}
-            {!loading && posts.length === 0 && (
+            {/* Posts / Bookmarks tabs */}
+            <View style={[styles.tabRow, { borderBottomColor: colors.border }]}>
+              {(["posts", "bookmarks"] as TabType[]).map((tab) => (
+                <TouchableOpacity
+                  key={tab}
+                  style={[styles.tabBtn, activeTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
+                  onPress={() => setActiveTab(tab)}
+                >
+                  <Feather
+                    name={tab === "posts" ? "file-text" : "bookmark"}
+                    size={15}
+                    color={activeTab === tab ? colors.primary : colors.textMuted}
+                  />
+                  <Text style={[styles.tabLabel, { color: activeTab === tab ? colors.primary : colors.textMuted }]}>
+                    {tab === "posts" ? `Posts (${posts.length})` : `Saved (${bookmarks.length})`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {displayedLoading && <ActivityIndicator color={colors.primary} style={{ margin: 20 }} />}
+            {!displayedLoading && displayedPosts.length === 0 && (
               <View style={styles.emptyPosts}>
-                <Feather name="file-text" size={36} color={colors.textMuted} />
+                <Feather name={activeTab === "posts" ? "file-text" : "bookmark"} size={36} color={colors.textMuted} />
                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                  No posts yet
+                  {activeTab === "posts" ? "No posts yet" : "No saved posts yet"}
                 </Text>
+                {activeTab === "bookmarks" && (
+                  <Text style={[styles.emptyHint, { color: colors.textMuted }]}>
+                    Tap the bookmark icon on any post to save it here
+                  </Text>
+                )}
               </View>
             )}
           </View>
@@ -312,38 +366,19 @@ export default function ProfileScreen() {
       )}
 
       {/* Android / Web photo source picker */}
-      <Modal
-        visible={showPhotoSheet}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowPhotoSheet(false)}
-      >
-        <Pressable
-          style={styles.sheetBackdrop}
-          onPress={() => setShowPhotoSheet(false)}
-        >
+      <Modal visible={showPhotoSheet} transparent animationType="fade" onRequestClose={() => setShowPhotoSheet(false)}>
+        <Pressable style={styles.sheetBackdrop} onPress={() => setShowPhotoSheet(false)}>
           <View style={[styles.sheet, { backgroundColor: colors.card }]}>
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>
-              Change Profile Photo
-            </Text>
-            <TouchableOpacity
-              style={[styles.sheetOption, { borderBottomColor: colors.border }]}
-              onPress={() => doUpload("camera")}
-            >
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>Change Profile Photo</Text>
+            <TouchableOpacity style={[styles.sheetOption, { borderBottomColor: colors.border }]} onPress={() => doUpload("camera")}>
               <Feather name="camera" size={20} color={colors.primary} />
               <Text style={[styles.sheetOptionText, { color: colors.text }]}>Take Photo</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.sheetOption}
-              onPress={() => doUpload("gallery")}
-            >
+            <TouchableOpacity style={styles.sheetOption} onPress={() => doUpload("gallery")}>
               <Feather name="image" size={20} color={colors.primary} />
               <Text style={[styles.sheetOptionText, { color: colors.text }]}>Choose from Gallery</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.sheetCancel, { backgroundColor: colors.muted }]}
-              onPress={() => setShowPhotoSheet(false)}
-            >
+            <TouchableOpacity style={[styles.sheetCancel, { backgroundColor: colors.muted }]} onPress={() => setShowPhotoSheet(false)}>
               <Text style={[styles.sheetCancelText, { color: colors.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -355,10 +390,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-  },
+  header: { paddingBottom: 16, borderBottomWidth: 1 },
   headerActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -378,10 +410,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     gap: 6,
   },
-  avatarWrapper: {
-    position: "relative",
-    marginBottom: 4,
-  },
+  avatarWrapper: { position: "relative", marginBottom: 4 },
   cameraOverlay: {
     position: "absolute",
     bottom: 0,
@@ -394,15 +423,21 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
-  username: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 22,
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     marginTop: 6,
   },
-  niche: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 13,
+  verifiedBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
   },
+  username: { fontFamily: "Inter_700Bold", fontSize: 22 },
+  niche: { fontFamily: "Inter_500Medium", fontSize: 13 },
   bio: {
     fontFamily: "Inter_400Regular",
     fontSize: 14,
@@ -410,11 +445,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     lineHeight: 19,
   },
-  bioEdit: {
-    width: "100%",
-    gap: 8,
-    marginTop: 8,
-  },
+  bioEdit: { width: "100%", gap: 8, marginTop: 8 },
   bioInput: {
     borderWidth: 1,
     borderRadius: 10,
@@ -424,21 +455,9 @@ const styles = StyleSheet.create({
     minHeight: 70,
     textAlignVertical: "top",
   },
-  bioActions: {
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "flex-end",
-  },
-  bioBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  bioBtnText: {
-    color: "#fff",
-    fontFamily: "Inter_500Medium",
-    fontSize: 13,
-  },
+  bioActions: { flexDirection: "row", gap: 8, justifyContent: "flex-end" },
+  bioBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  bioBtnText: { color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 },
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -447,27 +466,11 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingHorizontal: 24,
   },
-  stat: {
-    flex: 1,
-    alignItems: "center",
-    gap: 2,
-  },
-  statNum: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 20,
-  },
-  statLabel: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 12,
-  },
-  statDivider: {
-    width: 1,
-    height: 30,
-  },
-  quickLinks: {
-    padding: 16,
-    gap: 8,
-  },
+  stat: { flex: 1, alignItems: "center", gap: 2 },
+  statNum: { fontFamily: "Inter_700Bold", fontSize: 20 },
+  statLabel: { fontFamily: "Inter_400Regular", fontSize: 12 },
+  statDivider: { width: 1, height: 30 },
+  quickLinks: { padding: 16, gap: 8 },
   quickLink: {
     flexDirection: "row",
     alignItems: "center",
@@ -476,27 +479,31 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  quickLinkText: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 14,
+  quickLinkText: { fontFamily: "Inter_500Medium", fontSize: 14, flex: 1 },
+  themePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  themePillText: { fontFamily: "Inter_600SemiBold", fontSize: 12 },
+  tabRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  tabBtn: {
     flex: 1,
-  },
-  postsHeader: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 18,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    paddingTop: 4,
-  },
-  emptyPosts: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 40,
-    gap: 12,
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
   },
-  emptyText: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 14,
-  },
+  tabLabel: { fontFamily: "Inter_600SemiBold", fontSize: 13 },
+  emptyPosts: { alignItems: "center", paddingVertical: 40, gap: 10 },
+  emptyText: { fontFamily: "Inter_400Regular", fontSize: 14 },
+  emptyHint: { fontFamily: "Inter_400Regular", fontSize: 12, textAlign: "center", paddingHorizontal: 32 },
   sheetBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.55)",
@@ -521,18 +528,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
-  sheetOptionText: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 16,
-  },
+  sheetOptionText: { fontFamily: "Inter_500Medium", fontSize: 16 },
   sheetCancel: {
     marginTop: 12,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
   },
-  sheetCancelText: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 15,
-  },
+  sheetCancelText: { fontFamily: "Inter_600SemiBold", fontSize: 15 },
 });

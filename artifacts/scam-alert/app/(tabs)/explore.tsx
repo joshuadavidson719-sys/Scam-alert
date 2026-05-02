@@ -25,6 +25,7 @@ import { CATEGORIES, type CategoryId } from "@/context/AuthContext";
 import { router } from "expo-router";
 import { UserAvatar } from "@/components/UserAvatar";
 import { CategoryPill } from "@/components/CategoryPill";
+import { ScamStatsChart } from "@/components/ScamStatsChart";
 import { formatTimeAgo } from "@/lib/utils";
 import type { PostData } from "@/components/PostCard";
 
@@ -314,25 +315,30 @@ export default function ExploreScreen() {
           renderItem={renderCategory}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={() => (
-            /* AI Checker banner */
-            <TouchableOpacity
-              style={[styles.aiBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}
-              onPress={() => router.push("/scam-checker" as never)}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.aiIconBox, { backgroundColor: colors.primary }]}>
-                <Feather name="shield" size={20} color="#fff" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.aiTitle, { color: colors.text }]}>AI Scam Checker</Text>
-                <Text style={[styles.aiDesc, { color: colors.textSecondary }]}>
-                  Paste a suspicious message — our AI will analyze it instantly
-                </Text>
-              </View>
-              <View style={[styles.aiArrow, { backgroundColor: colors.primary }]}>
-                <Feather name="arrow-right" size={14} color="#fff" />
-              </View>
-            </TouchableOpacity>
+            <>
+              {/* AI Checker banner */}
+              <TouchableOpacity
+                style={[styles.aiBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}
+                onPress={() => router.push("/scam-checker" as never)}
+                activeOpacity={0.85}
+              >
+                <View style={[styles.aiIconBox, { backgroundColor: colors.primary }]}>
+                  <Feather name="shield" size={20} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.aiTitle, { color: colors.text }]}>AI Scam Checker</Text>
+                  <Text style={[styles.aiDesc, { color: colors.textSecondary }]}>
+                    Paste a suspicious message — our AI will analyze it instantly
+                  </Text>
+                </View>
+                <View style={[styles.aiArrow, { backgroundColor: colors.primary }]}>
+                  <Feather name="arrow-right" size={14} color="#fff" />
+                </View>
+              </TouchableOpacity>
+              {/* Scam statistics chart */}
+              <ScamStatsChart />
+              <Text style={[styles.browseLabel, { color: colors.textMuted }]}>BROWSE BY CATEGORY</Text>
+            </>
           )}
           contentContainerStyle={[styles.catList, { paddingBottom: insets.bottom + 80 }]}
           showsVerticalScrollIndicator={false}
@@ -373,6 +379,14 @@ const styles = StyleSheet.create({
   cancelText: {
     fontFamily: "Inter_500Medium",
     fontSize: 14,
+  },
+  browseLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 11,
+    letterSpacing: 0.8,
+    marginHorizontal: 14,
+    marginTop: 16,
+    marginBottom: 8,
   },
   // Category browse
   catList: { padding: 14, gap: 0 },

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Image,
   Share,
-  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -15,6 +14,7 @@ import { doc, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/fir
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
+import { useBookmarks } from "@/hooks/useBookmarks";
 import { UserAvatar } from "./UserAvatar";
 import { CategoryPill } from "./CategoryPill";
 import type { CategoryId } from "@/context/AuthContext";
@@ -26,6 +26,7 @@ export interface PostData {
   authorId: string;
   authorName: string;
   authorAvatar: string | null;
+  authorVerified?: boolean;
   title: string;
   description: string;
   images: string[];
@@ -46,11 +47,11 @@ interface Props {
 export function PostCard({ post, onComment, onReport }: Props) {
   const colors = useColors();
   const { user, profile } = useAuth();
-  const [liked, setLiked] = useState(
-    !!user && post.likes.includes(user.uid)
-  );
+  const { toggle, isBookmarked } = useBookmarks();
+  const [liked, setLiked] = useState(!!user && post.likes.includes(user.uid));
   const [likeCount, setLikeCount] = useState(post.likes.length);
   const [shareCount, setShareCount] = useState(post.shareCount);
+  const [saved, setSaved] = useState(isBookmarked(post.id));
 
   const handleLike = async () => {
     if (!user) return;
@@ -96,18 +97,16 @@ export function PostCard({ post, onComment, onReport }: Props) {
             post.description,
             ``,
             `— Posted by ${post.authorName} on Scam Alert`,
-            `Stay informed. Stay safe. Download the app and join the community.`,
+            `Stay informed. Stay safe.`,
           ].join("\n"),
-          url: "https://scam-alert.app", // shown as a rich link on iOS
+          url: "https://scam-alert.app",
         },
         {
-          dialogTitle: "Share this scam alert",   // Android only
-          subject: `Scam Alert: ${post.title}`,   // email subject
+          dialogTitle: "Share this scam alert",
+          subject: `Scam Alert: ${post.title}`,
         }
       );
 
-      // Only count as a share when the user actually sent it
-      // (on Android, result.action is always sharedAction even if dismissed)
       const didShare =
         result.action === Share.sharedAction ||
         result.action === "sharedAction";
@@ -134,8 +133,14 @@ export function PostCard({ post, onComment, onReport }: Props) {
         }
       }
     } catch {
-      // Sheet cancelled or not available — no-op
+      // Sheet cancelled — no-op
     }
+  };
+
+  const handleBookmark = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const nowSaved = await toggle(post.id);
+    setSaved(nowSaved);
   };
 
   const handleReport = () => {
@@ -156,9 +161,16 @@ export function PostCard({ post, onComment, onReport }: Props) {
         >
           <UserAvatar uri={post.authorAvatar} name={post.authorName} size={38} />
           <View style={styles.authorInfo}>
-            <Text style={[styles.authorName, { color: colors.text }]}>
-              {post.authorName}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text style={[styles.authorName, { color: colors.text }]}>
+                {post.authorName}
+              </Text>
+              {post.authorVerified && (
+                <View style={[styles.verifiedBadge, { backgroundColor: colors.primary }]}>
+                  <Feather name="check" size={9} color="#fff" />
+                </View>
+              )}
+            </View>
             <Text style={[styles.time, { color: colors.textMuted }]}>
               {formatTimeAgo(post.createdAt)}
             </Text>
@@ -191,7 +203,6 @@ export function PostCard({ post, onComment, onReport }: Props) {
             name="heart"
             size={18}
             color={liked ? colors.primary : colors.textSecondary}
-            style={liked && styles.likedIcon}
           />
           <Text
             style={[
@@ -215,6 +226,14 @@ export function PostCard({ post, onComment, onReport }: Props) {
           <Text style={[styles.actionText, { color: colors.textSecondary }]}>
             {shareCount > 0 ? shareCount : "Share"}
           </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.action} onPress={handleBookmark}>
+          <Feather
+            name="bookmark"
+            size={18}
+            color={saved ? colors.primary : colors.textSecondary}
+          />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.action} onPress={handleReport}>
@@ -249,9 +268,21 @@ const styles = StyleSheet.create({
   authorInfo: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
   authorName: {
     fontFamily: "Inter_600SemiBold",
     fontSize: 14,
+  },
+  verifiedBadge: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   time: {
     fontFamily: "Inter_400Regular",
@@ -275,7 +306,6 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: 200,
-    marginBottom: 0,
   },
   divider: {
     height: 1,
@@ -293,15 +323,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 4,
     flex: 1,
   },
   actionText: {
     fontFamily: "Inter_500Medium",
     fontSize: 13,
-  },
-  likedIcon: {
-    // visual style when liked
   },
 });
