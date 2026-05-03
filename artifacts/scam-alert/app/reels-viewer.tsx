@@ -54,6 +54,10 @@ const ST = StyleSheet.create({
   tickerTxt: { fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#fff", flex: 1 },
 });
 
+// Tracks whether the user has ever tapped to unlock browser autoplay.
+// Once unlocked, subsequent reels can autoplay without needing another tap.
+let webAutoplayUnlocked = false;
+
 // ── Single Reel Item ────────────────────────────────────────────────────────
 function ReelItem({
   reel, isActive, isNear, currentUserId, onLike, onOpenComments, onDelete,
@@ -69,7 +73,9 @@ function ReelItem({
   const soundRef = useRef<Audio.Sound | null>(null);
   const [paused, setPaused]   = useState(false);
   const [viewed, setViewed]   = useState(false);
-  const [blocked, setBlocked] = useState(false);
+  // On web, start blocked until user has made their first gesture.
+  // After that first tap, webAutoplayUnlocked = true so new reels autoplay.
+  const [blocked, setBlocked] = useState(Platform.OS === "web" && !webAutoplayUnlocked);
   const isOwner = !!currentUserId && currentUserId === reel.userId;
   const liked   = currentUserId ? reel.likes.includes(currentUserId) : false;
   const hasMusic = !!reel.musicUrl;
@@ -154,6 +160,8 @@ function ReelItem({
   // ── Interaction handlers ────────────────────────────────────────────────
   const handleTap = () => {
     if (blocked) {
+      // First user gesture — unlock browser autoplay for all future reels
+      webAutoplayUnlocked = true;
       setBlocked(false);
       setPaused(false);
       try { player.play(); } catch {}
@@ -216,12 +224,17 @@ function ReelItem({
           colors={["rgba(0,0,0,0.45)", "transparent"]}
           style={[StyleSheet.absoluteFill, { bottom: "80%" as any }]}
         />
-        {(paused || blocked) && (
+        {blocked && (
+          <View style={S.blockedOverlay}>
+            <View style={S.blockedCircle}>
+              <Feather name="play" size={36} color="#fff" />
+            </View>
+            <Text style={S.tapToPlay}>Tap to play</Text>
+          </View>
+        )}
+        {!blocked && paused && (
           <View style={S.pauseIcon}>
-            <Feather name={blocked ? "play" : "pause"} size={40} color="rgba(255,255,255,0.8)" />
-            {blocked && (
-              <Text style={S.tapToPlay}>Tap to play</Text>
-            )}
+            <Feather name="pause" size={40} color="rgba(255,255,255,0.8)" />
           </View>
         )}
       </TouchableOpacity>
@@ -544,8 +557,10 @@ const S = StyleSheet.create({
   uploadEmpty:  { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#FF3B3B", paddingHorizontal: 20, paddingVertical: 11, borderRadius: 14 },
 
   reel:         { width: SW, height: SH, backgroundColor: "#000" },
-  pauseIcon:    { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 10 },
-  tapToPlay:    { fontFamily: "Inter_600SemiBold", fontSize: 14, color: "rgba(255,255,255,0.85)", backgroundColor: "rgba(0,0,0,0.4)", paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
+  pauseIcon:      { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
+  blockedOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 14, backgroundColor: "rgba(0,0,0,0.55)" },
+  blockedCircle:  { width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.2)", borderWidth: 2, borderColor: "rgba(255,255,255,0.7)", alignItems: "center", justifyContent: "center" },
+  tapToPlay:      { fontFamily: "Inter_700Bold", fontSize: 15, color: "#fff", letterSpacing: 0.3 },
 
   bottomOverlay:{ position: "absolute", bottom: 90, left: 16, right: 80 },
   userRow:      { flexDirection: "row", alignItems: "center", marginBottom: 10 },
