@@ -4,7 +4,7 @@ import {
   Dimensions, ActivityIndicator, TextInput, Modal,
   KeyboardAvoidingView, Platform,
 } from "react-native";
-import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
+import { Video, ResizeMode, AVPlaybackStatus, Audio, Sound } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -31,9 +31,26 @@ export type ReelDoc = {
   likes: string[];
   views: number;
   createdAt: number;
+  musicUrl?: string | null;
+  musicName?: string | null;
+  musicEmoji?: string | null;
 };
 
 type Comment = { id: string; userId: string; username: string; text: string; createdAt: number };
+
+// ── Spinning music note ──────────────────────────────────────────────────────
+function MusicTicker({ name, emoji }: { name: string; emoji: string }) {
+  return (
+    <View style={ST.ticker}>
+      <Text style={{ fontSize: 14 }}>{emoji}</Text>
+      <Text style={ST.tickerTxt} numberOfLines={1}>{name}</Text>
+    </View>
+  );
+}
+const ST = StyleSheet.create({
+  ticker: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, alignSelf: "flex-start", maxWidth: 220 },
+  tickerTxt: { fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#fff", flex: 1 },
+});
 
 // ── Single Reel Item ────────────────────────────────────────────────────────
 function ReelItem({
@@ -45,19 +62,43 @@ function ReelItem({
   onLike: (id: string, liked: boolean) => void;
   onOpenComments: (reel: ReelDoc) => void;
 }) {
-  const videoRef = useRef<InstanceType<typeof Video>>(null);
+  const videoRef  = useRef<InstanceType<typeof Video>>(null);
+  const soundRef  = useRef<InstanceType<typeof Sound> | null>(null);
   const [paused, setPaused]   = useState(false);
   const [viewed, setViewed]   = useState(false);
   const liked = currentUserId ? reel.likes.includes(currentUserId) : false;
+  const hasMusic = !!reel.musicUrl;
 
+  // Load music when reel becomes active
   useEffect(() => {
-    if (!isActive) {
-      videoRef.current?.pauseAsync();
-      setPaused(false);
+    if (!hasMusic || !reel.musicUrl) return;
+    let cancelled = false;
+    Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false }).catch(() => {});
+    Audio.Sound.createAsync(
+      { uri: reel.musicUrl },
+      { shouldPlay: isActive, isLooping: true, volume: 0.85 },
+    ).then(({ sound }) => {
+      if (cancelled) { sound.unloadAsync(); return; }
+      soundRef.current = sound;
+    }).catch(() => {});
+
+    return () => {
+      cancelled = true;
+      soundRef.current?.unloadAsync().catch(() => {});
+      soundRef.current = null;
+    };
+  }, [reel.id]);
+
+  // Sync play/pause with isActive
+  useEffect(() => {
+    if (!isActive || paused) {
+      videoRef.current?.pauseAsync().catch(() => {});
+      soundRef.current?.pauseAsync().catch(() => {});
     } else {
-      videoRef.current?.playAsync();
+      videoRef.current?.playAsync().catch(() => {});
+      soundRef.current?.playAsync().catch(() => {});
     }
-  }, [isActive]);
+  }, [isActive, paused]);
 
   const handlePlayback = (status: AVPlaybackStatus) => {
     if (!status.isLoaded) return;
@@ -68,13 +109,20 @@ function ReelItem({
   };
 
   const togglePause = () => {
-    if (paused) { videoRef.current?.playAsync(); setPaused(false); }
-    else        { videoRef.current?.pauseAsync(); setPaused(true); }
+    const next = !paused;
+    setPaused(next);
+    if (next) {
+      videoRef.current?.pauseAsync().catch(() => {});
+      soundRef.current?.pauseAsync().catch(() => {});
+    } else {
+      videoRef.current?.playAsync().catch(() => {});
+      soundRef.current?.playAsync().catch(() => {});
+    }
   };
 
   return (
     <View style={S.reel}>
-      {/* Video */}
+      {/* Video — muted when music track is attached */}
       <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={togglePause}>
         <Video
           ref={videoRef}
@@ -83,17 +131,16 @@ function ReelItem({
           resizeMode={ResizeMode.COVER}
           shouldPlay={isActive && !paused}
           isLooping
+          isMuted={hasMusic}
           onPlaybackStatusUpdate={handlePlayback}
         />
-        {/* Dark overlay */}
         <LinearGradient
-          colors={["transparent", "transparent", "rgba(0,0,0,0.8)"]}
+          colors={["transparent", "transparent", "rgba(0,0,0,0.82)"]}
           style={StyleSheet.absoluteFill}
           locations={[0, 0.4, 1]}
         />
-        {/* Top gradient */}
         <LinearGradient
-          colors={["rgba(0,0,0,0.5)", "transparent"]}
+          colors={["rgba(0,0,0,0.45)", "transparent"]}
           style={[StyleSheet.absoluteFill, { bottom: "80%" as any }]}
         />
         {paused && (
@@ -115,7 +162,13 @@ function ReelItem({
           </View>
         </TouchableOpacity>
         <Text style={S.caption} numberOfLines={3}>{reel.caption}</Text>
-        <View style={S.statsRow}>
+
+        {/* Music ticker */}
+        {hasMusic && reel.musicName && (
+          <MusicTicker name={reel.musicName} emoji={reel.musicEmoji ?? "🎵"} />
+        )}
+
+        <View style={[S.statsRow, { marginTop: 8 }]}>
           <Feather name="eye" size={12} color="rgba(255,255,255,0.6)" />
           <Text style={S.statTxt}>{reel.views.toLocaleString()} views</Text>
           <Text style={[S.statTxt, { marginLeft: 10 }]}>❤️ {reel.likes.length.toLocaleString()}</Text>
@@ -136,6 +189,12 @@ function ReelItem({
           <Feather name="share-2" size={24} color="#fff" />
           <Text style={S.actionCount}>Share</Text>
         </TouchableOpacity>
+        {hasMusic && (
+          <TouchableOpacity style={S.actionBtn} onPress={togglePause}>
+            <Feather name={paused ? "volume-x" : "music"} size={22} color="#EC4899" />
+            <Text style={[S.actionCount, { color: "#EC4899" }]}>Music</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -244,14 +303,14 @@ function CommentsModal({
   );
 }
 
-// ── Main Screen ────────────────────────────────────────────────────────────
+// ── Main Screen ─────────────────────────────────────────────────────────────
 export default function ReelsViewer() {
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
   const params = useLocalSearchParams<{ userId?: string; startIndex?: string }>();
 
-  const [reels, setReels]           = useState<ReelDoc[]>([]);
-  const [loading, setLoading]       = useState(true);
+  const [reels, setReels]             = useState<ReelDoc[]>([]);
+  const [loading, setLoading]         = useState(true);
   const [activeIndex, setActiveIndex] = useState(parseInt(params.startIndex ?? "0") || 0);
   const [commentReel, setCommentReel] = useState<ReelDoc | null>(null);
 
@@ -338,7 +397,6 @@ export default function ReelsViewer() {
 
   return (
     <View style={S.screen}>
-      {/* Back button */}
       <View style={[S.topBar, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Feather name="arrow-left" size={22} color="#fff" />
@@ -382,7 +440,6 @@ export default function ReelsViewer() {
 
 const S = StyleSheet.create({
   screen:       { flex: 1, backgroundColor: "#000" },
-
   topBar:       { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 10 },
   topTitle:     { fontFamily: "Inter_700Bold", fontSize: 17, color: "#fff" },
   backBtn:      { position: "absolute", top: 60, left: 16, zIndex: 10 },

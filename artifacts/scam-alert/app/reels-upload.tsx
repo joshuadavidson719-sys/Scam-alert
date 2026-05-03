@@ -1,9 +1,9 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, ScrollView, Platform,
+  Alert, ActivityIndicator, ScrollView, FlatList,
 } from "react-native";
-import { Video, ResizeMode } from "expo-av";
+import { Video, ResizeMode, Audio, Sound } from "expo-av";
 import * as ImagePicker from "expo-image-picker";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -14,52 +14,138 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { db, storage } from "@/lib/firebase";
 
+type Step = "pick" | "music" | "caption";
+
+type MusicTrack = {
+  id: string;
+  name: string;
+  emoji: string;
+  genre: string;
+  url: string | null;
+};
+
+const MUSIC_LIBRARY: MusicTrack[] = [
+  { id: "none",  name: "No Music",       emoji: "🔇", genre: "",            url: null },
+  { id: "s1",    name: "Breaking Alert",  emoji: "📰", genre: "News",        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+  { id: "s2",    name: "Street Heat",     emoji: "🔥", genre: "Hip-Hop",     url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+  { id: "s3",    name: "Tech Vibes",      emoji: "⚡", genre: "Electronic",  url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+  { id: "s4",    name: "Dark Warning",    emoji: "🌑", genre: "Suspense",    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
+  { id: "s5",    name: "Chill Wave",      emoji: "🌊", genre: "Lo-Fi",       url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+  { id: "s6",    name: "Hype Up",         emoji: "💥", genre: "Motivational",url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
+  { id: "s7",    name: "Alert Mode",      emoji: "🚨", genre: "Dramatic",    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" },
+  { id: "s8",    name: "Smooth Expose",   emoji: "🎙️", genre: "Jazz",        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
+];
+
 export default function ReelsUpload() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
   const videoRef = useRef<InstanceType<typeof Video>>(null);
 
-  const [videoUri, setVideoUri]     = useState<string | null>(null);
-  const [caption, setCaption]       = useState("");
-  const [uploading, setUploading]   = useState(false);
-  const [progress, setProgress]     = useState(0);
-  const [step, setStep]             = useState<"pick" | "caption">("pick");
+  const [videoUri, setVideoUri]         = useState<string | null>(null);
+  const [caption, setCaption]           = useState("");
+  const [uploading, setUploading]       = useState(false);
+  const [progress, setProgress]         = useState(0);
+  const [step, setStep]                 = useState<Step>("pick");
+  const [selectedMusic, setSelectedMusic] = useState<MusicTrack>(MUSIC_LIBRARY[0]);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const previewSound = useRef<InstanceType<typeof Sound> | null>(null);
+
+  // Stop preview sound on unmount
+  useEffect(() => {
+    Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false }).catch(() => {});
+    return () => {
+      previewSound.current?.unloadAsync().catch(() => {});
+    };
+  }, []);
+
+  const stopPreview = async () => {
+    if (previewSound.current) {
+      await previewSound.current.stopAsync().catch(() => {});
+      await previewSound.current.unloadAsync().catch(() => {});
+      previewSound.current = null;
+    }
+    setPreviewingId(null);
+  };
+
+  const togglePreview = async (track: MusicTrack) => {
+    if (previewingId === track.id) {
+      await stopPreview();
+      return;
+    }
+    await stopPreview();
+    if (!track.url) return;
+    setLoadingPreview(true);
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: track.url },
+        { shouldPlay: true, isLooping: true, volume: 1 },
+      );
+      previewSound.current = sound;
+      setPreviewingId(track.id);
+    } catch {
+      Alert.alert("Preview unavailable", "Could not load this track. Try another one.");
+    }
+    setLoadingPreview(false);
+  };
+
+  const requestLibraryPermission = async (): Promise<boolean> => {
+    let { granted, canAskAgain } = await ImagePicker.getMediaLibraryPermissionsAsync();
+    if (!granted) {
+      if (!canAskAgain) {
+        Alert.alert("Permission Denied", "Photo library access was denied. Please enable it in your device Settings.");
+        return false;
+      }
+      const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      granted = res.granted;
+    }
+    if (!granted) {
+      Alert.alert("Permission Needed", "Allow Scam Alert to access your photo library to pick a video.");
+      return false;
+    }
+    return true;
+  };
 
   const pickVideo = async () => {
     try {
-      // Check current permission first, only prompt if not already granted
-      let { granted, canAskAgain } = await ImagePicker.getMediaLibraryPermissionsAsync();
-      if (!granted) {
-        if (!canAskAgain) {
-          Alert.alert(
-            "Permission Denied",
-            "Photo library access was denied. Please enable it in your device Settings.",
-          );
-          return;
-        }
-        const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        granted = res.granted;
-      }
-      if (!granted) {
-        Alert.alert("Permission Needed", "Allow Scam Alert to access your photo library to pick a video.");
-        return;
-      }
-
-      // allowsEditing + videoMaxDuration together cause silent abort on Android (SDK 54 bug)
-      // Drop allowsEditing for video — full clip is picked cleanly
+      if (!(await requestLibraryPermission())) return;
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["videos"] as any,
         allowsEditing: false,
         videoMaxDuration: 60,
       });
-
       if (!result.canceled && result.assets?.[0]?.uri) {
         setVideoUri(result.assets[0].uri);
-        setStep("caption");
+        setStep("music");
       }
-    } catch (err) {
+    } catch {
       Alert.alert("Error", "Could not open your photo library. Please try again.");
+    }
+  };
+
+  const recordVideo = async () => {
+    try {
+      let { granted: camGranted } = await ImagePicker.getCameraPermissionsAsync();
+      if (!camGranted) {
+        const res = await ImagePicker.requestCameraPermissionsAsync();
+        camGranted = res.granted;
+      }
+      if (!camGranted) {
+        Alert.alert("Camera Needed", "Allow camera access to record a reel.");
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["videos"] as any,
+        allowsEditing: false,
+        videoMaxDuration: 60,
+      });
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setVideoUri(result.assets[0].uri);
+        setStep("music");
+      }
+    } catch {
+      Alert.alert("Error", "Could not open camera. Please try again.");
     }
   };
 
@@ -69,6 +155,7 @@ export default function ReelsUpload() {
       Alert.alert("Caption needed", "Add a caption before posting your reel.");
       return;
     }
+    await stopPreview();
     setUploading(true);
     setProgress(0);
     try {
@@ -94,6 +181,9 @@ export default function ReelsUpload() {
         profilePhoto: profile.profilePhoto ?? null,
         videoUrl,
         caption:      caption.trim(),
+        musicName:    selectedMusic.id === "none" ? null : selectedMusic.name,
+        musicEmoji:   selectedMusic.id === "none" ? null : selectedMusic.emoji,
+        musicUrl:     selectedMusic.url ?? null,
         likes:        [],
         views:        0,
         createdAt:    serverTimestamp(),
@@ -102,33 +192,58 @@ export default function ReelsUpload() {
       Alert.alert("Posted! 🎬", "Your reel is live.", [
         { text: "OK", onPress: () => router.back() },
       ]);
-    } catch (e) {
+    } catch {
       Alert.alert("Upload failed", "Something went wrong. Please try again.");
     } finally {
       setUploading(false);
     }
   };
 
+  const goBack = () => {
+    if (step === "caption") { stopPreview(); setStep("music"); }
+    else if (step === "music") { stopPreview(); setStep("pick"); }
+    else router.back();
+  };
+
+  const stepLabel = step === "pick" ? "New Reel" : step === "music" ? "Add Music" : "Caption & Post";
+
   return (
     <View style={[S.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {/* Header */}
       <View style={[S.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <Feather name="x" size={22} color={colors.text} />
+        <TouchableOpacity onPress={goBack} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <Feather name={step === "pick" ? "x" : "arrow-left"} size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[S.headerTitle, { color: colors.text }]}>New Reel</Text>
+        <Text style={[S.headerTitle, { color: colors.text }]}>{stepLabel}</Text>
         {step === "caption" && !uploading ? (
           <TouchableOpacity onPress={handlePost}>
             <Text style={[S.postBtn, { color: colors.primary }]}>Post</Text>
+          </TouchableOpacity>
+        ) : step === "music" ? (
+          <TouchableOpacity onPress={() => { stopPreview(); setStep("caption"); }}>
+            <Text style={[S.postBtn, { color: colors.primary }]}>Next</Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 40 }} />
         )}
       </View>
 
+      {/* Step indicator */}
+      <View style={S.stepBar}>
+        {(["pick", "music", "caption"] as Step[]).map((s, i) => (
+          <View
+            key={s}
+            style={[S.stepDot, {
+              backgroundColor: step === s ? colors.primary : i < ["pick","music","caption"].indexOf(step) ? colors.primary + "80" : colors.border,
+            }]}
+          />
+        ))}
+      </View>
+
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
-        {step === "pick" ? (
-          /* ── Pick step ── */
+
+        {/* ── STEP 1: Pick ── */}
+        {step === "pick" && (
           <View style={S.pickArea}>
             <View style={[S.pickCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={{ fontSize: 52 }}>🎬</Text>
@@ -136,10 +251,16 @@ export default function ReelsUpload() {
               <Text style={[S.pickSub, { color: colors.textMuted }]}>
                 Share scam warnings, tips, or awareness clips. Up to 60 seconds.
               </Text>
-              <TouchableOpacity style={[S.pickBtn, { backgroundColor: colors.primary }]} onPress={pickVideo}>
-                <Feather name="video" size={18} color="#fff" />
-                <Text style={S.pickBtnTxt}>Choose Video</Text>
-              </TouchableOpacity>
+              <View style={S.pickBtns}>
+                <TouchableOpacity style={[S.pickBtn, { backgroundColor: colors.primary, flex: 1 }]} onPress={pickVideo}>
+                  <Feather name="image" size={18} color="#fff" />
+                  <Text style={S.pickBtnTxt}>Choose Video</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[S.pickBtn, { backgroundColor: "#7C3AED", flex: 1 }]} onPress={recordVideo}>
+                  <Feather name="video" size={18} color="#fff" />
+                  <Text style={S.pickBtnTxt}>Record Video</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={[S.tipsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -154,8 +275,96 @@ export default function ReelsUpload() {
               ))}
             </View>
           </View>
-        ) : (
-          /* ── Caption step ── */
+        )}
+
+        {/* ── STEP 2: Music ── */}
+        {step === "music" && (
+          <View style={S.musicArea}>
+            {/* Mini video preview */}
+            {videoUri && (
+              <View style={[S.miniPreview, { backgroundColor: "#000" }]}>
+                <Video
+                  source={{ uri: videoUri }}
+                  style={StyleSheet.absoluteFill}
+                  resizeMode={ResizeMode.COVER}
+                  shouldPlay
+                  isLooping
+                  isMuted
+                />
+                <View style={S.miniLabel}>
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 11, color: "#fff" }}>Your Reel</Text>
+                </View>
+              </View>
+            )}
+
+            <Text style={[S.musicTitle, { color: colors.text }]}>🎵 Choose Background Music</Text>
+            <Text style={[S.musicSub, { color: colors.textMuted }]}>
+              Tap a track to preview it. Tap again to stop. Tap Next when ready.
+            </Text>
+
+            {MUSIC_LIBRARY.map((track) => {
+              const isSelected = selectedMusic.id === track.id;
+              const isPreviewing = previewingId === track.id;
+              return (
+                <TouchableOpacity
+                  key={track.id}
+                  style={[
+                    S.trackRow,
+                    {
+                      backgroundColor: isSelected ? colors.primary + "18" : colors.card,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    },
+                  ]}
+                  onPress={() => setSelectedMusic(track)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={{ fontSize: 22, width: 30, textAlign: "center" }}>{track.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[S.trackName, { color: colors.text }]}>{track.name}</Text>
+                    {track.genre ? (
+                      <Text style={[S.trackGenre, { color: colors.textMuted }]}>{track.genre}</Text>
+                    ) : null}
+                  </View>
+
+                  {/* Preview button — only for tracks with a URL */}
+                  {track.url && (
+                    <TouchableOpacity
+                      style={[S.previewBtn, { backgroundColor: isPreviewing ? "#EC4899" : colors.muted }]}
+                      onPress={() => togglePreview(track)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      {loadingPreview && previewingId === null ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Feather name={isPreviewing ? "pause" : "play"} size={14} color="#fff" />
+                      )}
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Selected check */}
+                  {isSelected && (
+                    <View style={[S.checkBadge, { backgroundColor: colors.primary }]}>
+                      <Feather name="check" size={12} color="#fff" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+
+            <TouchableOpacity
+              style={[S.nextBtn, { backgroundColor: colors.primary }]}
+              onPress={() => { stopPreview(); setStep("caption"); }}
+            >
+              <Text style={S.nextBtnTxt}>
+                {selectedMusic.id === "none" ? "Continue without music" : `Use "${selectedMusic.name}"`}
+              </Text>
+              <Feather name="arrow-right" size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ── STEP 3: Caption ── */}
+        {step === "caption" && (
           <View>
             {/* Video preview */}
             {videoUri && (
@@ -169,9 +378,16 @@ export default function ReelsUpload() {
                   isLooping
                   isMuted
                 />
-                <TouchableOpacity style={S.changeVideo} onPress={pickVideo}>
-                  <Feather name="refresh-cw" size={14} color="#fff" />
-                  <Text style={S.changeVideoTxt}>Change</Text>
+                {/* Music badge */}
+                {selectedMusic.id !== "none" && (
+                  <View style={S.musicBadge}>
+                    <Text style={{ fontSize: 13 }}>{selectedMusic.emoji}</Text>
+                    <Text style={S.musicBadgeTxt}>{selectedMusic.name}</Text>
+                  </View>
+                )}
+                <TouchableOpacity style={S.changeVideo} onPress={() => setStep("music")}>
+                  <Feather name="music" size={13} color="#fff" />
+                  <Text style={S.changeVideoTxt}>Change Music</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -203,7 +419,6 @@ export default function ReelsUpload() {
               </View>
             )}
 
-            {/* Post button (bottom) */}
             {!uploading && (
               <TouchableOpacity
                 style={[S.postBtnFull, { backgroundColor: colors.primary }]}
@@ -227,19 +442,40 @@ const S = StyleSheet.create({
   headerTitle:  { fontFamily: "Inter_700Bold", fontSize: 17 },
   postBtn:      { fontFamily: "Inter_700Bold", fontSize: 16 },
 
+  stepBar:      { flexDirection: "row", justifyContent: "center", gap: 8, paddingVertical: 10 },
+  stepDot:      { width: 28, height: 4, borderRadius: 2 },
+
   pickArea:     { padding: 16, gap: 16 },
   pickCard:     { borderRadius: 20, borderWidth: 1, padding: 24, alignItems: "center", gap: 12 },
   pickTitle:    { fontFamily: "Inter_700Bold", fontSize: 18, textAlign: "center" },
   pickSub:      { fontFamily: "Inter_400Regular", fontSize: 13, lineHeight: 20, textAlign: "center" },
-  pickBtn:      { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14, marginTop: 4 },
-  pickBtnTxt:   { fontFamily: "Inter_700Bold", fontSize: 15, color: "#fff" },
+  pickBtns:     { flexDirection: "row", gap: 10, marginTop: 4, width: "100%" },
+  pickBtn:      { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14 },
+  pickBtnTxt:   { fontFamily: "Inter_700Bold", fontSize: 14, color: "#fff" },
 
   tipsCard:     { borderRadius: 20, borderWidth: 1, padding: 16, gap: 8 },
   tipsTitle:    { fontFamily: "Inter_700Bold", fontSize: 14, marginBottom: 2 },
   tip:          { fontFamily: "Inter_400Regular", fontSize: 13, lineHeight: 20 },
 
+  musicArea:    { padding: 16, gap: 10 },
+  miniPreview:  { borderRadius: 14, overflow: "hidden", height: 120, marginBottom: 6 },
+  miniLabel:    { position: "absolute", bottom: 8, left: 10 },
+  musicTitle:   { fontFamily: "Inter_700Bold", fontSize: 16, marginTop: 4 },
+  musicSub:     { fontFamily: "Inter_400Regular", fontSize: 12, lineHeight: 18, marginBottom: 4 },
+
+  trackRow:     { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 14, borderWidth: 1.5 },
+  trackName:    { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  trackGenre:   { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 1 },
+  previewBtn:   { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+  checkBadge:   { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+
+  nextBtn:      { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 16, marginTop: 6 },
+  nextBtnTxt:   { fontFamily: "Inter_700Bold", fontSize: 15, color: "#fff" },
+
   previewWrap:  { marginHorizontal: 16, marginTop: 16, borderRadius: 16, overflow: "hidden", aspectRatio: 9 / 16, maxHeight: 360, backgroundColor: "#000" },
   preview:      { flex: 1 },
+  musicBadge:   { position: "absolute", bottom: 46, left: 10, flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
+  musicBadgeTxt:{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#fff" },
   changeVideo:  { position: "absolute", top: 10, right: 10, flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
   changeVideoTxt:{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#fff" },
 
