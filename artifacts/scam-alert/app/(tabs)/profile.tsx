@@ -330,13 +330,13 @@ export default function ProfileScreen() {
             <View style={styles.quickLinks}>
               <TouchableOpacity
                 style={[styles.quickLink, { borderColor: "#7C3AED60", backgroundColor: "#7C3AED0D" }]}
-                onPress={() => router.push("/scam-game" as never)}
+                onPress={() => router.push("/games-hub" as never)}
               >
                 <Text style={{ fontSize: 16 }}>🎮</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.quickLinkText, { color: colors.text }]}>Scam Surfer</Text>
+                  <Text style={[styles.quickLinkText, { color: colors.text }]}>Scam Games</Text>
                   <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
-                    Dodge scams & beat your friends' scores
+                    3 games — run, tap & swipe to beat friends
                   </Text>
                 </View>
                 <Feather name="chevron-right" size={14} color={colors.textMuted} />
