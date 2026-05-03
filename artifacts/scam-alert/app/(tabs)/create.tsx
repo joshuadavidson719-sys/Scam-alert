@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import {
   collection,
   addDoc,
@@ -85,7 +85,8 @@ export default function CreateScreen() {
       result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
     } else {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -96,25 +97,18 @@ export default function CreateScreen() {
       result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
     }
 
-    if (!result.canceled && result.assets[0]) {
+    if (!result.canceled && result.assets[0]?.base64) {
       const uri = result.assets[0].uri;
       setImageUri(uri);
       setImageUploading(true);
       try {
-        const blob = await new Promise<Blob>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.onload = () => resolve(xhr.response as Blob);
-          xhr.onerror = () => reject(new Error("Failed to read image file."));
-          xhr.responseType = "blob";
-          xhr.open("GET", uri, true);
-          xhr.send(null);
-        });
         const storageRef = ref(storage, `posts/${user?.uid}_${Date.now()}.jpg`);
-        await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
+        await uploadString(storageRef, result.assets[0].base64!, "base64", { contentType: "image/jpeg" });
         const url = await getDownloadURL(storageRef);
         setUploadedImageUrl(url);
       } catch {

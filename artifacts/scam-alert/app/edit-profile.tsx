@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth, NICHES } from "@/context/AuthContext";
@@ -34,20 +34,6 @@ export default function EditProfileScreen() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  /**
-   * Convert a local file URI to a Blob using XHR.
-   * fetch(uri).blob() does not work correctly on React Native for local files.
-   */
-  const uriToBlob = (uri: string): Promise<Blob> =>
-    new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = () => resolve(xhr.response as Blob);
-      xhr.onerror = () => reject(new Error("Failed to read image file."));
-      xhr.responseType = "blob";
-      xhr.open("GET", uri, true);
-      xhr.send(null);
-    });
-
   const pickImage = async (source: "camera" | "gallery") => {
     let result;
     if (source === "camera") {
@@ -60,7 +46,8 @@ export default function EditProfileScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
     } else {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -72,22 +59,26 @@ export default function EditProfileScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
     }
-    if (!result.canceled && result.assets[0]) {
+    if (!result.canceled && result.assets[0]?.base64) {
       setUploading(true);
       try {
-        const uri = result.assets[0].uri;
-        const blob = await uriToBlob(uri);
+        const base64 = result.assets[0].base64;
         const storageRef = ref(storage, `avatars/${user?.uid}_${Date.now()}.jpg`);
-        await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
+        await uploadString(storageRef, base64, "base64", { contentType: "image/jpeg" });
         const url = await getDownloadURL(storageRef);
-        if (typeof (blob as any).close === "function") (blob as any).close();
         setAvatarUri(url);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Unknown error";
-        Alert.alert("Upload failed", `Could not upload photo: ${msg}`);
+      } catch (err: any) {
+        const code = err?.code ?? "";
+        const msg = code === "storage/unauthorized"
+          ? "Upload blocked by Firebase rules. Please check your Firebase Storage security rules."
+          : code
+          ? `Firebase error: ${code}`
+          : err?.message ?? "Unknown error";
+        Alert.alert("Upload failed", msg);
       } finally {
         setUploading(false);
       }
