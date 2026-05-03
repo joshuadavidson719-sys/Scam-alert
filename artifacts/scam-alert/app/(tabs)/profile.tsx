@@ -14,6 +14,8 @@ import {
   Pressable,
   Switch,
   ScrollView,
+  Share,
+  Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -49,6 +51,152 @@ type ReelItem = {
   caption: string; likes: string[]; views: number; createdAt: number;
 };
 
+// ── Social sharing constants ─────────────────────────────────────────────────
+const HASHTAGS = "#ScamAlert #ScamAwareness #FraudAlert";
+
+type SocialPlatform = {
+  id: string; name: string; emoji: string; color: string;
+  buildUrl?: (videoUrl: string, text: string) => string;
+};
+
+const SOCIAL_PLATFORMS: SocialPlatform[] = [
+  {
+    id: "facebook", name: "Facebook", emoji: "📘", color: "#1877F2",
+    buildUrl: (u, t) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(u)}&quote=${encodeURIComponent(t + " " + HASHTAGS)}`,
+  },
+  {
+    id: "twitter", name: "X (Twitter)", emoji: "🐦", color: "#1a1a1a",
+    buildUrl: (u, t) => `https://twitter.com/intent/tweet?url=${encodeURIComponent(u)}&text=${encodeURIComponent(t.slice(0, 180) + " " + HASHTAGS)}`,
+  },
+  {
+    id: "linkedin", name: "LinkedIn", emoji: "💼", color: "#0A66C2",
+    buildUrl: (u, t) => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(u)}&summary=${encodeURIComponent(t + " " + HASHTAGS)}`,
+  },
+  {
+    id: "reddit", name: "Reddit", emoji: "🤖", color: "#FF4500",
+    buildUrl: (u, t) => `https://www.reddit.com/submit?url=${encodeURIComponent(u)}&title=${encodeURIComponent(t.slice(0, 200) + " " + HASHTAGS)}`,
+  },
+  {
+    id: "pinterest", name: "Pinterest", emoji: "📌", color: "#E60023",
+    buildUrl: (u, t) => `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(u)}&description=${encodeURIComponent(t + " " + HASHTAGS)}`,
+  },
+  { id: "instagram", name: "Instagram", emoji: "📸", color: "#E1306C" },
+  { id: "tiktok",    name: "TikTok",    emoji: "🎵", color: "#EE1D52" },
+  { id: "youtube",   name: "YouTube",   emoji: "▶️",  color: "#FF0000" },
+];
+
+// ── Social Share Modal ───────────────────────────────────────────────────────
+function SocialShareModal({
+  visible, onClose, videoUrl, caption,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  videoUrl: string;
+  caption: string;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const shareText = `${caption} ${HASHTAGS}`;
+
+  const handlePlatform = async (platform: SocialPlatform) => {
+    try {
+      if (platform.buildUrl) {
+        const url = platform.buildUrl(videoUrl, caption);
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+          await Linking.openURL(url);
+        } else {
+          // Fallback to native share sheet
+          await Share.share({ message: shareText + "\n" + videoUrl, url: videoUrl });
+        }
+      } else {
+        // Instagram / TikTok / YouTube — use native share sheet
+        await Share.share({
+          message: `${shareText}\n\nWatch on Scam Alert: ${videoUrl}`,
+          url: videoUrl,
+          title: "Scam Alert Reel",
+        });
+      }
+    } catch {}
+  };
+
+  const handleNativeShare = async () => {
+    try {
+      await Share.share({
+        message: `${shareText}\n\nWatch on Scam Alert: ${videoUrl}`,
+        url: videoUrl,
+        title: "Scam Alert Reel",
+      });
+    } catch {}
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await Share.share({ message: videoUrl });
+      Alert.alert("Link copied!", "Video link ready to share.");
+    } catch {}
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={SSM.backdrop} onPress={onClose} />
+      <View style={[SSM.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 12 }]}>
+        <View style={[SSM.handle, { backgroundColor: colors.border }]} />
+        <Text style={[SSM.title, { color: colors.text }]}>Share Reel</Text>
+        <Text style={[SSM.sub, { color: colors.textMuted }]}>
+          Shared with tags: <Text style={{ color: colors.primary }}>{HASHTAGS}</Text>
+        </Text>
+
+        {/* Platform grid */}
+        <View style={SSM.grid}>
+          {SOCIAL_PLATFORMS.map((p) => (
+            <TouchableOpacity
+              key={p.id}
+              style={SSM.platformBtn}
+              onPress={() => handlePlatform(p)}
+              activeOpacity={0.75}
+            >
+              <View style={[SSM.platformIcon, { backgroundColor: p.color + "18", borderColor: p.color + "40" }]}>
+                <Text style={{ fontSize: 22 }}>{p.emoji}</Text>
+              </View>
+              <Text style={[SSM.platformName, { color: colors.textSecondary }]}>{p.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Bottom actions */}
+        <View style={[SSM.divider, { backgroundColor: colors.border }]} />
+        <View style={SSM.bottomRow}>
+          <TouchableOpacity style={[SSM.bottomBtn, { backgroundColor: colors.muted }]} onPress={handleCopyLink}>
+            <Feather name="link" size={16} color={colors.text} />
+            <Text style={[SSM.bottomBtnTxt, { color: colors.text }]}>Copy Link</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[SSM.bottomBtn, { backgroundColor: "#FF3B3B" }]} onPress={handleNativeShare}>
+            <Feather name="share-2" size={16} color="#fff" />
+            <Text style={[SSM.bottomBtnTxt, { color: "#fff" }]}>Share via…</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const SSM = StyleSheet.create({
+  backdrop:     { flex: 1, backgroundColor: "rgba(0,0,0,0.5)" },
+  sheet:        { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 14, paddingHorizontal: 20 },
+  handle:       { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 14 },
+  title:        { fontFamily: "Inter_700Bold", fontSize: 18, textAlign: "center" },
+  sub:          { fontFamily: "Inter_400Regular", fontSize: 12, textAlign: "center", marginTop: 4, marginBottom: 16 },
+  grid:         { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 12, paddingBottom: 4 },
+  platformBtn:  { width: "22%", alignItems: "center", gap: 6 },
+  platformIcon: { width: 54, height: 54, borderRadius: 16, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  platformName: { fontFamily: "Inter_400Regular", fontSize: 11, textAlign: "center" },
+  divider:      { height: 1, marginVertical: 14 },
+  bottomRow:    { flexDirection: "row", gap: 10 },
+  bottomBtn:    { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 13, borderRadius: 14 },
+  bottomBtnTxt: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+});
+
 export default function ProfileScreen() {
   const colors = useColors();
   const { mode, setMode, isDark } = useTheme();
@@ -71,6 +219,7 @@ export default function ProfileScreen() {
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
   const [reels, setReels] = useState<ReelItem[]>([]);
   const [reelsLoading, setReelsLoading] = useState(false);
+  const [shareReel, setShareReel] = useState<ReelItem | null>(null);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   // My posts
@@ -370,6 +519,22 @@ export default function ProfileScreen() {
                 <Feather name="chevron-right" size={14} color={colors.textMuted} />
               </TouchableOpacity>
 
+              {reels.length > 0 && (
+                <TouchableOpacity
+                  style={[styles.quickLink, { borderColor: "#0A66C260", backgroundColor: "#0A66C20D" }]}
+                  onPress={() => setShareReel(reels[0])}
+                >
+                  <Text style={{ fontSize: 16 }}>📣</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.quickLinkText, { color: colors.text }]}>Share to Social Media</Text>
+                    <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
+                      Facebook, TikTok, Instagram, Reddit & more
+                    </Text>
+                  </View>
+                  <Feather name="chevron-right" size={14} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity
                 style={[styles.quickLink, { borderColor: "#7C3AED60", backgroundColor: "#7C3AED0D" }]}
                 onPress={() => router.push("/games-hub" as never)}
@@ -523,6 +688,14 @@ export default function ProfileScreen() {
                         <View style={styles.reelPlayOverlay}>
                           <Feather name="play" size={22} color="#fff" />
                         </View>
+                        {/* Share button */}
+                        <TouchableOpacity
+                          style={styles.reelShareBtn}
+                          onPress={(e) => { e.stopPropagation(); setShareReel(reel); }}
+                          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                        >
+                          <Feather name="share-2" size={12} color="#fff" />
+                        </TouchableOpacity>
                         <View style={[styles.reelStats, { backgroundColor: "rgba(0,0,0,0.55)" }]}>
                           <Feather name="eye" size={10} color="#fff" />
                           <Text style={styles.reelStatTxt}>{reel.views.toLocaleString()}</Text>
@@ -603,6 +776,15 @@ export default function ProfileScreen() {
 
       <AchievementToast achievement={newlyUnlocked} onHide={clearNewlyUnlocked} />
       <CustomThemePicker visible={showThemePicker} onClose={() => setShowThemePicker(false)} />
+
+      {shareReel && (
+        <SocialShareModal
+          visible={!!shareReel}
+          onClose={() => setShareReel(null)}
+          videoUrl={shareReel.videoUrl}
+          caption={shareReel.caption}
+        />
+      )}
     </View>
   );
 }
@@ -840,6 +1022,7 @@ const styles = StyleSheet.create({
   reelsGrid:    { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 12, gap: 3, paddingBottom: 16 },
   reelThumb:    { width: "32%", aspectRatio: 9 / 16, borderRadius: 8, overflow: "hidden", justifyContent: "flex-end" },
   reelPlayOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.25)" },
+  reelShareBtn:    { position: "absolute", top: 6, right: 6, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 10, padding: 5, zIndex: 2 },
   reelStats:    { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 6, paddingVertical: 4, borderRadius: 4 },
   reelStatTxt:  { fontFamily: "Inter_600SemiBold", fontSize: 10, color: "#fff", marginLeft: 2 },
 });
