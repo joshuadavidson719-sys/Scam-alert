@@ -63,6 +63,7 @@
     "expo-document-picker": "^14.0.8",
     "expo-notifications": "^0.32.17",
     "expo-video": "^3.0.16",
+    "expo-video-thumbnails": "^55.0.14",
     "firebase": "^12.12.1",
     "openai": "^6.35.0",
     "react-native-view-shot": "^4.0.3"

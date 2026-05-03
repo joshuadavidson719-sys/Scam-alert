@@ -48,12 +48,24 @@ import { useStreak } from "@/hooks/useStreak";
 import { useAchievements, getRarityColor, ALL_ACHIEVEMENTS } from "@/hooks/useAchievements";
 import { AchievementToast } from "@/components/AchievementToast";
 import { CustomThemePicker } from "@/components/CustomThemePicker";
+import * as VideoThumbnails from "expo-video-thumbnails";
+import { Image } from "react-native";
 
 // ── ReelThumbnail ────────────────────────────────────────────────────────────
-// On web: renders a native <video> element with preload="metadata" so the
-// browser automatically decodes and displays the first video frame as a still.
-// On native: shows a styled dark placeholder (no thumbnail library needed).
+// Web  → native <video preload="metadata"> shows first frame automatically.
+// Native → expo-video-thumbnails generates a real JPEG frame at 500ms.
 function ReelThumbnail({ videoUrl, style }: { videoUrl: string; style: object }) {
+  const [thumbUri, setThumbUri] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (Platform.OS === "web") return;
+    let cancelled = false;
+    VideoThumbnails.getThumbnailAsync(videoUrl, { time: 500 })
+      .then(({ uri }) => { if (!cancelled) setThumbUri(uri); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [videoUrl]);
+
   if (Platform.OS === "web") {
     return (
       <View style={style}>
@@ -63,18 +75,22 @@ function ReelThumbnail({ videoUrl, style }: { videoUrl: string; style: object })
           muted: true,
           playsInline: true,
           style: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
-          onLoadedMetadata: (e: any) => {
-            // Seek slightly past 0 so the browser paints a real frame, not a black canvas
-            e.target.currentTime = 0.5;
-          },
+          onLoadedMetadata: (e: any) => { e.target.currentTime = 0.5; },
         })}
       </View>
     );
   }
-  // Native fallback — styled dark card with a film icon
+
+  // Native — show generated thumbnail or dark placeholder while loading
   return (
-    <View style={[style, { backgroundColor: "#1a1a1a", alignItems: "center", justifyContent: "center" }]}>
-      <Feather name="film" size={22} color="rgba(255,255,255,0.25)" />
+    <View style={[style, { backgroundColor: "#111" }]}>
+      {thumbUri ? (
+        <Image source={{ uri: thumbUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <Feather name="film" size={22} color="rgba(255,255,255,0.2)" />
+        </View>
+      )}
     </View>
   );
 }
