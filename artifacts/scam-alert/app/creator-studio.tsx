@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,20 +11,22 @@ import {
   Alert,
   Share,
   Dimensions,
-  Platform,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import ViewShot from "react-native-view-shot";
 import { useColors } from "@/hooks/useColors";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-type ElementType = "text" | "sticker" | "shape";
-type ToolTab = "background" | "text" | "sticker" | "shape";
+// ── Types ──────────────────────────────────────────────────────────────────────
+type ElementType = "text" | "sticker" | "shape" | "image";
+type ToolTab = "background" | "text" | "sticker" | "shape" | "image";
+type CanvasFormat = "square" | "story" | "banner";
 
 interface CanvasElement {
   id: string;
@@ -36,8 +38,13 @@ interface CanvasElement {
   fontSize: number;
   bold: boolean;
   italic: boolean;
+  scale: number;
+  rotation: number;
   shapeType?: "rect" | "circle";
   shapeSize?: number;
+  imageUri?: string;
+  imageW?: number;
+  imageH?: number;
 }
 
 interface Background {
@@ -46,59 +53,72 @@ interface Background {
   imageUri?: string;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-const CANVAS_SIZE = Math.min(Dimensions.get("window").width - 32, 340);
+interface Draft {
+  id: string;
+  name: string;
+  savedAt: number;
+  bg: Background;
+  elements: CanvasElement[];
+  format: CanvasFormat;
+}
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+const SW = Dimensions.get("window").width;
+
+const FORMATS: Record<CanvasFormat, { label: string; icon: string; w: number; h: number }> = {
+  square: { label: "Square", icon: "⬜", w: Math.min(SW - 32, 320), h: Math.min(SW - 32, 320) },
+  story:  { label: "Story",  icon: "📱", w: Math.min(SW - 32, 320) * (9 / 16), h: Math.min(SW - 32, 320) },
+  banner: { label: "Banner", icon: "🖼️", w: Math.min(SW - 32, 320), h: Math.min(SW - 32, 320) * (9 / 16) },
+};
 
 const BG_PRESETS: Background[] = [
-  { type: "solid", colors: ["#0F0F0F"] },
-  { type: "solid", colors: ["#FFFFFF"] },
-  { type: "solid", colors: ["#FF3B3B"] },
-  { type: "solid", colors: ["#1A1A2E"] },
-  { type: "solid", colors: ["#0D1B2A"] },
-  { type: "solid", colors: ["#1B4332"] },
+  { type: "solid",    colors: ["#0F0F0F"] },
+  { type: "solid",    colors: ["#FFFFFF"] },
+  { type: "solid",    colors: ["#FF3B3B"] },
+  { type: "solid",    colors: ["#1A1A2E"] },
+  { type: "solid",    colors: ["#0D1B2A"] },
+  { type: "solid",    colors: ["#1B4332"] },
   { type: "gradient", colors: ["#FF3B3B", "#8B0000"] },
   { type: "gradient", colors: ["#1A1A2E", "#16213E"] },
-  { type: "gradient", colors: ["#0D1B2A", "#1B4332"] },
   { type: "gradient", colors: ["#FF6B6B", "#FFD93D"] },
   { type: "gradient", colors: ["#6C63FF", "#3F3D56"] },
   { type: "gradient", colors: ["#11998E", "#38EF7D"] },
   { type: "gradient", colors: ["#FC5C7D", "#6A3093"] },
   { type: "gradient", colors: ["#F7971E", "#FFD200"] },
   { type: "gradient", colors: ["#000000", "#434343"] },
+  { type: "gradient", colors: ["#0F2027", "#2C5364"] },
 ];
 
 const TEXT_COLORS = [
-  "#FFFFFF", "#FF3B3B", "#FFD93D", "#10B981", "#3B82F6",
-  "#EC4899", "#F97316", "#8B5CF6", "#06B6D4", "#000000",
+  "#FFFFFF","#FF3B3B","#FFD93D","#10B981","#3B82F6",
+  "#EC4899","#F97316","#8B5CF6","#06B6D4","#000000",
 ];
-
-const FONT_SIZES = [14, 18, 24, 32, 42, 56];
+const FONT_SIZES  = [12, 16, 20, 28, 36, 48];
+const SCALE_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const ROT_STEP    = 15;
 
 const STICKER_ROWS = [
-  ["🚨", "⚠️", "🔥", "💯", "❗", "‼️", "🆘", "🛑"],
-  ["😱", "😡", "😤", "🤯", "😰", "🫢", "🙈", "💀"],
-  ["👀", "👁️", "🔍", "🕵️", "🔒", "🛡️", "⚡", "💥"],
-  ["✅", "❌", "🚫", "💔", "🤝", "👊", "💪", "🦾"],
-  ["💰", "💳", "🏦", "📱", "💻", "📩", "🎣", "🕷️"],
-  ["🌹", "⭐", "🏆", "🎯", "📢", "📣", "🔔", "💬"],
+  ["🚨","⚠️","🔥","💯","❗","‼️","🆘","🛑"],
+  ["😱","😡","😤","🤯","😰","🫢","🙈","💀"],
+  ["👀","👁️","🔍","🕵️","🔒","🛡️","⚡","💥"],
+  ["✅","❌","🚫","💔","🤝","👊","💪","🦾"],
+  ["💰","💳","🏦","📱","💻","📩","🎣","🕷️"],
+  ["🌹","⭐","🏆","🎯","📢","📣","🔔","💬"],
 ];
-
 const SHAPE_COLORS = [
-  "#FF3B3B", "#F97316", "#FFD93D", "#10B981", "#3B82F6",
-  "#8B5CF6", "#EC4899", "#FFFFFF", "#000000", "#6B7280",
+  "#FF3B3B","#F97316","#FFD93D","#10B981","#3B82F6",
+  "#8B5CF6","#EC4899","#FFFFFF","#000000","#6B7280",
 ];
 
-// ── Draggable element ─────────────────────────────────────────────────────────
+const DRAFTS_KEY = "@studio_drafts_v2";
+const MAX_DRAFTS = 8;
+
+// ── Draggable element ──────────────────────────────────────────────────────────
 function DraggableElement({
-  el,
-  selected,
-  canvasSize,
-  onSelect,
-  onMove,
+  el, selected, canvasW, canvasH, onSelect, onMove,
 }: {
-  el: CanvasElement;
-  selected: boolean;
-  canvasSize: number;
+  el: CanvasElement; selected: boolean;
+  canvasW: number; canvasH: number;
   onSelect: () => void;
   onMove: (x: number, y: number) => void;
 }) {
@@ -113,39 +133,50 @@ function DraggableElement({
         Haptics.selectionAsync();
       },
       onPanResponderMove: (_, g) => {
-        const nx = Math.max(0, Math.min(canvasSize - 40, posRef.current.x + g.dx));
-        const ny = Math.max(0, Math.min(canvasSize - 40, posRef.current.y + g.dy));
+        const nx = Math.max(0, Math.min(canvasW - 20, posRef.current.x + g.dx));
+        const ny = Math.max(0, Math.min(canvasH - 20, posRef.current.y + g.dy));
         onMove(nx, ny);
       },
     })
   ).current;
 
+  const transform = [{ scale: el.scale }, { rotate: `${el.rotation}deg` }];
+
   const renderContent = () => {
     if (el.type === "shape") {
-      const size = el.shapeSize ?? 60;
+      const sz = (el.shapeSize ?? 60) * el.scale;
       return (
-        <View
-          style={{
-            width: size,
-            height: el.shapeType === "circle" ? size : size * 0.6,
-            borderRadius: el.shapeType === "circle" ? size / 2 : 8,
-            backgroundColor: el.color,
-          }}
+        <View style={{
+          width: sz,
+          height: el.shapeType === "circle" ? sz : sz * 0.6,
+          borderRadius: el.shapeType === "circle" ? sz / 2 : 8,
+          backgroundColor: el.color,
+          transform: [{ rotate: `${el.rotation}deg` }],
+        }} />
+      );
+    }
+    if (el.type === "image" && el.imageUri) {
+      const w = (el.imageW ?? 100) * el.scale;
+      const h = (el.imageH ?? 100) * el.scale;
+      return (
+        <Image
+          source={{ uri: el.imageUri }}
+          style={{ width: w, height: h, borderRadius: 8, transform: [{ rotate: `${el.rotation}deg` }] }}
+          resizeMode="cover"
         />
       );
     }
     return (
-      <Text
-        style={{
-          fontSize: el.fontSize,
-          color: el.type === "sticker" ? undefined : el.color,
-          fontWeight: el.bold ? "bold" : "normal",
-          fontStyle: el.italic ? "italic" : "normal",
-          textShadowColor: el.type === "text" ? "rgba(0,0,0,0.5)" : undefined,
-          textShadowOffset: el.type === "text" ? { width: 1, height: 1 } : undefined,
-          textShadowRadius: el.type === "text" ? 3 : 0,
-        }}
-      >
+      <Text style={{
+        fontSize: el.fontSize,
+        color: el.type === "sticker" ? undefined : el.color,
+        fontWeight: el.bold ? "bold" : "normal",
+        fontStyle: el.italic ? "italic" : "normal",
+        transform: [{ scale: el.scale }, { rotate: `${el.rotation}deg` }],
+        textShadowColor: el.type === "text" ? "rgba(0,0,0,0.55)" : undefined,
+        textShadowOffset: el.type === "text" ? { width: 1, height: 1 } : undefined,
+        textShadowRadius: el.type === "text" ? 4 : 0,
+      }}>
         {el.content}
       </Text>
     );
@@ -154,49 +185,58 @@ function DraggableElement({
   return (
     <View
       {...pan.panHandlers}
-      style={[
-        styles.element,
-        { left: el.x, top: el.y },
-        selected && styles.elementSelected,
-      ]}
+      style={[styles.element, { left: el.x, top: el.y }, selected && styles.elementSelected]}
     >
       {renderContent()}
     </View>
   );
 }
 
-// ── Main screen ───────────────────────────────────────────────────────────────
+// ── Main screen ────────────────────────────────────────────────────────────────
 export default function CreatorStudio() {
-  const colors = useColors();
-  const insets = useSafeAreaInsets();
-  const shotRef = useRef<ViewShot>(null);
+  const colors  = useColors();
+  const insets  = useSafeAreaInsets();
+  const shotRef = useRef<any>(null);
 
-  const [bg, setBg] = useState<Background>(BG_PRESETS[6]);
+  const [format, setFormat]     = useState<CanvasFormat>("square");
+  const [bg, setBg]             = useState<Background>(BG_PRESETS[6]);
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ToolTab>("background");
-  const [history, setHistory] = useState<CanvasElement[][]>([[]]);
+  const [history, setHistory]   = useState<CanvasElement[][]>([[]]);
 
-  // Text editor modal
-  const [textModal, setTextModal] = useState(false);
-  const [textInput, setTextInput] = useState("");
-  const [textColor, setTextColor] = useState("#FFFFFF");
-  const [textSize, setTextSize] = useState(24);
-  const [textBold, setTextBold] = useState(false);
+  // Text modal
+  const [textModal, setTextModal]   = useState(false);
+  const [textInput, setTextInput]   = useState("");
+  const [textColor, setTextColor]   = useState("#FFFFFF");
+  const [textSize, setTextSize]     = useState(24);
+  const [textBold, setTextBold]     = useState(false);
   const [textItalic, setTextItalic] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId]   = useState<string | null>(null);
 
   // Shape options
-  const [shapeType, setShapeType] = useState<"rect" | "circle">("rect");
+  const [shapeType, setShapeType]   = useState<"rect" | "circle">("rect");
   const [shapeColor, setShapeColor] = useState("#FF3B3B");
-  const [shapeSize, setShapeSize] = useState(80);
+  const [shapeSize, setShapeSize]   = useState(80);
 
+  // Drafts modal
+  const [draftsModal, setDraftsModal] = useState(false);
+  const [drafts, setDrafts]           = useState<Draft[]>([]);
+
+  const canvasW = FORMATS[format].w;
+  const canvasH = FORMATS[format].h;
   const selectedEl = elements.find((e) => e.id === selectedId) ?? null;
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
-  const pushHistory = (els: CanvasElement[]) => {
-    setHistory((h) => [...h.slice(-20), els]);
-  };
+  // Load drafts on mount
+  useEffect(() => {
+    AsyncStorage.getItem(DRAFTS_KEY).then((v) => {
+      if (v) setDrafts(JSON.parse(v));
+    });
+  }, []);
+
+  // ── History ────────────────────────────────────────────────────────────────
+  const pushHistory = (els: CanvasElement[]) =>
+    setHistory((h) => [...h.slice(-25), els]);
 
   const undo = () => {
     if (history.length <= 1) return;
@@ -207,6 +247,7 @@ export default function CreatorStudio() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  // ── Elements ───────────────────────────────────────────────────────────────
   const addElement = (el: CanvasElement) => {
     const next = [...elements, el];
     setElements(next);
@@ -214,9 +255,8 @@ export default function CreatorStudio() {
     setSelectedId(el.id);
   };
 
-  const updateElement = (id: string, patch: Partial<CanvasElement>) => {
+  const updateEl = (id: string, patch: Partial<CanvasElement>) =>
     setElements((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
-  };
 
   const deleteSelected = () => {
     if (!selectedId) return;
@@ -225,6 +265,18 @@ export default function CreatorStudio() {
     pushHistory(next);
     setSelectedId(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+  };
+
+  const duplicateSelected = () => {
+    if (!selectedEl) return;
+    const clone: CanvasElement = {
+      ...selectedEl,
+      id: Date.now().toString(),
+      x: selectedEl.x + 20,
+      y: selectedEl.y + 20,
+    };
+    addElement(clone);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   const bringForward = () => {
@@ -237,7 +289,33 @@ export default function CreatorStudio() {
     }
   };
 
-  // ── Text ──────────────────────────────────────────────────────────────────
+  const sendBackward = () => {
+    if (!selectedId) return;
+    const idx = elements.findIndex((e) => e.id === selectedId);
+    if (idx > 0) {
+      const next = [...elements];
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+      setElements(next);
+    }
+  };
+
+  const scaleSelected = (delta: number) => {
+    if (!selectedEl) return;
+    const cur = SCALE_STEPS.indexOf(
+      SCALE_STEPS.reduce((a, b) => Math.abs(b - selectedEl.scale) < Math.abs(a - selectedEl.scale) ? b : a)
+    );
+    const next = SCALE_STEPS[Math.max(0, Math.min(SCALE_STEPS.length - 1, cur + delta))];
+    updateEl(selectedEl.id, { scale: next });
+    Haptics.selectionAsync();
+  };
+
+  const rotateSelected = (deg: number) => {
+    if (!selectedEl) return;
+    updateEl(selectedEl.id, { rotation: ((selectedEl.rotation + deg) % 360 + 360) % 360 });
+    Haptics.selectionAsync();
+  };
+
+  // ── Text ───────────────────────────────────────────────────────────────────
   const openTextModal = (id?: string) => {
     if (id) {
       const el = elements.find((e) => e.id === id);
@@ -250,12 +328,8 @@ export default function CreatorStudio() {
         setEditingId(id);
       }
     } else {
-      setTextInput("");
-      setTextColor("#FFFFFF");
-      setTextSize(24);
-      setTextBold(false);
-      setTextItalic(false);
-      setEditingId(null);
+      setTextInput(""); setTextColor("#FFFFFF"); setTextSize(24);
+      setTextBold(false); setTextItalic(false); setEditingId(null);
     }
     setTextModal(true);
   };
@@ -263,65 +337,36 @@ export default function CreatorStudio() {
   const commitText = () => {
     if (!textInput.trim()) { setTextModal(false); return; }
     if (editingId) {
-      updateElement(editingId, {
-        content: textInput.trim(),
-        color: textColor,
-        fontSize: textSize,
-        bold: textBold,
-        italic: textItalic,
+      updateEl(editingId, {
+        content: textInput.trim(), color: textColor,
+        fontSize: textSize, bold: textBold, italic: textItalic,
       });
     } else {
       addElement({
-        id: Date.now().toString(),
-        type: "text",
+        id: Date.now().toString(), type: "text",
         content: textInput.trim(),
-        x: CANVAS_SIZE / 2 - 60,
-        y: CANVAS_SIZE / 2 - 20,
-        color: textColor,
-        fontSize: textSize,
-        bold: textBold,
-        italic: textItalic,
+        x: canvasW / 2 - 60, y: canvasH / 2 - 20,
+        color: textColor, fontSize: textSize,
+        bold: textBold, italic: textItalic,
+        scale: 1, rotation: 0,
       });
     }
     setTextModal(false);
   };
 
-  // ── Sticker ───────────────────────────────────────────────────────────────
+  // ── Sticker ────────────────────────────────────────────────────────────────
   const addSticker = (emoji: string) => {
     addElement({
-      id: Date.now().toString(),
-      type: "sticker",
-      content: emoji,
-      x: CANVAS_SIZE / 2 - 24,
-      y: CANVAS_SIZE / 2 - 24,
-      color: "#000",
-      fontSize: 48,
-      bold: false,
-      italic: false,
+      id: Date.now().toString(), type: "sticker", content: emoji,
+      x: canvasW / 2 - 24, y: canvasH / 2 - 24,
+      color: "#000", fontSize: 48, bold: false, italic: false,
+      scale: 1, rotation: 0,
     });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  // ── Shape ─────────────────────────────────────────────────────────────────
-  const addShape = () => {
-    addElement({
-      id: Date.now().toString(),
-      type: "shape",
-      content: "",
-      x: CANVAS_SIZE / 2 - shapeSize / 2,
-      y: CANVAS_SIZE / 2 - shapeSize / 2,
-      color: shapeColor,
-      fontSize: 14,
-      bold: false,
-      italic: false,
-      shapeType,
-      shapeSize,
-    });
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  };
-
-  // ── Image background ──────────────────────────────────────────────────────
-  const pickBgImage = async () => {
+  // ── Image sticker ──────────────────────────────────────────────────────────
+  const pickImageSticker = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -329,31 +374,97 @@ export default function CreatorStudio() {
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
+      const { uri, width: iw, height: ih } = result.assets[0];
+      const displayH = 100;
+      const displayW = iw && ih ? (iw / ih) * displayH : 100;
+      addElement({
+        id: Date.now().toString(), type: "image", content: "",
+        x: canvasW / 2 - displayW / 2, y: canvasH / 2 - displayH / 2,
+        color: "#000", fontSize: 14, bold: false, italic: false,
+        scale: 1, rotation: 0,
+        imageUri: uri, imageW: displayW, imageH: displayH,
+      });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+  };
+
+  // ── Shape ──────────────────────────────────────────────────────────────────
+  const addShape = () => {
+    addElement({
+      id: Date.now().toString(), type: "shape", content: "",
+      x: canvasW / 2 - shapeSize / 2, y: canvasH / 2 - shapeSize / 2,
+      color: shapeColor, fontSize: 14, bold: false, italic: false,
+      scale: 1, rotation: 0, shapeType, shapeSize,
+    });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  // ── BG image ───────────────────────────────────────────────────────────────
+  const pickBgImage = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.85,
+    });
+    if (!result.canceled && result.assets[0]) {
       setBg({ type: "image", colors: [], imageUri: result.assets[0].uri });
     }
   };
 
-  // ── Export ────────────────────────────────────────────────────────────────
+  // ── Drafts ─────────────────────────────────────────────────────────────────
+  const saveDraft = async () => {
+    const now = Date.now();
+    const draft: Draft = {
+      id: now.toString(),
+      name: `Design ${new Date(now).toLocaleDateString()} ${new Date(now).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+      savedAt: now,
+      bg, elements, format,
+    };
+    const next = [draft, ...drafts].slice(0, MAX_DRAFTS);
+    setDrafts(next);
+    await AsyncStorage.setItem(DRAFTS_KEY, JSON.stringify(next));
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert("Draft saved!", "Your design has been saved to drafts.");
+  };
+
+  const loadDraft = (draft: Draft) => {
+    setBg(draft.bg);
+    setElements(draft.elements);
+    setFormat(draft.format);
+    setSelectedId(null);
+    setHistory([draft.elements]);
+    setDraftsModal(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const deleteDraft = async (id: string) => {
+    const next = drafts.filter((d) => d.id !== id);
+    setDrafts(next);
+    await AsyncStorage.setItem(DRAFTS_KEY, JSON.stringify(next));
+  };
+
+  // ── Export ─────────────────────────────────────────────────────────────────
   const handleExport = async () => {
     try {
       setSelectedId(null);
-      await new Promise((r) => setTimeout(r, 100));
-      const uri = await (shotRef.current as any).capture();
-      await Share.share({ url: uri, title: "My Scam Alert Creation" });
+      await new Promise((r) => setTimeout(r, 120));
+      const uri = await shotRef.current.capture();
+      await Share.share({ url: uri, title: "My Scam Alert Design" });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
-      Alert.alert("Export failed", "Could not export your design. Please try again.");
+      Alert.alert("Export failed", "Could not export. Please try again.");
     }
   };
 
-  // ── Canvas background render ───────────────────────────────────────────────
+  // ── Canvas BG render ───────────────────────────────────────────────────────
   const renderBg = () => {
     if (bg.type === "image" && bg.imageUri) {
       return (
-        <View style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}>
-          {/* eslint-disable-next-line @typescript-eslint/no-require-imports */}
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }]} />
-        </View>
+        <Image
+          source={{ uri: bg.imageUri }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
       );
     }
     if (bg.type === "gradient") {
@@ -361,21 +472,35 @@ export default function CreatorStudio() {
         <LinearGradient
           colors={bg.colors as [string, string]}
           style={StyleSheet.absoluteFill}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         />
       );
     }
     return <View style={[StyleSheet.absoluteFill, { backgroundColor: bg.colors[0] }]} />;
   };
 
-  // ── Tool panels ───────────────────────────────────────────────────────────
+  // ── Tool panel ─────────────────────────────────────────────────────────────
   const renderToolPanel = () => {
     switch (activeTool) {
       case "background":
         return (
           <View style={styles.toolPanel}>
-            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Background</Text>
+            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Canvas Size</Text>
+            <View style={styles.formatRow}>
+              {(Object.keys(FORMATS) as CanvasFormat[]).map((f) => (
+                <TouchableOpacity
+                  key={f}
+                  style={[styles.formatBtn, { backgroundColor: format === f ? colors.primary : colors.muted }]}
+                  onPress={() => { setFormat(f); Haptics.selectionAsync(); }}
+                >
+                  <Text style={styles.formatIcon}>{FORMATS[f].icon}</Text>
+                  <Text style={[styles.formatLabel, { color: format === f ? "#fff" : colors.text }]}>
+                    {FORMATS[f].label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={[styles.panelTitle, { color: colors.textMuted, marginTop: 10 }]}>Background</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.bgRow}>
                 {BG_PRESETS.map((preset, i) => (
@@ -388,8 +513,7 @@ export default function CreatorStudio() {
                       <LinearGradient
                         colors={preset.colors as [string, string]}
                         style={styles.bgSwatchInner}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                       />
                     ) : (
                       <View style={[styles.bgSwatchInner, { backgroundColor: preset.colors[0] }]} />
@@ -410,20 +534,17 @@ export default function CreatorStudio() {
         return (
           <View style={styles.toolPanel}>
             <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Text</Text>
-            <TouchableOpacity
-              style={[styles.addTextBtn, { backgroundColor: colors.primary }]}
-              onPress={() => { setActiveTool("text"); openTextModal(); }}
-            >
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={() => openTextModal()}>
               <Feather name="plus" size={16} color="#fff" />
-              <Text style={styles.addTextBtnLabel}>Add Text</Text>
+              <Text style={styles.actionBtnLabel}>Add Text</Text>
             </TouchableOpacity>
             {selectedEl?.type === "text" && (
               <TouchableOpacity
-                style={[styles.addTextBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, marginTop: 8 }]}
+                style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, marginTop: 8 }]}
                 onPress={() => openTextModal(selectedEl.id)}
               >
                 <Feather name="edit-2" size={14} color={colors.text} />
-                <Text style={[styles.addTextBtnLabel, { color: colors.text }]}>Edit Selected Text</Text>
+                <Text style={[styles.actionBtnLabel, { color: colors.text }]}>Edit Selected Text</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -443,6 +564,20 @@ export default function CreatorStudio() {
               </View>
             ))}
           </ScrollView>
+        );
+
+      case "image":
+        return (
+          <View style={styles.toolPanel}>
+            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Image Sticker</Text>
+            <Text style={[styles.panelHint, { color: colors.textMuted }]}>
+              Pick a photo from your gallery and place it on the canvas. Drag to reposition, use scale buttons to resize.
+            </Text>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary, marginTop: 12 }]} onPress={pickImageSticker}>
+              <Feather name="image" size={16} color="#fff" />
+              <Text style={styles.actionBtnLabel}>Pick from Gallery</Text>
+            </TouchableOpacity>
+          </View>
         );
 
       case "shape":
@@ -473,105 +608,144 @@ export default function CreatorStudio() {
                 ))}
               </View>
             </ScrollView>
-            <TouchableOpacity
-              style={[styles.addTextBtn, { backgroundColor: shapeColor }]}
-              onPress={addShape}
-            >
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: shapeColor }]} onPress={addShape}>
               <Feather name="plus" size={16} color="#fff" />
-              <Text style={styles.addTextBtnLabel}>Add {shapeType === "rect" ? "Rectangle" : "Circle"}</Text>
+              <Text style={styles.actionBtnLabel}>Add {shapeType === "rect" ? "Rectangle" : "Circle"}</Text>
             </TouchableOpacity>
           </View>
         );
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      {/* Nav */}
+
+      {/* Nav bar */}
       <View style={[styles.nav, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Feather name="x" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Creator Studio</Text>
         <View style={styles.navRight}>
-          <TouchableOpacity onPress={undo} style={styles.navBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Feather name="corner-up-left" size={20} color={history.length > 1 ? colors.text : colors.textMuted} />
+          <TouchableOpacity onPress={undo} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[styles.navIconBtn, { backgroundColor: history.length > 1 ? colors.card : "transparent" }]}>
+            <Feather name="corner-up-left" size={18} color={history.length > 1 ? colors.text : colors.textMuted} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.exportBtn, { backgroundColor: colors.primary }]}
-            onPress={handleExport}
-          >
-            <Feather name="share" size={14} color="#fff" />
+          <TouchableOpacity onPress={() => { setDraftsModal(true); }}
+            style={[styles.navIconBtn, { backgroundColor: colors.card }]}>
+            <Feather name="folder" size={18} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={saveDraft}
+            style={[styles.navIconBtn, { backgroundColor: colors.card }]}>
+            <Feather name="save" size={18} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.exportBtn, { backgroundColor: colors.primary }]} onPress={handleExport}>
+            <Feather name="share" size={13} color="#fff" />
             <Text style={styles.exportBtnLabel}>Export</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Canvas */}
-      <View style={styles.canvasWrapper}>
-        <ViewShot
-          ref={shotRef}
-          options={{ format: "jpg", quality: 0.95 }}
-          style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }}
-        >
-          <View style={{ width: CANVAS_SIZE, height: CANVAS_SIZE, overflow: "hidden" }}>
+      <View style={[styles.canvasWrapper, { backgroundColor: colors.muted }]}>
+        <ViewShot ref={shotRef} options={{ format: "jpg", quality: 0.95 }}
+          style={{ width: canvasW, height: canvasH }}>
+          <View style={{ width: canvasW, height: canvasH, overflow: "hidden" }}>
             {renderBg()}
-            {/* Watermark */}
             <Text style={styles.watermark}>Scam Alert</Text>
-            {/* Elements */}
             {elements.map((el) => (
               <DraggableElement
                 key={el.id}
                 el={el}
                 selected={el.id === selectedId}
-                canvasSize={CANVAS_SIZE}
+                canvasW={canvasW}
+                canvasH={canvasH}
                 onSelect={() => setSelectedId(el.id)}
-                onMove={(x, y) => updateElement(el.id, { x, y })}
+                onMove={(x, y) => updateEl(el.id, { x, y })}
               />
             ))}
           </View>
         </ViewShot>
+      </View>
 
-        {/* Element action bar */}
-        {selectedEl && (
-          <View style={[styles.elementActions, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {/* Selected element controls */}
+      {selectedEl && (
+        <View style={[styles.elControls, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {/* Row 1: scale + rotate */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.elCtrlRow}>
+            <View style={styles.ctrlGroup}>
+              <Text style={[styles.ctrlGroupLabel, { color: colors.textMuted }]}>Size</Text>
+              <TouchableOpacity style={[styles.ctrlBtn, { backgroundColor: colors.muted }]} onPress={() => scaleSelected(-1)}>
+                <Feather name="minus" size={14} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={[styles.ctrlValue, { color: colors.text }]}>{Math.round(selectedEl.scale * 100)}%</Text>
+              <TouchableOpacity style={[styles.ctrlBtn, { backgroundColor: colors.muted }]} onPress={() => scaleSelected(1)}>
+                <Feather name="plus" size={14} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.ctrlDivider, { backgroundColor: colors.border }]} />
+
+            <View style={styles.ctrlGroup}>
+              <Text style={[styles.ctrlGroupLabel, { color: colors.textMuted }]}>Rotate</Text>
+              <TouchableOpacity style={[styles.ctrlBtn, { backgroundColor: colors.muted }]} onPress={() => rotateSelected(-ROT_STEP)}>
+                <Feather name="rotate-ccw" size={14} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={[styles.ctrlValue, { color: colors.text }]}>{selectedEl.rotation}°</Text>
+              <TouchableOpacity style={[styles.ctrlBtn, { backgroundColor: colors.muted }]} onPress={() => rotateSelected(ROT_STEP)}>
+                <Feather name="rotate-cw" size={14} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.ctrlDivider, { backgroundColor: colors.border }]} />
+
+            {/* Actions */}
             {selectedEl.type === "text" && (
-              <TouchableOpacity style={styles.elAction} onPress={() => openTextModal(selectedEl.id)}>
-                <Feather name="edit-2" size={16} color={colors.primary} />
-                <Text style={[styles.elActionLabel, { color: colors.primary }]}>Edit</Text>
+              <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: colors.primary + "20" }]} onPress={() => openTextModal(selectedEl.id)}>
+                <Feather name="edit-2" size={14} color={colors.primary} />
+                <Text style={[styles.ctrlActionLabel, { color: colors.primary }]}>Edit</Text>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={styles.elAction} onPress={bringForward}>
-              <Feather name="arrow-up" size={16} color={colors.text} />
-              <Text style={[styles.elActionLabel, { color: colors.text }]}>Forward</Text>
+            <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: colors.muted }]} onPress={duplicateSelected}>
+              <Feather name="copy" size={14} color={colors.text} />
+              <Text style={[styles.ctrlActionLabel, { color: colors.text }]}>Copy</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.elAction} onPress={deleteSelected}>
-              <Feather name="trash-2" size={16} color="#EF4444" />
-              <Text style={[styles.elActionLabel, { color: "#EF4444" }]}>Delete</Text>
+            <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: colors.muted }]} onPress={bringForward}>
+              <Feather name="arrow-up" size={14} color={colors.text} />
+              <Text style={[styles.ctrlActionLabel, { color: colors.text }]}>↑</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.elAction} onPress={() => setSelectedId(null)}>
-              <Feather name="x" size={16} color={colors.textMuted} />
-              <Text style={[styles.elActionLabel, { color: colors.textMuted }]}>Done</Text>
+            <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: colors.muted }]} onPress={sendBackward}>
+              <Feather name="arrow-down" size={14} color={colors.text} />
+              <Text style={[styles.ctrlActionLabel, { color: colors.text }]}>↓</Text>
             </TouchableOpacity>
-          </View>
-        )}
-      </View>
+            <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: "#EF444420" }]} onPress={deleteSelected}>
+              <Feather name="trash-2" size={14} color="#EF4444" />
+              <Text style={[styles.ctrlActionLabel, { color: "#EF4444" }]}>Del</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: colors.muted }]} onPress={() => setSelectedId(null)}>
+              <Feather name="x" size={14} color={colors.textMuted} />
+              <Text style={[styles.ctrlActionLabel, { color: colors.textMuted }]}>Done</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      )}
 
       {/* Tool tabs */}
       <View style={[styles.toolTabs, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
         {([
-          { key: "background", icon: "image", label: "BG" },
-          { key: "text", icon: "type", label: "Text" },
-          { key: "sticker", icon: "smile", label: "Sticker" },
-          { key: "shape", icon: "square", label: "Shape" },
+          { key: "background", icon: "image",   label: "BG" },
+          { key: "text",       icon: "type",    label: "Text" },
+          { key: "sticker",    icon: "smile",   label: "Sticker" },
+          { key: "image",      icon: "camera",  label: "Photo" },
+          { key: "shape",      icon: "square",  label: "Shape" },
         ] as { key: ToolTab; icon: string; label: string }[]).map((t) => (
           <TouchableOpacity
             key={t.key}
             style={[styles.toolTab, activeTool === t.key && { borderTopColor: colors.primary, borderTopWidth: 2 }]}
             onPress={() => { setActiveTool(t.key); Haptics.selectionAsync(); }}
           >
-            <Feather name={t.icon as any} size={20} color={activeTool === t.key ? colors.primary : colors.textMuted} />
+            <Feather name={t.icon as any} size={18} color={activeTool === t.key ? colors.primary : colors.textMuted} />
             <Text style={[styles.toolTabLabel, { color: activeTool === t.key ? colors.primary : colors.textMuted }]}>
               {t.label}
             </Text>
@@ -584,93 +758,102 @@ export default function CreatorStudio() {
         {renderToolPanel()}
       </View>
 
-      {/* Text editor modal */}
+      {/* ── Text editor modal ─────────────────────────────────────────────── */}
       <Modal visible={textModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {editingId ? "Edit Text" : "Add Text"}
-              </Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{editingId ? "Edit Text" : "Add Text"}</Text>
               <TouchableOpacity onPress={() => setTextModal(false)}>
                 <Feather name="x" size={20} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
-            {/* Preview */}
             <View style={[styles.textPreview, { backgroundColor: colors.background }]}>
-              <Text style={{
-                color: textColor,
-                fontSize: textSize,
-                fontWeight: textBold ? "bold" : "normal",
-                fontStyle: textItalic ? "italic" : "normal",
-              }}>
+              <Text style={{ color: textColor, fontSize: textSize, fontWeight: textBold ? "bold" : "normal", fontStyle: textItalic ? "italic" : "normal" }}>
                 {textInput || "Preview text"}
               </Text>
             </View>
 
-            {/* Input */}
             <TextInput
               style={[styles.textInputField, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-              value={textInput}
-              onChangeText={setTextInput}
-              placeholder="Type something..."
-              placeholderTextColor={colors.textMuted}
-              multiline
-              maxLength={120}
-              autoFocus
+              value={textInput} onChangeText={setTextInput}
+              placeholder="Type something..." placeholderTextColor={colors.textMuted}
+              multiline maxLength={120} autoFocus
             />
 
-            {/* Color */}
             <Text style={[styles.optionLabel, { color: colors.textMuted }]}>Color</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.colorRow}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
                 {TEXT_COLORS.map((c) => (
-                  <TouchableOpacity
-                    key={c}
-                    onPress={() => setTextColor(c)}
-                    style={[styles.colorDot, { backgroundColor: c }, textColor === c && styles.colorDotSelected]}
-                  />
+                  <TouchableOpacity key={c} onPress={() => setTextColor(c)}
+                    style={[styles.colorDot, { backgroundColor: c }, textColor === c && styles.colorDotSelected]} />
                 ))}
               </View>
             </ScrollView>
 
-            {/* Size */}
             <Text style={[styles.optionLabel, { color: colors.textMuted }]}>Size</Text>
             <View style={styles.sizeRow}>
               {FONT_SIZES.map((s) => (
-                <TouchableOpacity
-                  key={s}
-                  onPress={() => setTextSize(s)}
-                  style={[styles.sizeBtn, { backgroundColor: textSize === s ? colors.primary : colors.muted }]}
-                >
+                <TouchableOpacity key={s} onPress={() => setTextSize(s)}
+                  style={[styles.sizeBtn, { backgroundColor: textSize === s ? colors.primary : colors.muted }]}>
                   <Text style={[styles.sizeBtnLabel, { color: textSize === s ? "#fff" : colors.text }]}>{s}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            {/* Bold / Italic */}
             <View style={styles.styleRow}>
-              <TouchableOpacity
-                onPress={() => setTextBold((v) => !v)}
-                style={[styles.styleBtn, { backgroundColor: textBold ? colors.primary : colors.muted }]}
-              >
+              <TouchableOpacity onPress={() => setTextBold((v) => !v)}
+                style={[styles.styleBtn, { backgroundColor: textBold ? colors.primary : colors.muted }]}>
                 <Text style={[styles.styleBtnLabel, { color: textBold ? "#fff" : colors.text, fontWeight: "bold" }]}>B</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setTextItalic((v) => !v)}
-                style={[styles.styleBtn, { backgroundColor: textItalic ? colors.primary : colors.muted }]}
-              >
+              <TouchableOpacity onPress={() => setTextItalic((v) => !v)}
+                style={[styles.styleBtn, { backgroundColor: textItalic ? colors.primary : colors.muted }]}>
                 <Text style={[styles.styleBtnLabel, { color: textItalic ? "#fff" : colors.text, fontStyle: "italic" }]}>I</Text>
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={[styles.commitBtn, { backgroundColor: colors.primary }]}
-              onPress={commitText}
-            >
+            <TouchableOpacity style={[styles.commitBtn, { backgroundColor: colors.primary }]} onPress={commitText}>
               <Text style={styles.commitBtnLabel}>{editingId ? "Update" : "Add to Canvas"}</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Drafts modal ─────────────────────────────────────────────────── */}
+      <Modal visible={draftsModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { backgroundColor: colors.card, maxHeight: "80%" }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Saved Drafts</Text>
+              <TouchableOpacity onPress={() => setDraftsModal(false)}>
+                <Feather name="x" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+            {drafts.length === 0 ? (
+              <View style={{ alignItems: "center", paddingVertical: 32, gap: 8 }}>
+                <Feather name="folder" size={36} color={colors.textMuted} />
+                <Text style={[styles.panelHint, { color: colors.textMuted, textAlign: "center" }]}>
+                  No drafts yet. Tap the save icon to save your current design.
+                </Text>
+              </View>
+            ) : (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {drafts.map((d) => (
+                  <View key={d.id} style={[styles.draftRow, { borderColor: colors.border }]}>
+                    <TouchableOpacity style={{ flex: 1 }} onPress={() => loadDraft(d)}>
+                      <Text style={[styles.draftName, { color: colors.text }]}>{d.name}</Text>
+                      <Text style={[styles.draftMeta, { color: colors.textMuted }]}>
+                        {FORMATS[d.format].icon} {FORMATS[d.format].label} · {d.elements.length} elements
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteDraft(d.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Feather name="trash-2" size={16} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
           </View>
         </View>
       </Modal>
@@ -682,193 +865,139 @@ export default function CreatorStudio() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   nav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 14, paddingBottom: 10, borderBottomWidth: 1,
   },
-  navTitle: { fontFamily: "Inter_700Bold", fontSize: 17 },
-  navRight: { flexDirection: "row", alignItems: "center", gap: 12 },
-  navBtn: { padding: 2 },
+  navTitle: { fontFamily: "Inter_700Bold", fontSize: 16 },
+  navRight: { flexDirection: "row", alignItems: "center", gap: 6 },
+  navIconBtn: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   exportBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 18,
   },
   exportBtnLabel: { fontFamily: "Inter_700Bold", fontSize: 13, color: "#fff" },
 
   canvasWrapper: {
-    alignItems: "center",
-    paddingVertical: 12,
-    gap: 8,
+    alignItems: "center", justifyContent: "center",
+    paddingVertical: 10,
   },
-  element: {
-    position: "absolute",
-  },
+  element: { position: "absolute" },
   elementSelected: {
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.8)",
-    borderRadius: 4,
-    padding: 2,
+    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.85)",
+    borderRadius: 4, padding: 2,
+    shadowColor: "#fff", shadowOpacity: 0.3, shadowRadius: 6, shadowOffset: { width: 0, height: 0 },
   },
   watermark: {
-    position: "absolute",
-    bottom: 8,
-    right: 10,
-    fontFamily: "Inter_700Bold",
-    fontSize: 10,
-    color: "rgba(255,255,255,0.3)",
-    letterSpacing: 1,
+    position: "absolute", bottom: 6, right: 8,
+    fontFamily: "Inter_700Bold", fontSize: 9,
+    color: "rgba(255,255,255,0.28)", letterSpacing: 1,
   },
-  elementActions: {
-    flexDirection: "row",
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    gap: 4,
-  },
-  elAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  elActionLabel: { fontFamily: "Inter_600SemiBold", fontSize: 12 },
 
-  toolTabs: {
-    flexDirection: "row",
-    borderTopWidth: 1,
+  // Element controls
+  elControls: {
+    borderTopWidth: 1, borderBottomWidth: 1,
   },
+  elCtrlRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 8, gap: 6 },
+  ctrlGroup: { flexDirection: "row", alignItems: "center", gap: 6 },
+  ctrlGroupLabel: { fontFamily: "Inter_600SemiBold", fontSize: 10, textTransform: "uppercase" },
+  ctrlBtn: { width: 28, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  ctrlValue: { fontFamily: "Inter_600SemiBold", fontSize: 12, minWidth: 36, textAlign: "center" },
+  ctrlDivider: { width: 1, height: 24, marginHorizontal: 2 },
+  ctrlAction: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8,
+  },
+  ctrlActionLabel: { fontFamily: "Inter_600SemiBold", fontSize: 11 },
+
+  // Tool tabs
+  toolTabs: { flexDirection: "row", borderTopWidth: 1 },
   toolTab: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 10,
-    gap: 3,
-    borderTopWidth: 2,
-    borderTopColor: "transparent",
+    flex: 1, alignItems: "center", paddingVertical: 8, gap: 2,
+    borderTopWidth: 2, borderTopColor: "transparent",
   },
-  toolTabLabel: { fontFamily: "Inter_600SemiBold", fontSize: 10 },
+  toolTabLabel: { fontFamily: "Inter_600SemiBold", fontSize: 9 },
 
-  toolPanelWrap: {
-    flex: 1,
-    borderTopWidth: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
+  toolPanelWrap: { flex: 1, borderTopWidth: 1, paddingHorizontal: 14, paddingTop: 10 },
   toolPanel: { flex: 1 },
   panelTitle: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 10,
+    fontFamily: "Inter_700Bold", fontSize: 10,
+    textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8,
   },
+  panelHint: { fontFamily: "Inter_400Regular", fontSize: 12, lineHeight: 18 },
+
+  // Format
+  formatRow: { flexDirection: "row", gap: 8, marginBottom: 4 },
+  formatBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", gap: 6,
+    justifyContent: "center", paddingVertical: 8, borderRadius: 10,
+  },
+  formatIcon: { fontSize: 14 },
+  formatLabel: { fontFamily: "Inter_600SemiBold", fontSize: 12 },
+
+  // BG swatches
   bgRow: { flexDirection: "row", gap: 8 },
   bgSwatch: {
-    width: 54,
-    height: 54,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "transparent",
-    overflow: "hidden",
+    width: 50, height: 50, borderRadius: 10,
+    borderWidth: 2, borderColor: "transparent", overflow: "hidden",
   },
   bgSwatchSelected: { borderColor: "#FF3B3B" },
   bgSwatchInner: { flex: 1 },
 
-  addTextBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
+  // Buttons
+  actionBtn: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12,
   },
-  addTextBtnLabel: { fontFamily: "Inter_700Bold", fontSize: 14, color: "#fff" },
+  actionBtnLabel: { fontFamily: "Inter_700Bold", fontSize: 14, color: "#fff" },
 
-  stickerRow: { flexDirection: "row", gap: 4, marginBottom: 4 },
-  stickerBtn: { flex: 1, alignItems: "center", paddingVertical: 6 },
-  stickerEmoji: { fontSize: 28 },
+  // Stickers
+  stickerRow: { flexDirection: "row", gap: 2, marginBottom: 2 },
+  stickerBtn: { flex: 1, alignItems: "center", paddingVertical: 4 },
+  stickerEmoji: { fontSize: 26 },
 
-  shapeTypeRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  shapeTypeBtn: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
+  // Shapes
+  shapeTypeRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  shapeTypeBtn: { flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 10 },
   shapeTypeBtnLabel: { fontFamily: "Inter_600SemiBold", fontSize: 13 },
 
-  colorRow: { flexDirection: "row", gap: 8 },
+  // Colors
   colorDot: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: "transparent",
+    width: 28, height: 28, borderRadius: 14,
+    borderWidth: 2, borderColor: "transparent",
   },
-  colorDotSelected: { borderColor: "#fff", transform: [{ scale: 1.2 }] },
+  colorDotSelected: { borderColor: "#fff", transform: [{ scale: 1.25 }] },
 
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end",
-  },
-  modalSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    gap: 12,
-    maxHeight: "90%",
-  },
+  // Text modal
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
+  modalSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, gap: 12 },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   modalTitle: { fontFamily: "Inter_700Bold", fontSize: 18 },
   textPreview: {
-    height: 70,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 12,
+    height: 64, borderRadius: 12, alignItems: "center",
+    justifyContent: "center", paddingHorizontal: 12,
   },
   textInputField: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    fontFamily: "Inter_400Regular",
-    fontSize: 15,
-    minHeight: 60,
+    borderWidth: 1, borderRadius: 12, padding: 12,
+    fontFamily: "Inter_400Regular", fontSize: 15, minHeight: 56,
   },
   optionLabel: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontFamily: "Inter_600SemiBold", fontSize: 10,
+    textTransform: "uppercase", letterSpacing: 0.5,
   },
-  sizeRow: { flexDirection: "row", gap: 6 },
-  sizeBtn: {
-    width: 44,
-    height: 36,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sizeBtnLabel: { fontFamily: "Inter_700Bold", fontSize: 13 },
+  sizeRow: { flexDirection: "row", gap: 6, flexWrap: "wrap" },
+  sizeBtn: { width: 44, height: 34, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  sizeBtnLabel: { fontFamily: "Inter_700Bold", fontSize: 12 },
   styleRow: { flexDirection: "row", gap: 8 },
   styleBtn: { width: 44, height: 44, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   styleBtnLabel: { fontSize: 20 },
-  commitBtn: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: "center",
-    marginTop: 4,
-  },
+  commitBtn: { paddingVertical: 14, borderRadius: 14, alignItems: "center", marginTop: 4 },
   commitBtnLabel: { fontFamily: "Inter_700Bold", fontSize: 15, color: "#fff" },
+
+  // Drafts
+  draftRow: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingVertical: 12, borderBottomWidth: 1,
+  },
+  draftName: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  draftMeta: { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 },
 });
