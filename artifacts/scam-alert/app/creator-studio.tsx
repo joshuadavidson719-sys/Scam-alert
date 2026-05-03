@@ -12,21 +12,34 @@ import {
   Share,
   Dimensions,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Audio } from "expo-av";
 import { router } from "expo-router";
 import ViewShot from "react-native-view-shot";
 import { useColors } from "@/hooks/useColors";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type ElementType = "text" | "sticker" | "shape" | "image";
-type ToolTab = "background" | "text" | "sticker" | "shape" | "image";
+type ToolTab = "background" | "text" | "sticker" | "shape" | "image" | "music";
 type CanvasFormat = "square" | "story" | "banner";
+
+interface MusicTrack {
+  id: string;
+  name: string;
+  artist: string;
+  genre: string;
+  icon: string;
+  uri: string;
+  custom?: boolean;
+}
 
 interface CanvasElement {
   id: string;
@@ -146,6 +159,49 @@ const STICKER_CATEGORIES = [
   { icon: "📢", label: "Broadcast" },
 ];
 
+const MUSIC_TRACKS: MusicTrack[] = [
+  {
+    id: "1", icon: "🚨", name: "Danger Zone",
+    artist: "Royalty Free", genre: "Dramatic",
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+  },
+  {
+    id: "2", icon: "🎤", name: "Street Hustle",
+    artist: "Royalty Free", genre: "Hip Hop",
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+  },
+  {
+    id: "3", icon: "☕", name: "Lo-Fi Chill",
+    artist: "Royalty Free", genre: "Chill",
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+  },
+  {
+    id: "4", icon: "⚡", name: "Power Move",
+    artist: "Royalty Free", genre: "Epic",
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+  },
+  {
+    id: "5", icon: "🌃", name: "Midnight Vibes",
+    artist: "Royalty Free", genre: "R&B / Smooth",
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+  },
+  {
+    id: "6", icon: "😤", name: "High Tension",
+    artist: "Royalty Free", genre: "Thriller",
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+  },
+  {
+    id: "7", icon: "🌅", name: "New Day",
+    artist: "Royalty Free", genre: "Uplifting",
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+  },
+  {
+    id: "8", icon: "🕵️", name: "Investigation",
+    artist: "Royalty Free", genre: "Mystery",
+    uri: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+  },
+];
+
 const DRAFTS_KEY = "@studio_drafts_v2";
 const MAX_DRAFTS = 8;
 
@@ -259,9 +315,24 @@ export default function CreatorStudio() {
   const [draftsModal, setDraftsModal] = useState(false);
   const [drafts, setDrafts]           = useState<Draft[]>([]);
 
+  // Music
+  const soundRef          = useRef<Audio.Sound | null>(null);
+  const [allTracks, setAllTracks]         = useState<MusicTrack[]>(MUSIC_TRACKS);
+  const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying]         = useState(false);
+  const [isLoading, setIsLoading]         = useState(false);
+
   const canvasW = FORMATS[format].w;
   const canvasH = FORMATS[format].h;
   const selectedEl = elements.find((e) => e.id === selectedId) ?? null;
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false });
+    return () => {
+      soundRef.current?.unloadAsync();
+    };
+  }, []);
 
   // Load drafts on mount
   useEffect(() => {
@@ -436,6 +507,86 @@ export default function CreatorStudio() {
   };
 
   // ── BG image ───────────────────────────────────────────────────────────────
+  // ── Music ─────────────────────────────────────────────────────────────────
+  const playTrack = async (track: MusicTrack) => {
+    try {
+      setIsLoading(true);
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+      if (activeTrackId === track.id && isPlaying) {
+        setActiveTrackId(null);
+        setIsPlaying(false);
+        setIsLoading(false);
+        return;
+      }
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: track.uri },
+        { shouldPlay: true, isLooping: true, volume: 0.75 }
+      );
+      soundRef.current = sound;
+      setActiveTrackId(track.id);
+      setIsPlaying(true);
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded) setIsPlaying(status.isPlaying);
+      });
+    } catch {
+      Alert.alert("Playback error", "Could not load this track. Try another.");
+    } finally {
+      setIsLoading(false);
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const togglePlayPause = async () => {
+    if (!soundRef.current) return;
+    if (isPlaying) {
+      await soundRef.current.pauseAsync();
+      setIsPlaying(false);
+    } else {
+      await soundRef.current.playAsync();
+      setIsPlaying(true);
+    }
+    Haptics.selectionAsync();
+  };
+
+  const stopMusic = async () => {
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
+    }
+    setActiveTrackId(null);
+    setIsPlaying(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const pickDeviceAudio = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "audio/*",
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      const custom: MusicTrack = {
+        id: `custom-${Date.now()}`,
+        icon: "🎵",
+        name: asset.name.replace(/\.[^.]+$/, ""),
+        artist: "Your Library",
+        genre: "Custom",
+        uri: asset.uri,
+        custom: true,
+      };
+      setAllTracks((prev) => [custom, ...prev.filter((t) => !t.custom)]);
+      await playTrack(custom);
+    } catch {
+      Alert.alert("Error", "Could not pick audio file.");
+    }
+  };
+
   const pickBgImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
@@ -672,6 +823,73 @@ export default function CreatorStudio() {
           </View>
         );
 
+      case "music":
+        return (
+          <ScrollView style={styles.toolPanel} showsVerticalScrollIndicator={false}>
+            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Music</Text>
+
+            {/* Upload from device */}
+            <TouchableOpacity
+              style={[styles.musicUploadBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={pickDeviceAudio}
+            >
+              <Text style={styles.musicUploadIcon}>📂</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.musicUploadTitle, { color: colors.text }]}>Upload Your Music</Text>
+                <Text style={[styles.musicUploadSub, { color: colors.textMuted }]}>Pick any audio file from your phone</Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+
+            <Text style={[styles.panelTitle, { color: colors.textMuted, marginTop: 12 }]}>Instrumental Tracks</Text>
+
+            {allTracks.map((track) => {
+              const active = activeTrackId === track.id;
+              return (
+                <TouchableOpacity
+                  key={track.id}
+                  style={[styles.musicTrackCard, {
+                    backgroundColor: active ? colors.primary + "18" : colors.card,
+                    borderColor: active ? colors.primary : colors.border,
+                  }]}
+                  onPress={() => playTrack(track)}
+                  activeOpacity={0.75}
+                >
+                  <View style={[styles.musicTrackIcon, { backgroundColor: active ? colors.primary : colors.muted }]}>
+                    {isLoading && active
+                      ? <ActivityIndicator size="small" color="#fff" />
+                      : <Text style={{ fontSize: 20 }}>{track.icon}</Text>
+                    }
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.musicTrackName, { color: active ? colors.primary : colors.text }]}>{track.name}</Text>
+                    <Text style={[styles.musicTrackMeta, { color: colors.textMuted }]}>
+                      {track.custom ? "📱 Your Library" : "🎵 " + track.genre}
+                    </Text>
+                  </View>
+                  {active && (
+                    <TouchableOpacity onPress={togglePlayPause} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <View style={[styles.musicPlayBtn, { backgroundColor: colors.primary }]}>
+                        <Feather name={isPlaying ? "pause" : "play"} size={14} color="#fff" />
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  {active && (
+                    <TouchableOpacity onPress={stopMusic} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <View style={[styles.musicStopBtn, { backgroundColor: colors.muted }]}>
+                        <Feather name="square" size={12} color={colors.text} />
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  {!active && (
+                    <Feather name="play-circle" size={22} color={colors.textMuted} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        );
+
       case "shape":
         return (
           <View style={styles.toolPanel}>
@@ -853,6 +1071,24 @@ export default function CreatorStudio() {
         </View>
       )}
 
+      {/* Active track bar */}
+      {activeTrackId && (
+        <View style={[styles.activeTrackBar, { backgroundColor: colors.primary }]}>
+          <Text style={styles.activeTrackBarIcon}>
+            {allTracks.find((t) => t.id === activeTrackId)?.icon ?? "🎵"}
+          </Text>
+          <Text style={styles.activeTrackBarName} numberOfLines={1}>
+            {allTracks.find((t) => t.id === activeTrackId)?.name ?? "Playing"}
+          </Text>
+          <TouchableOpacity onPress={togglePlayPause} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+            <Feather name={isPlaying ? "pause" : "play"} size={16} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={stopMusic} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+            <Feather name="x" size={16} color="rgba(255,255,255,0.7)" />
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Tool tabs */}
       <View style={[styles.toolTabs, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
         {([
@@ -861,15 +1097,19 @@ export default function CreatorStudio() {
           { key: "sticker",    icon: "smile",   label: "Sticker" },
           { key: "image",      icon: "camera",  label: "Photo" },
           { key: "shape",      icon: "square",  label: "Shape" },
+          { key: "music",      icon: "music",   label: "Music" },
         ] as { key: ToolTab; icon: string; label: string }[]).map((t) => (
           <TouchableOpacity
             key={t.key}
             style={[styles.toolTab, activeTool === t.key && { borderTopColor: colors.primary, borderTopWidth: 2 }]}
             onPress={() => { setActiveTool(t.key); Haptics.selectionAsync(); }}
           >
-            <Feather name={t.icon as any} size={18} color={activeTool === t.key ? colors.primary : colors.textMuted} />
+            {t.key === "music" && activeTrackId
+              ? <Text style={{ fontSize: 16 }}>🎵</Text>
+              : <Feather name={t.icon as any} size={18} color={activeTool === t.key ? colors.primary : colors.textMuted} />
+            }
             <Text style={[styles.toolTabLabel, { color: activeTool === t.key ? colors.primary : colors.textMuted }]}>
-              {t.label}
+              {t.label}{t.key === "music" && activeTrackId && isPlaying ? " ●" : ""}
             </Text>
           </TouchableOpacity>
         ))}
@@ -1121,6 +1361,42 @@ const styles = StyleSheet.create({
   shapeCardIcon: { fontSize: 18 },
   shapeCardLabel: { fontFamily: "Inter_700Bold", fontSize: 12 },
   shapeCardCheck: { fontFamily: "Inter_600SemiBold", fontSize: 9 },
+
+  // Music
+  musicUploadBtn: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 4,
+  },
+  musicUploadIcon: { fontSize: 24 },
+  musicUploadTitle: { fontFamily: "Inter_700Bold", fontSize: 14 },
+  musicUploadSub: { fontFamily: "Inter_400Regular", fontSize: 11, marginTop: 1 },
+  musicTrackCard: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    padding: 12, borderRadius: 14, borderWidth: 1, marginBottom: 8,
+  },
+  musicTrackIcon: {
+    width: 44, height: 44, borderRadius: 22,
+    alignItems: "center", justifyContent: "center",
+  },
+  musicTrackName: { fontFamily: "Inter_700Bold", fontSize: 14 },
+  musicTrackMeta: { fontFamily: "Inter_400Regular", fontSize: 11, marginTop: 2 },
+  musicPlayBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    alignItems: "center", justifyContent: "center",
+  },
+  musicStopBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    alignItems: "center", justifyContent: "center",
+    marginLeft: 4,
+  },
+  activeTrackBar: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 16, paddingVertical: 8,
+  },
+  activeTrackBarIcon: { fontSize: 16 },
+  activeTrackBarName: {
+    flex: 1, fontFamily: "Inter_700Bold", fontSize: 13, color: "#fff",
+  },
 
   // Color pills
   colorPill: {
