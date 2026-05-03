@@ -51,6 +51,8 @@ interface Background {
   type: "solid" | "gradient" | "image";
   colors: string[];
   imageUri?: string;
+  icon: string;
+  name: string;
 }
 
 interface Draft {
@@ -72,26 +74,34 @@ const FORMATS: Record<CanvasFormat, { label: string; icon: string; w: number; h:
 };
 
 const BG_PRESETS: Background[] = [
-  { type: "solid",    colors: ["#0F0F0F"] },
-  { type: "solid",    colors: ["#FFFFFF"] },
-  { type: "solid",    colors: ["#FF3B3B"] },
-  { type: "solid",    colors: ["#1A1A2E"] },
-  { type: "solid",    colors: ["#0D1B2A"] },
-  { type: "solid",    colors: ["#1B4332"] },
-  { type: "gradient", colors: ["#FF3B3B", "#8B0000"] },
-  { type: "gradient", colors: ["#1A1A2E", "#16213E"] },
-  { type: "gradient", colors: ["#FF6B6B", "#FFD93D"] },
-  { type: "gradient", colors: ["#6C63FF", "#3F3D56"] },
-  { type: "gradient", colors: ["#11998E", "#38EF7D"] },
-  { type: "gradient", colors: ["#FC5C7D", "#6A3093"] },
-  { type: "gradient", colors: ["#F7971E", "#FFD200"] },
-  { type: "gradient", colors: ["#000000", "#434343"] },
-  { type: "gradient", colors: ["#0F2027", "#2C5364"] },
+  { type: "solid",    colors: ["#0F0F0F"], icon: "🌑", name: "Dark" },
+  { type: "solid",    colors: ["#FFFFFF"], icon: "☀️",  name: "White" },
+  { type: "solid",    colors: ["#FF3B3B"], icon: "🚨", name: "Alert" },
+  { type: "solid",    colors: ["#1A1A2E"], icon: "🌌", name: "Deep Blue" },
+  { type: "solid",    colors: ["#0D1B2A"], icon: "🌊", name: "Ocean" },
+  { type: "solid",    colors: ["#1B4332"], icon: "🌲", name: "Forest" },
+  { type: "gradient", colors: ["#FF3B3B", "#8B0000"], icon: "🔥", name: "Fire" },
+  { type: "gradient", colors: ["#1A1A2E", "#16213E"], icon: "🌃", name: "Night" },
+  { type: "gradient", colors: ["#FF6B6B", "#FFD93D"], icon: "🌅", name: "Sunset" },
+  { type: "gradient", colors: ["#6C63FF", "#3F3D56"], icon: "💜", name: "Purple" },
+  { type: "gradient", colors: ["#11998E", "#38EF7D"], icon: "💚", name: "Emerald" },
+  { type: "gradient", colors: ["#FC5C7D", "#6A3093"], icon: "🌸", name: "Pink" },
+  { type: "gradient", colors: ["#F7971E", "#FFD200"], icon: "🌟", name: "Gold" },
+  { type: "gradient", colors: ["#000000", "#434343"], icon: "💨", name: "Smoke" },
+  { type: "gradient", colors: ["#0F2027", "#2C5364"], icon: "🌐", name: "Deep Sea" },
 ];
 
-const TEXT_COLORS = [
-  "#FFFFFF","#FF3B3B","#FFD93D","#10B981","#3B82F6",
-  "#EC4899","#F97316","#8B5CF6","#06B6D4","#000000",
+const TEXT_COLORS: { hex: string; icon: string; name: string }[] = [
+  { hex: "#FFFFFF", icon: "⬜", name: "White" },
+  { hex: "#FF3B3B", icon: "🔴", name: "Red" },
+  { hex: "#FFD93D", icon: "🟡", name: "Yellow" },
+  { hex: "#10B981", icon: "🟢", name: "Green" },
+  { hex: "#3B82F6", icon: "🔵", name: "Blue" },
+  { hex: "#EC4899", icon: "🌸", name: "Pink" },
+  { hex: "#F97316", icon: "🟠", name: "Orange" },
+  { hex: "#8B5CF6", icon: "💜", name: "Purple" },
+  { hex: "#06B6D4", icon: "🩵", name: "Cyan" },
+  { hex: "#000000", icon: "⬛", name: "Black" },
 ];
 const FONT_SIZES  = [12, 16, 20, 28, 36, 48];
 const SCALE_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -105,9 +115,17 @@ const STICKER_ROWS = [
   ["💰","💳","🏦","📱","💻","📩","🎣","🕷️"],
   ["🌹","⭐","🏆","🎯","📢","📣","🔔","💬"],
 ];
-const SHAPE_COLORS = [
-  "#FF3B3B","#F97316","#FFD93D","#10B981","#3B82F6",
-  "#8B5CF6","#EC4899","#FFFFFF","#000000","#6B7280",
+const SHAPE_COLORS: { hex: string; icon: string; name: string }[] = [
+  { hex: "#FF3B3B", icon: "🔴", name: "Red" },
+  { hex: "#F97316", icon: "🟠", name: "Orange" },
+  { hex: "#FFD93D", icon: "🟡", name: "Yellow" },
+  { hex: "#10B981", icon: "🟢", name: "Green" },
+  { hex: "#3B82F6", icon: "🔵", name: "Blue" },
+  { hex: "#8B5CF6", icon: "💜", name: "Purple" },
+  { hex: "#EC4899", icon: "🌸", name: "Pink" },
+  { hex: "#FFFFFF", icon: "⬜", name: "White" },
+  { hex: "#000000", icon: "⬛", name: "Black" },
+  { hex: "#6B7280", icon: "🩶", name: "Grey" },
 ];
 
 const DRAFTS_KEY = "@studio_drafts_v2";
@@ -503,27 +521,31 @@ export default function CreatorStudio() {
             <Text style={[styles.panelTitle, { color: colors.textMuted, marginTop: 10 }]}>Background</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.bgRow}>
-                {BG_PRESETS.map((preset, i) => (
-                  <TouchableOpacity
-                    key={i}
-                    onPress={() => { setBg(preset); Haptics.selectionAsync(); }}
-                    style={[styles.bgSwatch, bg === preset && styles.bgSwatchSelected]}
-                  >
-                    {preset.type === "gradient" ? (
-                      <LinearGradient
-                        colors={preset.colors as [string, string]}
-                        style={styles.bgSwatchInner}
-                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                      />
-                    ) : (
-                      <View style={[styles.bgSwatchInner, { backgroundColor: preset.colors[0] }]} />
-                    )}
-                  </TouchableOpacity>
-                ))}
-                <TouchableOpacity onPress={pickBgImage} style={[styles.bgSwatch, { borderStyle: "dashed" }]}>
-                  <View style={[styles.bgSwatchInner, { backgroundColor: colors.muted, alignItems: "center", justifyContent: "center" }]}>
-                    <Feather name="image" size={18} color={colors.textMuted} />
-                  </View>
+                {BG_PRESETS.map((preset, i) => {
+                  const selected = bg === preset;
+                  return (
+                    <TouchableOpacity
+                      key={i}
+                      onPress={() => { setBg(preset); Haptics.selectionAsync(); }}
+                      style={[styles.bgCard, selected && styles.bgCardSelected]}
+                    >
+                      {preset.type === "gradient" ? (
+                        <LinearGradient
+                          colors={preset.colors as [string, string]}
+                          style={StyleSheet.absoluteFill}
+                          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                        />
+                      ) : (
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: preset.colors[0] }]} />
+                      )}
+                      <Text style={styles.bgCardIcon}>{preset.icon}</Text>
+                      <Text style={styles.bgCardName}>{preset.name}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+                <TouchableOpacity onPress={pickBgImage} style={[styles.bgCard, { borderStyle: "dashed", backgroundColor: colors.muted }]}>
+                  <Feather name="image" size={22} color={colors.textMuted} />
+                  <Text style={[styles.bgCardName, { color: colors.textMuted }]}>Gallery</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -598,13 +620,16 @@ export default function CreatorStudio() {
               ))}
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-              <View style={{ flexDirection: "row", gap: 8, paddingVertical: 4 }}>
+              <View style={{ flexDirection: "row", gap: 6, paddingVertical: 4 }}>
                 {SHAPE_COLORS.map((c) => (
                   <TouchableOpacity
-                    key={c}
-                    onPress={() => setShapeColor(c)}
-                    style={[styles.colorDot, { backgroundColor: c }, shapeColor === c && styles.colorDotSelected]}
-                  />
+                    key={c.hex}
+                    onPress={() => setShapeColor(c.hex)}
+                    style={[styles.colorPill, shapeColor === c.hex && { borderColor: c.hex, borderWidth: 2 }, { backgroundColor: colors.muted }]}
+                  >
+                    <Text style={styles.colorPillIcon}>{c.icon}</Text>
+                    <Text style={[styles.colorPillLabel, { color: shapeColor === c.hex ? c.hex : colors.textMuted }]}>{c.name}</Text>
+                  </TouchableOpacity>
                 ))}
               </View>
             </ScrollView>
@@ -784,10 +809,16 @@ export default function CreatorStudio() {
 
             <Text style={[styles.optionLabel, { color: colors.textMuted }]}>Color</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: "row", gap: 8 }}>
+              <View style={{ flexDirection: "row", gap: 6 }}>
                 {TEXT_COLORS.map((c) => (
-                  <TouchableOpacity key={c} onPress={() => setTextColor(c)}
-                    style={[styles.colorDot, { backgroundColor: c }, textColor === c && styles.colorDotSelected]} />
+                  <TouchableOpacity
+                    key={c.hex}
+                    onPress={() => setTextColor(c.hex)}
+                    style={[styles.colorPill, textColor === c.hex && { borderColor: c.hex, borderWidth: 2 }, { backgroundColor: colors.muted }]}
+                  >
+                    <Text style={styles.colorPillIcon}>{c.icon}</Text>
+                    <Text style={[styles.colorPillLabel, { color: textColor === c.hex ? c.hex : colors.textMuted }]}>{c.name}</Text>
+                  </TouchableOpacity>
                 ))}
               </View>
             </ScrollView>
@@ -934,14 +965,20 @@ const styles = StyleSheet.create({
   formatIcon: { fontSize: 14 },
   formatLabel: { fontFamily: "Inter_600SemiBold", fontSize: 12 },
 
-  // BG swatches
-  bgRow: { flexDirection: "row", gap: 8 },
-  bgSwatch: {
-    width: 50, height: 50, borderRadius: 10,
+  // BG cards
+  bgRow: { flexDirection: "row", gap: 8, paddingVertical: 4 },
+  bgCard: {
+    width: 68, height: 80, borderRadius: 12,
     borderWidth: 2, borderColor: "transparent", overflow: "hidden",
+    alignItems: "center", justifyContent: "center", gap: 2,
   },
-  bgSwatchSelected: { borderColor: "#FF3B3B" },
-  bgSwatchInner: { flex: 1 },
+  bgCardSelected: { borderColor: "#FF3B3B" },
+  bgCardIcon: { fontSize: 22 },
+  bgCardName: {
+    fontFamily: "Inter_600SemiBold", fontSize: 9, color: "#fff",
+    textAlign: "center", textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3,
+  },
 
   // Buttons
   actionBtn: {
@@ -960,12 +997,14 @@ const styles = StyleSheet.create({
   shapeTypeBtn: { flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 10 },
   shapeTypeBtnLabel: { fontFamily: "Inter_600SemiBold", fontSize: 13 },
 
-  // Colors
-  colorDot: {
-    width: 28, height: 28, borderRadius: 14,
+  // Color pills
+  colorPill: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 8, paddingVertical: 6, borderRadius: 20,
     borderWidth: 2, borderColor: "transparent",
   },
-  colorDotSelected: { borderColor: "#fff", transform: [{ scale: 1.25 }] },
+  colorPillIcon: { fontSize: 14 },
+  colorPillLabel: { fontFamily: "Inter_600SemiBold", fontSize: 11 },
 
   // Text modal
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
