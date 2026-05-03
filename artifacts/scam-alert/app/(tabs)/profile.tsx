@@ -519,21 +519,32 @@ export default function ProfileScreen() {
                 <Feather name="chevron-right" size={14} color={colors.textMuted} />
               </TouchableOpacity>
 
-              {reels.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.quickLink, { borderColor: "#0A66C260", backgroundColor: "#0A66C20D" }]}
-                  onPress={() => setShareReel(reels[0])}
-                >
-                  <Text style={{ fontSize: 16 }}>📣</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.quickLinkText, { color: colors.text }]}>Share to Social Media</Text>
-                    <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
-                      Facebook, TikTok, Instagram, Reddit & more
-                    </Text>
-                  </View>
-                  <Feather name="chevron-right" size={14} color={colors.textMuted} />
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                style={[styles.quickLink, { borderColor: "#0A66C260", backgroundColor: "#0A66C20D" }]}
+                onPress={() => {
+                  if (reels.length > 0) {
+                    setShareReel(reels[0]);
+                  } else {
+                    Alert.alert(
+                      "No reels yet",
+                      "Post your first reel to share it across social media.",
+                      [
+                        { text: "Post a Reel", onPress: () => router.push("/reels-upload" as never) },
+                        { text: "Cancel", style: "cancel" },
+                      ],
+                    );
+                  }
+                }}
+              >
+                <Text style={{ fontSize: 16 }}>📣</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.quickLinkText, { color: colors.text }]}>Share to Social Media</Text>
+                  <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
+                    Facebook, TikTok, Instagram, Reddit & more
+                  </Text>
+                </View>
+                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+              </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.quickLink, { borderColor: "#7C3AED60", backgroundColor: "#7C3AED0D" }]}
