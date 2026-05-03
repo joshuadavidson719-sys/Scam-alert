@@ -65,23 +65,15 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
                 if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
               }}
               onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
-              activeOpacity={0.75}
+              activeOpacity={0.7}
             >
-              {/* Circle icon container */}
-              <View
-                style={[
-                  styles.circle,
-                  isFocused
-                    ? { backgroundColor: colors.primary }
-                    : { backgroundColor: "transparent" },
-                ]}
-              >
+              {/* Plain icon — no circle/bucket background */}
+              <View style={styles.iconWrap}>
                 <Feather
                   name={isFocused ? cfg.activeIcon : cfg.icon}
-                  size={20}
-                  color={isFocused ? "#fff" : (colors.mutedForeground ?? colors.textSecondary)}
+                  size={22}
+                  color={isFocused ? colors.primary : (colors.mutedForeground ?? colors.textSecondary)}
                 />
-                {/* Badge */}
                 {badge !== undefined && badge !== null && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{badge}</Text>
@@ -129,12 +121,10 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 4,
   },
-  circle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  iconWrap: {
     alignItems: "center",
     justifyContent: "center",
+    height: 28,
   },
   badge: {
     position: "absolute",
