@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   Dimensions, ActivityIndicator, TextInput, Modal,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform, Alert,
 } from "react-native";
 import { Video, ResizeMode, AVPlaybackStatus, Audio } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
@@ -12,12 +12,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import {
   collection, query, where, orderBy, getDocs, doc,
   updateDoc, arrayUnion, arrayRemove, increment, addDoc,
-  onSnapshot, serverTimestamp, limit,
+  onSnapshot, serverTimestamp, limit, deleteDoc,
 } from "firebase/firestore";
+import { ref as storageRef, deleteObject } from "firebase/storage";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 
@@ -54,21 +55,59 @@ const ST = StyleSheet.create({
 
 // ── Single Reel Item ────────────────────────────────────────────────────────
 function ReelItem({
-  reel, isActive, currentUserId, onLike, onOpenComments,
+  reel, isActive, isNear, currentUserId, onLike, onOpenComments, onDelete,
 }: {
   reel: ReelDoc;
   isActive: boolean;
+  isNear: boolean;
   currentUserId?: string;
   onLike: (id: string, liked: boolean) => void;
   onOpenComments: (reel: ReelDoc) => void;
+  onDelete: (id: string) => void;
 }) {
   const videoRef  = useRef<InstanceType<typeof Video>>(null);
   const soundRef  = useRef<Audio.Sound | null>(null);
   const [paused, setPaused]     = useState(false);
   const [viewed, setViewed]     = useState(false);
   const [blocked, setBlocked]   = useState(false); // autoplay blocked by browser
-  const liked = currentUserId ? reel.likes.includes(currentUserId) : false;
+  const isOwner = !!currentUserId && currentUserId === reel.userId;
+  const liked   = currentUserId ? reel.likes.includes(currentUserId) : false;
   const hasMusic = !!reel.musicUrl;
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Reel",
+      "This reel and its video will be permanently removed. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Delete Firestore document
+              await deleteDoc(doc(db, "reels", reel.id));
+              // Attempt to delete the video from Storage
+              try {
+                // Extract the path from the download URL
+                const url = new URL(reel.videoUrl);
+                const pathEncoded = url.pathname.split("/o/")[1]?.split("?")[0];
+                if (pathEncoded) {
+                  const path = decodeURIComponent(pathEncoded);
+                  await deleteObject(storageRef(storage, path));
+                }
+              } catch {
+                // Storage delete non-fatal — doc is already gone
+              }
+              onDelete(reel.id);
+            } catch {
+              Alert.alert("Error", "Could not delete the reel. Please try again.");
+            }
+          },
+        },
+      ],
+    );
+  };
 
   // Load music when reel becomes active
   useEffect(() => {
@@ -143,7 +182,7 @@ function ReelItem({
       <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleTap}>
         <Video
           ref={videoRef}
-          source={{ uri: reel.videoUrl }}
+          source={isNear ? { uri: reel.videoUrl } : undefined}
           style={StyleSheet.absoluteFill}
           resizeMode={ResizeMode.COVER}
           shouldPlay={isActive && !paused && !blocked}
@@ -217,6 +256,12 @@ function ReelItem({
           <TouchableOpacity style={S.actionBtn} onPress={togglePause}>
             <Feather name={paused ? "volume-x" : "music"} size={22} color="#EC4899" />
             <Text style={[S.actionCount, { color: "#EC4899" }]}>Music</Text>
+          </TouchableOpacity>
+        )}
+        {isOwner && (
+          <TouchableOpacity style={S.actionBtn} onPress={handleDelete}>
+            <Feather name="trash-2" size={22} color="#FF3B3B" />
+            <Text style={[S.actionCount, { color: "#FF3B3B" }]}>Delete</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -338,6 +383,16 @@ export default function ReelsViewer() {
   const [activeIndex, setActiveIndex] = useState(parseInt(params.startIndex ?? "0") || 0);
   const [commentReel, setCommentReel] = useState<ReelDoc | null>(null);
 
+  const handleDeleteReel = useCallback((deletedId: string) => {
+    setReels(prev => {
+      const next = prev.filter(r => r.id !== deletedId);
+      // If we deleted the last reel, go back
+      if (next.length === 0) { router.back(); return prev; }
+      return next;
+    });
+    setActiveIndex(prev => Math.max(0, prev - 1));
+  }, []);
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -444,13 +499,19 @@ export default function ReelsViewer() {
         getItemLayout={(_, index) => ({ length: SH, offset: SH * index, index })}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+        windowSize={3}
+        initialNumToRender={1}
+        maxToRenderPerBatch={1}
+        removeClippedSubviews
         renderItem={({ item, index }) => (
           <ReelItem
             reel={item}
             isActive={index === activeIndex}
+            isNear={Math.abs(index - activeIndex) <= 1}
             currentUserId={user?.uid}
             onLike={handleLike}
             onOpenComments={setCommentReel}
+            onDelete={handleDeleteReel}
           />
         )}
       />
