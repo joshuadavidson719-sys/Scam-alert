@@ -210,14 +210,14 @@ export default function SettingsScreen() {
             <Feather name="chevron-right" size={18} color={colors.textMuted} />
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <View style={styles.row}>
+          <TouchableOpacity style={styles.row} onPress={() => router.push("/tos" as never)}>
             <Feather name="shield" size={18} color={colors.primary} />
             <View style={{ flex: 1 }}>
-              <Text style={[styles.rowTitle, { color: colors.text }]}>Privacy Policy</Text>
-              <Text style={[styles.rowSub, { color: colors.textMuted }]}>User data & privacy</Text>
+              <Text style={[styles.rowTitle, { color: colors.text }]}>Terms, Privacy & DMCA</Text>
+              <Text style={[styles.rowSub, { color: colors.textMuted }]}>Legal · Copyright · Data policy</Text>
             </View>
             <Feather name="chevron-right" size={18} color={colors.textMuted} />
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Danger Zone */}

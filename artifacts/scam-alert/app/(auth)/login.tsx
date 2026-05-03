@@ -149,9 +149,16 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.disclaimer, { color: colors.textMuted }]}>
-          All content is user-submitted and for awareness purposes only.
-        </Text>
+        <View style={{ alignItems: "center", gap: 6, marginTop: 32 }}>
+          <Text style={[styles.disclaimer, { color: colors.textMuted }]}>
+            All content is user-submitted and for awareness purposes only.
+          </Text>
+          <TouchableOpacity onPress={() => router.push("/tos" as never)}>
+            <Text style={[styles.disclaimer, { color: colors.primary }]}>
+              Terms of Service · Privacy Policy · DMCA
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );

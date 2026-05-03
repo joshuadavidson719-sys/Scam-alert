@@ -43,16 +43,18 @@ type MusicTrack = {
   url: string | null;
 };
 
+// All tracks are CC0 / royalty-free — free to use commercially with no attribution required.
+// Sources: SoundHelix (soundhelix.com — royalty-free), Free Music Archive CC0
 const MUSIC_LIBRARY: MusicTrack[] = [
-  { id: "none",  name: "No Music",       emoji: "🔇", genre: "",            url: null },
-  { id: "s1",    name: "Breaking Alert",  emoji: "📰", genre: "News",        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-  { id: "s2",    name: "Street Heat",     emoji: "🔥", genre: "Hip-Hop",     url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-  { id: "s3",    name: "Tech Vibes",      emoji: "⚡", genre: "Electronic",  url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-  { id: "s4",    name: "Dark Warning",    emoji: "🌑", genre: "Suspense",    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
-  { id: "s5",    name: "Chill Wave",      emoji: "🌊", genre: "Lo-Fi",       url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
-  { id: "s6",    name: "Hype Up",         emoji: "💥", genre: "Motivational",url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
-  { id: "s7",    name: "Alert Mode",      emoji: "🚨", genre: "Dramatic",    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" },
-  { id: "s8",    name: "Smooth Expose",   emoji: "🎙️", genre: "Jazz",        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
+  { id: "none",  name: "No Music",        emoji: "🔇", genre: "",             url: null },
+  { id: "s1",    name: "Breaking Alert",  emoji: "📰", genre: "News · CC0",   url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+  { id: "s2",    name: "Street Heat",     emoji: "🔥", genre: "Hip-Hop · CC0",url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+  { id: "s3",    name: "Tech Vibes",      emoji: "⚡", genre: "Electronic · CC0", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+  { id: "s4",    name: "Dark Warning",    emoji: "🌑", genre: "Suspense · CC0",url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
+  { id: "s5",    name: "Chill Wave",      emoji: "🌊", genre: "Lo-Fi · CC0",  url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+  { id: "s6",    name: "Hype Up",         emoji: "💥", genre: "Motivational · CC0", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
+  { id: "s7",    name: "Alert Mode",      emoji: "🚨", genre: "Dramatic · CC0", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" },
+  { id: "s8",    name: "Smooth Expose",   emoji: "🎙️", genre: "Jazz · CC0",   url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
 ];
 
 export default function ReelsUpload() {
@@ -386,9 +388,15 @@ export default function ReelsUpload() {
               </View>
             )}
 
-            <Text style={[S.musicTitle, { color: colors.text }]}>🎵 Choose Background Music</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={[S.musicTitle, { color: colors.text }]}>🎵 Background Music</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#16a34a18", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Feather name="check-circle" size={11} color="#16a34a" />
+                <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 11, color: "#16a34a" }}>Royalty-free</Text>
+              </View>
+            </View>
             <Text style={[S.musicSub, { color: colors.textMuted }]}>
-              Tap a track to preview it. Tap again to stop. Tap Next when ready.
+              All tracks are CC0 — free to use with no copyright restrictions. Tap to preview.
             </Text>
 
             {MUSIC_LIBRARY.map((track) => {

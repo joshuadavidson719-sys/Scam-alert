@@ -157,7 +157,14 @@ export default function SignupScreen() {
         </View>
 
         <Text style={[styles.terms, { color: colors.textMuted }]}>
-          By signing up, you agree to our Community Guidelines. No hate speech, harassment, sexual content, violence, or illegal activity.
+          By signing up you agree to our{" "}
+          <Text
+            style={{ color: colors.primary, fontFamily: "Inter_600SemiBold" }}
+            onPress={() => router.push("/tos" as never)}
+          >
+            Terms of Service
+          </Text>
+          {" "}and Community Guidelines. No hate speech, harassment, or illegal activity.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
