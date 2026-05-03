@@ -179,22 +179,25 @@ export default function ProfileScreen() {
                 {profile.isAdmin && (
                   <TouchableOpacity
                     onPress={() => router.push("/admin" as never)}
-                    style={[styles.iconBtn, { backgroundColor: colors.card }]}
+                    style={[styles.iconBtn, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "40" }]}
                   >
-                    <Feather name="shield" size={18} color={colors.primary} />
+                    <Feather name="shield" size={16} color={colors.primary} />
+                    <Text style={[styles.iconBtnLabel, { color: colors.primary }]}>Admin</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
                   onPress={() => router.push("/legal/privacy" as never)}
-                  style={[styles.iconBtn, { backgroundColor: colors.card }]}
+                  style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
                 >
-                  <Feather name="info" size={18} color={colors.textSecondary} />
+                  <Feather name="file-text" size={16} color={colors.textSecondary} />
+                  <Text style={[styles.iconBtnLabel, { color: colors.textSecondary }]}>Privacy</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleLogout}
-                  style={[styles.iconBtn, { backgroundColor: colors.card }]}
+                  style={[styles.iconBtn, { backgroundColor: "#EF444415", borderColor: "#EF444430" }]}
                 >
-                  <Feather name="log-out" size={18} color={colors.textSecondary} />
+                  <Feather name="log-out" size={16} color="#EF4444" />
+                  <Text style={[styles.iconBtnLabel, { color: "#EF4444" }]}>Log Out</Text>
                 </TouchableOpacity>
               </View>
 
@@ -503,11 +506,17 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  iconBtnLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
   },
   avatarSection: {
     alignItems: "center",
