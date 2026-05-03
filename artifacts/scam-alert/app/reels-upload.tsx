@@ -3,7 +3,8 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   Alert, ActivityIndicator, ScrollView, FlatList,
 } from "react-native";
-import { Video, ResizeMode, Audio } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
+import { Audio } from "expo-av";
 import * as ImagePicker from "expo-image-picker";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -15,6 +16,25 @@ import { useAuth } from "@/context/AuthContext";
 import { db, storage } from "@/lib/firebase";
 
 type Step = "pick" | "music" | "caption";
+
+// Small wrapper so useVideoPlayer can be called at component top level
+function VideoPreview({ uri, style }: { uri: string; style: object }) {
+  const player = useVideoPlayer({ uri }, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+  return (
+    <VideoView
+      player={player}
+      style={style as any}
+      contentFit="cover"
+      nativeControls={false}
+      allowsFullscreen={false}
+      allowsPictureInPicture={false}
+    />
+  );
+}
 
 type MusicTrack = {
   id: string;
@@ -40,7 +60,6 @@ export default function ReelsUpload() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
-  const videoRef = useRef<InstanceType<typeof Video>>(null);
   const params = useLocalSearchParams<{
     remixCaption?: string;
     remixMusicUrl?: string;
@@ -361,14 +380,7 @@ export default function ReelsUpload() {
             {/* Mini video preview */}
             {videoUri && (
               <View style={[S.miniPreview, { backgroundColor: "#000" }]}>
-                <Video
-                  source={{ uri: videoUri }}
-                  style={StyleSheet.absoluteFill}
-                  resizeMode={ResizeMode.COVER}
-                  shouldPlay
-                  isLooping
-                  isMuted
-                />
+                <VideoPreview uri={videoUri} style={StyleSheet.absoluteFill} />
                 <View style={S.miniLabel}>
                   <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 11, color: "#fff" }}>Your Reel</Text>
                 </View>
@@ -447,15 +459,7 @@ export default function ReelsUpload() {
             {/* Video preview */}
             {videoUri && (
               <View style={S.previewWrap}>
-                <Video
-                  ref={videoRef}
-                  source={{ uri: videoUri }}
-                  style={S.preview}
-                  resizeMode={ResizeMode.COVER}
-                  shouldPlay
-                  isLooping
-                  isMuted
-                />
+                <VideoPreview uri={videoUri} style={S.preview} />
                 {/* Music badge */}
                 {selectedMusic.id !== "none" && (
                   <View style={S.musicBadge}>

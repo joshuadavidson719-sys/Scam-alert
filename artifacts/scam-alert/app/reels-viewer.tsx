@@ -4,7 +4,8 @@ import {
   Dimensions, ActivityIndicator, TextInput, Modal,
   KeyboardAvoidingView, Platform, Alert,
 } from "react-native";
-import { Video, ResizeMode, AVPlaybackStatus, Audio } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
+import { Audio } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -65,46 +66,51 @@ function ReelItem({
   onOpenComments: (reel: ReelDoc) => void;
   onDelete: (id: string) => void;
 }) {
-  const videoRef  = useRef<InstanceType<typeof Video>>(null);
-  const soundRef  = useRef<Audio.Sound | null>(null);
-  const [paused, setPaused]     = useState(false);
-  const [viewed, setViewed]     = useState(false);
-  const [blocked, setBlocked]   = useState(false); // autoplay blocked by browser
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const [paused, setPaused]   = useState(false);
+  const [viewed, setViewed]   = useState(false);
+  const [blocked, setBlocked] = useState(false);
   const isOwner = !!currentUserId && currentUserId === reel.userId;
   const liked   = currentUserId ? reel.likes.includes(currentUserId) : false;
   const hasMusic = !!reel.musicUrl;
 
-  const handleDelete = () => {
-    Alert.alert(
-      "Delete Reel",
-      "This reel and its video will be permanently removed. This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            // Remove from UI immediately — cleanup runs in background
-            onDelete(reel.id);
-            // Firestore + Storage cleanup (non-blocking)
-            deleteDoc(doc(db, "reels", reel.id)).catch(() => {});
-            try {
-              const url = new URL(reel.videoUrl);
-              const pathEncoded = url.pathname.split("/o/")[1]?.split("?")[0];
-              if (pathEncoded) {
-                const path = decodeURIComponent(pathEncoded);
-                deleteObject(storageRef(storage, path)).catch(() => {});
-              }
-            } catch {
-              // non-fatal
-            }
-          },
-        },
-      ],
-    );
-  };
+  // ── expo-video player ────────────────────────────────────────────────────
+  const player = useVideoPlayer(
+    isNear ? { uri: reel.videoUrl } : null,
+    (p) => {
+      p.loop = true;
+      p.muted = hasMusic;
+    },
+  );
 
-  // Load music when reel becomes active
+  // When this reel moves in/out of the near window, load or stop
+  useEffect(() => {
+    if (isNear) {
+      try { player.replace({ uri: reel.videoUrl }); } catch { /* non-fatal */ }
+    }
+  }, [isNear, reel.videoUrl]);
+
+  // Play or pause based on active state
+  useEffect(() => {
+    if (isActive && !paused && !blocked) {
+      try { player.play(); } catch { /* non-fatal */ }
+    } else {
+      try { player.pause(); } catch { /* non-fatal */ }
+    }
+  }, [isActive, paused, blocked]);
+
+  // Track view count once the video starts playing
+  useEffect(() => {
+    const sub = player.addListener("playingChange", ({ isPlaying }: { isPlaying: boolean }) => {
+      if (isPlaying && !viewed) {
+        setViewed(true);
+        updateDoc(doc(db, "reels", reel.id), { views: increment(1) }).catch(() => {});
+      }
+    });
+    return () => sub.remove();
+  }, [reel.id, viewed]);
+
+  // ── Background music (expo-av Audio) ────────────────────────────────────
   useEffect(() => {
     if (!hasMusic || !reel.musicUrl) return;
     let cancelled = false;
@@ -116,7 +122,6 @@ function ReelItem({
       if (cancelled) { sound.unloadAsync(); return; }
       soundRef.current = sound;
     }).catch(() => {});
-
     return () => {
       cancelled = true;
       soundRef.current?.unloadAsync().catch(() => {});
@@ -124,70 +129,70 @@ function ReelItem({
     };
   }, [reel.id]);
 
-  // Sync play/pause with isActive
   useEffect(() => {
     if (!isActive || paused) {
-      videoRef.current?.pauseAsync().catch(() => {});
       soundRef.current?.pauseAsync().catch(() => {});
     } else {
-      videoRef.current?.playAsync().catch(() => {});
       soundRef.current?.playAsync().catch(() => {});
     }
   }, [isActive, paused]);
 
-  const handlePlayback = (status: AVPlaybackStatus) => {
-    if (!status.isLoaded) return;
-    if (status.isPlaying && !viewed) {
-      setViewed(true);
-      updateDoc(doc(db, "reels", reel.id), { views: increment(1) }).catch(() => {});
-    }
-  };
-
-  const togglePause = () => {
-    const next = !paused;
-    setPaused(next);
-    if (next) {
-      videoRef.current?.pauseAsync().catch(() => {});
-      soundRef.current?.pauseAsync().catch(() => {});
-    } else {
-      videoRef.current?.playAsync().catch(() => {});
-      soundRef.current?.playAsync().catch(() => {});
-    }
-  };
-
-  const handlePlaybackError = () => {
-    // Autoplay blocked by browser — show tap-to-play prompt
-    setBlocked(true);
-  };
-
+  // ── Interaction handlers ────────────────────────────────────────────────
   const handleTap = () => {
     if (blocked) {
       setBlocked(false);
       setPaused(false);
-      videoRef.current?.playAsync().catch(() => {});
+      try { player.play(); } catch {}
       soundRef.current?.playAsync().catch(() => {});
     } else {
-      togglePause();
+      const next = !paused;
+      setPaused(next);
+      if (next) {
+        try { player.pause(); } catch {}
+        soundRef.current?.pauseAsync().catch(() => {});
+      } else {
+        try { player.play(); } catch {}
+        soundRef.current?.playAsync().catch(() => {});
+      }
     }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Reel",
+      "This reel and its video will be permanently removed. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            onDelete(reel.id);
+            deleteDoc(doc(db, "reels", reel.id)).catch(() => {});
+            try {
+              const url = new URL(reel.videoUrl);
+              const pathEncoded = url.pathname.split("/o/")[1]?.split("?")[0];
+              if (pathEncoded) {
+                deleteObject(storageRef(storage, decodeURIComponent(pathEncoded))).catch(() => {});
+              }
+            } catch { /* non-fatal */ }
+          },
+        },
+      ],
+    );
   };
 
   return (
     <View style={S.reel}>
-      {/* Video — muted when music track is attached */}
+      {/* Video layer */}
       <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleTap}>
-        <Video
-          ref={videoRef}
-          source={isNear ? { uri: reel.videoUrl } : undefined}
+        <VideoView
+          player={player}
           style={StyleSheet.absoluteFill}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay={isActive && !paused && !blocked}
-          isLooping
-          isMuted={hasMusic}
-          onPlaybackStatusUpdate={(status) => {
-            handlePlayback(status);
-            if (!status.isLoaded && (status as any).error) handlePlaybackError();
-          }}
-          onError={handlePlaybackError}
+          contentFit="cover"
+          nativeControls={false}
+          allowsFullscreen={false}
+          allowsPictureInPicture={false}
         />
         <LinearGradient
           colors={["transparent", "transparent", "rgba(0,0,0,0.82)"]}
@@ -221,7 +226,6 @@ function ReelItem({
         </TouchableOpacity>
         <Text style={S.caption} numberOfLines={3}>{reel.caption}</Text>
 
-        {/* Music ticker */}
         {hasMusic && reel.musicName && (
           <MusicTicker name={reel.musicName} emoji={reel.musicEmoji ?? "🎵"} />
         )}
@@ -248,7 +252,7 @@ function ReelItem({
           <Text style={S.actionCount}>Share</Text>
         </TouchableOpacity>
         {hasMusic && (
-          <TouchableOpacity style={S.actionBtn} onPress={togglePause}>
+          <TouchableOpacity style={S.actionBtn} onPress={handleTap}>
             <Feather name={paused ? "volume-x" : "music"} size={22} color="#EC4899" />
             <Text style={[S.actionCount, { color: "#EC4899" }]}>Music</Text>
           </TouchableOpacity>
@@ -282,7 +286,6 @@ function CommentsModal({
 
   useEffect(() => {
     if (!reel || !visible) return;
-    // where + orderBy on different fields needs a composite index — sort client-side
     const q = query(
       collection(db, "reelComments"),
       where("reelId", "==", reel.id),
@@ -384,7 +387,6 @@ export default function ReelsViewer() {
   const handleDeleteReel = useCallback((deletedId: string) => {
     setReels(prev => {
       const next = prev.filter(r => r.id !== deletedId);
-      // If we deleted the last reel, go back
       if (next.length === 0) { router.back(); return prev; }
       return next;
     });
@@ -396,11 +398,7 @@ export default function ReelsViewer() {
       try {
         let q;
         if (params.userId) {
-          // Use only where() — sort client-side to avoid needing a composite index
-          q = query(
-            collection(db, "reels"),
-            where("userId", "==", params.userId),
-          );
+          q = query(collection(db, "reels"), where("userId", "==", params.userId));
         } else {
           q = query(collection(db, "reels"), orderBy("createdAt", "desc"), limit(50));
         }
@@ -411,7 +409,7 @@ export default function ReelsViewer() {
             ...d.data(),
             createdAt: d.data().createdAt?.toMillis?.() ?? Date.now(),
           } as ReelDoc))
-          .sort((a, b) => b.createdAt - a.createdAt); // newest first
+          .sort((a, b) => b.createdAt - a.createdAt);
         setReels(data);
       } catch (err) {
         console.error("[ReelsViewer] fetch error:", err);
