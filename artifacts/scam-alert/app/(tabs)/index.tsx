@@ -117,19 +117,22 @@ export default function HomeScreen() {
               onPress={() => router.push("/stories" as never)}
               style={[styles.iconBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
             >
-              <Feather name="camera" size={18} color={colors.textSecondary} />
+              <Feather name="camera" size={16} color={colors.textSecondary} />
+              <Text style={[styles.iconBtnLabel, { color: colors.textSecondary }]}>Stories</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/chatbot" as never)}
               style={[styles.iconBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
             >
-              <Feather name="cpu" size={18} color={colors.textSecondary} />
+              <Feather name="cpu" size={16} color={colors.textSecondary} />
+              <Text style={[styles.iconBtnLabel, { color: colors.textSecondary }]}>AI Chat</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/scam-checker" as never)}
-              style={[styles.iconBtn, { backgroundColor: colors.primary + "20" }]}
+              style={[styles.iconBtn, { backgroundColor: colors.primary + "20", borderWidth: 1, borderColor: colors.primary + "40" }]}
             >
-              <Feather name="shield" size={20} color={colors.primary} />
+              <Feather name="shield" size={16} color={colors.primary} />
+              <Text style={[styles.iconBtnLabel, { color: colors.primary }]}>Checker</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -271,11 +274,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 2,
+    minWidth: 52,
+  },
+  iconBtnLabel: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 9,
+    letterSpacing: 0.2,
   },
   categories: {
     paddingHorizontal: 16,
