@@ -182,18 +182,21 @@ function ReelItem({
       {/* ── Full-screen tap to pause/resume ── */}
       <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleTap}>
 
-        {/* ── Video ── */}
+        {/* ── Video ── only mount when near to save memory & bandwidth ── */}
         {Platform.OS === "web" ? (
-          React.createElement("video", {
+          isNear ? React.createElement("video", {
             key: reel.videoUrl,
             src: reel.videoUrl,
-            autoPlay: true,
             muted: true,
             loop: true,
             playsInline: true,
-            ref: (el: HTMLVideoElement | null) => { webVideoRef.current = el; },
+            preload: isActive ? "auto" : "metadata",
+            ref: (el: HTMLVideoElement | null) => {
+              webVideoRef.current = el;
+              if (el && isActive && !paused) el.play().catch(() => {});
+            },
             style: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" },
-          })
+          }) : null
         ) : (
           <VideoView
             player={player}
@@ -435,7 +438,7 @@ export default function ReelsViewer() {
     }
   }, []);
 
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 75 }).current;
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   const handleLike = async (reelId: string, liked: boolean) => {
     if (!user) return;
@@ -508,6 +511,7 @@ export default function ReelsViewer() {
         data={reels}
         keyExtractor={r => r.id}
         pagingEnabled
+        decelerationRate="fast"
         showsVerticalScrollIndicator={false}
         initialScrollIndex={activeIndex}
         getItemLayout={(_, index) => ({ length: SH, offset: SH * index, index })}
@@ -516,7 +520,8 @@ export default function ReelsViewer() {
         windowSize={3}
         initialNumToRender={1}
         maxToRenderPerBatch={1}
-        removeClippedSubviews
+        updateCellsBatchingPeriod={50}
+        removeClippedSubviews={Platform.OS !== "web"}
         renderItem={({ item, index }) => (
           <ReelItem
             reel={item}
