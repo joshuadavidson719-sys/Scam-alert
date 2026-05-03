@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -64,11 +63,9 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoSection}>
-          <Image
-            source={require("@/assets/images/icon.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <View style={[styles.logoCircle, { backgroundColor: colors.primary }]}>
+            <Feather name="shield" size={38} color="#fff" />
+          </View>
           <Text style={[styles.appName, { color: colors.text }]}>Scam Alert</Text>
           <Text style={[styles.tagline, { color: colors.textSecondary }]}>
             Stay informed. Stay safe.
@@ -170,10 +167,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 40,
   },
-  logo: {
-    width: 90,
-    height: 90,
-    marginBottom: 12,
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+    shadowColor: "#FF3B3B",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   appName: {
     fontFamily: "Inter_700Bold",

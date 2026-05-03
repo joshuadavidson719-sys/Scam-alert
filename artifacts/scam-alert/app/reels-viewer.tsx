@@ -75,29 +75,43 @@ function ReelItem({
   const hasMusic = !!reel.musicUrl;
 
   // ── expo-video player ────────────────────────────────────────────────────
+  // On web, browsers block autoplay of unmuted video → always mute on web.
+  // Music is handled separately by expo-av Audio and doesn't play on web anyway.
+  const muteVideo = hasMusic || Platform.OS === "web";
+
   const player = useVideoPlayer(
     isNear ? { uri: reel.videoUrl } : null,
     (p) => {
       p.loop = true;
-      p.muted = hasMusic;
+      p.muted = muteVideo;
     },
   );
 
-  // When this reel moves in/out of the near window, load or stop
+  // When this reel moves in/out of the near window, load source
   useEffect(() => {
     if (isNear) {
       try { player.replaceAsync({ uri: reel.videoUrl }).catch(() => {}); } catch { /* non-fatal */ }
     }
   }, [isNear, reel.videoUrl]);
 
-  // Play or pause based on active state
+  // Play or pause based on active state — catch browser autoplay rejections
   useEffect(() => {
     if (isActive && !paused && !blocked) {
-      try { player.play(); } catch { /* non-fatal */ }
+      try {
+        Promise.resolve(player.play()).catch(() => setBlocked(true));
+      } catch { setBlocked(true); }
     } else {
       try { player.pause(); } catch { /* non-fatal */ }
     }
   }, [isActive, paused, blocked]);
+
+  // Detect load errors and blocked autoplay via status events
+  useEffect(() => {
+    const sub = player.addListener("statusChange", ({ status }: { status: string }) => {
+      if (status === "error") setBlocked(true);
+    });
+    return () => sub.remove();
+  }, []);
 
   // Track view count once the video starts playing
   useEffect(() => {

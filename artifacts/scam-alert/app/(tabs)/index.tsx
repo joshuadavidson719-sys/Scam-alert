@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
-  Image,
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -103,11 +102,9 @@ export default function HomeScreen() {
       >
         <View style={styles.headerTop}>
           <View style={styles.logoRow}>
-            <Image
-              source={require("@/assets/images/icon.png")}
-              style={styles.headerLogo}
-              resizeMode="contain"
-            />
+            <View style={[styles.headerLogoCircle, { backgroundColor: colors.primary }]}>
+              <Feather name="shield" size={14} color="#fff" />
+            </View>
             <Text style={[styles.headerTitle, { color: colors.text }]}>
               Scam Alert
             </Text>
@@ -260,9 +257,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  headerLogo: {
-    width: 32,
-    height: 32,
+  headerLogoCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     fontFamily: "Inter_700Bold",
