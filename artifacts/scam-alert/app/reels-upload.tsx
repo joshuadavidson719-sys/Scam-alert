@@ -28,23 +28,38 @@ export default function ReelsUpload() {
 
   const pickVideo = async () => {
     try {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) {
+      // Check current permission first, only prompt if not already granted
+      let { granted, canAskAgain } = await ImagePicker.getMediaLibraryPermissionsAsync();
+      if (!granted) {
+        if (!canAskAgain) {
+          Alert.alert(
+            "Permission Denied",
+            "Photo library access was denied. Please enable it in your device Settings.",
+          );
+          return;
+        }
+        const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        granted = res.granted;
+      }
+      if (!granted) {
         Alert.alert("Permission Needed", "Allow Scam Alert to access your photo library to pick a video.");
         return;
       }
+
+      // allowsEditing + videoMaxDuration together cause silent abort on Android (SDK 54 bug)
+      // Drop allowsEditing for video — full clip is picked cleanly
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-        allowsEditing: true,
+        mediaTypes: ["videos"] as any,
+        allowsEditing: false,
         videoMaxDuration: 60,
-        quality: 0.8,
       });
-      if (!result.canceled && result.assets[0]) {
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
         setVideoUri(result.assets[0].uri);
         setStep("caption");
       }
-    } catch {
-      Alert.alert("Error", "Could not open your photo library.");
+    } catch (err) {
+      Alert.alert("Error", "Could not open your photo library. Please try again.");
     }
   };
 
