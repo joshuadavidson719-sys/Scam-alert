@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   Alert, ActivityIndicator, ScrollView, FlatList,
 } from "react-native";
-import { Video, ResizeMode, Audio, Sound } from "expo-av";
+import { Video, ResizeMode, Audio } from "expo-av";
 import * as ImagePicker from "expo-image-picker";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -56,7 +56,7 @@ export default function ReelsUpload() {
   const [selectedMusic, setSelectedMusic] = useState<MusicTrack>(MUSIC_LIBRARY[0]);
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
-  const previewSound = useRef<InstanceType<typeof Sound> | null>(null);
+  const previewSound = useRef<Audio.Sound | null>(null);
   const [isRemix, setIsRemix]           = useState(false);
 
   // Stop preview sound on unmount
@@ -179,7 +179,18 @@ export default function ReelsUpload() {
   };
 
   const handlePost = async () => {
-    if (!videoUri || !user || !profile) return;
+    if (!videoUri) {
+      Alert.alert("No video", "Please pick or record a video first.");
+      return;
+    }
+    if (!user) {
+      Alert.alert("Not signed in", "Please sign in to post a reel.");
+      return;
+    }
+    if (!profile) {
+      Alert.alert("Profile loading", "Your profile is still loading. Please wait a moment and try again.");
+      return;
+    }
     if (!caption.trim()) {
       Alert.alert("Caption needed", "Add a caption before posting your reel.");
       return;
@@ -188,16 +199,33 @@ export default function ReelsUpload() {
     setUploading(true);
     setProgress(0);
     try {
-      const response = await fetch(videoUri);
-      const blob = await response.blob();
+      // Fetch video as blob
+      let blob: Blob;
+      try {
+        const response = await fetch(videoUri);
+        if (!response.ok) throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
+        blob = await response.blob();
+      } catch (fetchErr: any) {
+        throw new Error(`Could not read video file: ${fetchErr?.message ?? fetchErr}`);
+      }
+
+      if (!blob || blob.size === 0) {
+        throw new Error("Video file is empty. Please pick a different video.");
+      }
+
       const storageRef = ref(storage, `reels/${user.uid}_${Date.now()}.mp4`);
 
       await new Promise<void>((resolve, reject) => {
         const task = uploadBytesResumable(storageRef, blob, { contentType: "video/mp4" });
         task.on(
           "state_changed",
-          (snap) => setProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-          reject,
+          (snap) => {
+            const pct = snap.totalBytes > 0
+              ? Math.round((snap.bytesTransferred / snap.totalBytes) * 100)
+              : 0;
+            setProgress(pct);
+          },
+          (err) => reject(err),
           () => resolve(),
         );
       });
@@ -214,6 +242,7 @@ export default function ReelsUpload() {
         musicEmoji:   selectedMusic.id === "none" ? null : selectedMusic.emoji,
         musicUrl:     selectedMusic.url ?? null,
         likes:        [],
+        dislikes:     [],
         views:        0,
         createdAt:    serverTimestamp(),
       });
@@ -221,8 +250,17 @@ export default function ReelsUpload() {
       Alert.alert("Posted! 🎬", "Your reel is live.", [
         { text: "OK", onPress: () => router.back() },
       ]);
-    } catch {
-      Alert.alert("Upload failed", "Something went wrong. Please try again.");
+    } catch (err: any) {
+      const msg = err?.message ?? String(err);
+      console.error("[ReelsUpload] upload error:", msg);
+      Alert.alert(
+        "Upload failed",
+        msg.includes("storage/unauthorized")
+          ? "Storage permission denied. Please check Firebase Storage rules."
+          : msg.includes("Could not read") || msg.includes("Fetch failed")
+          ? msg
+          : "Something went wrong uploading your reel. Please check your connection and try again.",
+      );
     } finally {
       setUploading(false);
     }
