@@ -343,22 +343,26 @@ export default function ReelsViewer() {
       try {
         let q;
         if (params.userId) {
+          // Use only where() — sort client-side to avoid needing a composite index
           q = query(
             collection(db, "reels"),
             where("userId", "==", params.userId),
-            orderBy("createdAt", "desc"),
           );
         } else {
           q = query(collection(db, "reels"), orderBy("createdAt", "desc"), limit(50));
         }
         const snap = await getDocs(q);
-        const data = snap.docs.map(d => ({
-          id: d.id,
-          ...d.data(),
-          createdAt: d.data().createdAt?.toMillis?.() ?? Date.now(),
-        } as ReelDoc));
+        const data = snap.docs
+          .map(d => ({
+            id: d.id,
+            ...d.data(),
+            createdAt: d.data().createdAt?.toMillis?.() ?? Date.now(),
+          } as ReelDoc))
+          .sort((a, b) => b.createdAt - a.createdAt); // newest first
         setReels(data);
-      } catch {}
+      } catch (err) {
+        console.error("[ReelsViewer] fetch error:", err);
+      }
       setLoading(false);
     };
     fetch();
