@@ -72,6 +72,50 @@ const GAMES: GameMeta[] = [
     scoreCollection: "racerScores",
     tags: ["Racing", "Action", "Nitro Boost"],
   },
+  {
+    id: "blockblast",
+    route: "/scam-block-blast",
+    emoji: "🧱",
+    title: "Scam Block Blast",
+    subtitle: "Block Puzzle",
+    description: "Place scam-labeled blocks onto an 8×8 grid. Fill complete rows or columns to blast them away and score big!",
+    color: "#DC2626",
+    scoreCollection: "blockScores",
+    tags: ["Puzzle", "Strategy", "Block Drop"],
+  },
+  {
+    id: "fraudflip",
+    route: "/fraud-flip",
+    emoji: "🎴",
+    title: "Fraud Flip",
+    subtitle: "Memory Match",
+    description: "Flip cards to find matching scam type pairs. Learn a new fraud fact with every match — 8 pairs to uncover!",
+    color: "#7C3AED",
+    scoreCollection: "flipScores",
+    tags: ["Memory", "Education", "8 Pairs"],
+  },
+  {
+    id: "wordhunt",
+    route: "/scam-word-hunt",
+    emoji: "🔍",
+    title: "Scam Word Hunt",
+    subtitle: "Word Search",
+    description: "Find 8 scam-related words hidden in a 10×10 letter grid before time runs out. Words go in every direction!",
+    color: "#0369A1",
+    scoreCollection: "wordScores",
+    tags: ["Word Game", "120 sec", "8 Words"],
+  },
+  {
+    id: "hilldash",
+    route: "/scam-hill-dash",
+    emoji: "🚗",
+    title: "Scam Hill Dash",
+    subtitle: "Hill Climb Racing",
+    description: "Drive over scam-infested hills! Hold GAS to climb, collect fuel cans and shields, dodge fraud bombs to survive!",
+    color: "#10B981",
+    scoreCollection: "hillScores",
+    tags: ["Racing", "Physics", "Survival"],
+  },
 ];
 
 export default function GamesHub() {
@@ -116,7 +160,7 @@ export default function GamesHub() {
           <View style={{ flex: 1 }}>
             <Text style={[S.bannerTitle, { color: colors.text }]}>Play & Learn</Text>
             <Text style={[S.bannerSub, { color: colors.textMuted }]}>
-              Three games, one goal — sharpen your scam radar while competing with friends.
+              Eight unique games, one goal — sharpen your scam radar and compete with friends.
             </Text>
           </View>
         </View>
