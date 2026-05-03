@@ -206,38 +206,65 @@ function ReelItem({
 
   return (
     <View style={S.reel}>
-      {/* Video layer */}
-      <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleTap}>
-        <VideoView
-          player={player}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          nativeControls={false}
-          allowsPictureInPicture={false}
-        />
-        <LinearGradient
-          colors={["transparent", "transparent", "rgba(0,0,0,0.82)"]}
-          style={StyleSheet.absoluteFill}
-          locations={[0, 0.4, 1]}
-        />
-        <LinearGradient
-          colors={["rgba(0,0,0,0.45)", "transparent"]}
-          style={[StyleSheet.absoluteFill, { bottom: "80%" as any }]}
-        />
-        {blocked && (
-          <View style={S.blockedOverlay}>
+      {/* ── Blocked state: skip VideoView entirely, show branded tap-to-play card ── */}
+      {blocked ? (
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={0.85} onPress={handleTap}>
+          {/* Clearly visible dark-charcoal background — NOT black */}
+          <LinearGradient
+            colors={["#1c1c1e", "#2c1010", "#1c1c1e"]}
+            style={StyleSheet.absoluteFill}
+            locations={[0, 0.5, 1]}
+          />
+          {/* Vivid red decorative rings — makes clear something is here */}
+          <View style={S.ringOuter} />
+          <View style={S.ringInner} />
+
+          {/* Big visible play button */}
+          <View style={S.blockedCenter}>
             <View style={S.blockedCircle}>
-              <Feather name="play" size={36} color="#fff" />
+              <Feather name="play" size={44} color="#fff" />
             </View>
-            <Text style={S.tapToPlay}>Tap to play</Text>
+            <Text style={S.tapToPlay}>Tap to Play</Text>
+            <Text style={S.tapToPlaySub}>Video paused · tap anywhere</Text>
           </View>
-        )}
-        {!blocked && paused && (
-          <View style={S.pauseIcon}>
-            <Feather name="pause" size={40} color="rgba(255,255,255,0.8)" />
+
+          {/* Reel info at bottom */}
+          <View style={S.blockedInfo}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <UserAvatar uri={reel.profilePhoto} name={reel.username} size={32} />
+              <Text style={S.blockedUser}>@{reel.username}</Text>
+            </View>
+            {reel.caption ? (
+              <Text style={S.blockedCaption} numberOfLines={2}>{reel.caption}</Text>
+            ) : null}
           </View>
-        )}
-      </TouchableOpacity>
+        </TouchableOpacity>
+      ) : (
+        /* ── Playing state: normal video layer ── */
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleTap}>
+          <VideoView
+            player={player}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            nativeControls={false}
+            allowsPictureInPicture={false}
+          />
+          <LinearGradient
+            colors={["transparent", "transparent", "rgba(0,0,0,0.82)"]}
+            style={StyleSheet.absoluteFill}
+            locations={[0, 0.4, 1]}
+          />
+          <LinearGradient
+            colors={["rgba(0,0,0,0.45)", "transparent"]}
+            style={[StyleSheet.absoluteFill, { bottom: "80%" as any }]}
+          />
+          {paused && (
+            <View style={S.pauseIcon}>
+              <Feather name="pause" size={40} color="rgba(255,255,255,0.8)" />
+            </View>
+          )}
+        </TouchableOpacity>
+      )}
 
       {/* Bottom info */}
       <View style={S.bottomOverlay}>
@@ -472,8 +499,16 @@ export default function ReelsViewer() {
 
   if (loading) {
     return (
-      <View style={[S.screen, { justifyContent: "center", alignItems: "center" }]}>
+      <View style={[S.screen, { justifyContent: "center", alignItems: "center", gap: 16 }]}>
+        <LinearGradient colors={["#1a0000", "#2d0a0a", "#000"]} style={StyleSheet.absoluteFill} />
+        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: "#FF3B3B", alignItems: "center", justifyContent: "center" }}>
+          <Feather name="film" size={32} color="#fff" />
+        </View>
         <ActivityIndicator size="large" color="#FF3B3B" />
+        <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 16, color: "#fff" }}>Loading Reels…</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ position: "absolute", top: insets.top + 8, left: 16 }}>
+          <Feather name="arrow-left" size={22} color="#fff" />
+        </TouchableOpacity>
       </View>
     );
   }
@@ -557,10 +592,18 @@ const S = StyleSheet.create({
   uploadEmpty:  { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#FF3B3B", paddingHorizontal: 20, paddingVertical: 11, borderRadius: 14 },
 
   reel:         { width: SW, height: SH, backgroundColor: "#000" },
-  pauseIcon:      { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
-  blockedOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 14, backgroundColor: "rgba(0,0,0,0.55)" },
-  blockedCircle:  { width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.2)", borderWidth: 2, borderColor: "rgba(255,255,255,0.7)", alignItems: "center", justifyContent: "center" },
-  tapToPlay:      { fontFamily: "Inter_700Bold", fontSize: 15, color: "#fff", letterSpacing: 0.3 },
+  pauseIcon:    { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
+
+  // Blocked / tap-to-play card styles
+  ringOuter:      { position: "absolute", width: 240, height: 240, borderRadius: 120, borderWidth: 2, borderColor: "rgba(255,59,59,0.45)", alignSelf: "center", top: "50%" as any, marginTop: -120 },
+  ringInner:      { position: "absolute", width: 160, height: 160, borderRadius: 80,  borderWidth: 2, borderColor: "rgba(255,59,59,0.65)", alignSelf: "center", top: "50%" as any, marginTop: -80 },
+  blockedCenter:  { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 14 },
+  blockedCircle:  { width: 96, height: 96, borderRadius: 48, backgroundColor: "#FF3B3B", alignItems: "center", justifyContent: "center" },
+  tapToPlay:      { fontFamily: "Inter_700Bold", fontSize: 20, color: "#fff", letterSpacing: 0.4 },
+  tapToPlaySub:   { fontFamily: "Inter_400Regular", fontSize: 13, color: "rgba(255,255,255,0.6)" },
+  blockedInfo:    { position: "absolute", bottom: 110, left: 20, right: 20 },
+  blockedUser:    { fontFamily: "Inter_700Bold", fontSize: 15, color: "#fff" },
+  blockedCaption: { fontFamily: "Inter_400Regular", fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 19 },
 
   bottomOverlay:{ position: "absolute", bottom: 90, left: 16, right: 80 },
   userRow:      { flexDirection: "row", alignItems: "center", marginBottom: 10 },
