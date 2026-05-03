@@ -41,7 +41,12 @@ import { useAchievements, getRarityColor, ALL_ACHIEVEMENTS } from "@/hooks/useAc
 import { AchievementToast } from "@/components/AchievementToast";
 import { CustomThemePicker } from "@/components/CustomThemePicker";
 
-type TabType = "posts" | "bookmarks";
+type TabType = "posts" | "bookmarks" | "reels";
+
+type ReelItem = {
+  id: string; userId: string; videoUrl: string;
+  caption: string; likes: string[]; views: number; createdAt: number;
+};
 
 export default function ProfileScreen() {
   const colors = useColors();
@@ -63,6 +68,8 @@ export default function ProfileScreen() {
   const [bioText, setBioText] = useState(profile?.bio ?? "");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
+  const [reels, setReels] = useState<ReelItem[]>([]);
+  const [reelsLoading, setReelsLoading] = useState(false);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   // My posts
@@ -84,6 +91,21 @@ export default function ProfileScreen() {
     });
     return unsub;
   }, [user]);
+
+  // My reels — fetch when tab switches to reels
+  useEffect(() => {
+    if (activeTab !== "reels" || !user) return;
+    setReelsLoading(true);
+    getDocs(
+      query(collection(db, "reels"), where("userId", "==", user.uid))
+    ).then((snap) => {
+      const data = snap.docs
+        .map((d) => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toMillis?.() ?? Date.now() } as ReelItem))
+        .sort((a, b) => b.createdAt - a.createdAt);
+      setReels(data);
+      setReelsLoading(false);
+    }).catch(() => setReelsLoading(false));
+  }, [activeTab, user]);
 
   // Bookmarked posts — fetch when tab switches
   useEffect(() => {
@@ -164,8 +186,8 @@ export default function ProfileScreen() {
 
   if (!profile) return null;
 
-  const displayedPosts = activeTab === "posts" ? posts : savedPosts;
-  const displayedLoading = activeTab === "posts" ? loading : savedLoading;
+  const displayedPosts = activeTab === "posts" ? posts : activeTab === "bookmarks" ? savedPosts : [];
+  const displayedLoading = activeTab === "posts" ? loading : activeTab === "bookmarks" ? savedLoading : reelsLoading;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -283,6 +305,11 @@ export default function ProfileScreen() {
                   <Text style={[styles.statLabel, { color: colors.textMuted }]}>Posts</Text>
                 </View>
                 <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+                <TouchableOpacity style={styles.stat} onPress={() => setActiveTab("reels")}>
+                  <Text style={[styles.statNum, { color: colors.text }]}>{reels.length}</Text>
+                  <Text style={[styles.statLabel, { color: colors.textMuted }]}>Reels</Text>
+                </TouchableOpacity>
+                <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                 <View style={styles.stat}>
                   <Text style={[styles.statNum, { color: colors.text }]}>{profile.followers?.length ?? 0}</Text>
                   <Text style={[styles.statLabel, { color: colors.textMuted }]}>Followers</Text>
@@ -329,6 +356,20 @@ export default function ProfileScreen() {
             {/* Quick Actions */}
             <View style={styles.quickLinks}>
               <TouchableOpacity
+                style={[styles.quickLink, { borderColor: "#EC489960", backgroundColor: "#EC48990D" }]}
+                onPress={() => router.push("/reels-upload" as never)}
+              >
+                <Text style={{ fontSize: 16 }}>🎬</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.quickLinkText, { color: colors.text }]}>Post a Reel</Text>
+                  <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
+                    Share scam warnings as short videos
+                  </Text>
+                </View>
+                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={[styles.quickLink, { borderColor: "#7C3AED60", backgroundColor: "#7C3AED0D" }]}
                 onPress={() => router.push("/games-hub" as never)}
               >
@@ -336,7 +377,7 @@ export default function ProfileScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.quickLinkText, { color: colors.text }]}>Scam Games</Text>
                   <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
-                    3 games — run, tap & swipe to beat friends
+                    4 games — run, tap, swipe & race to beat friends
                   </Text>
                 </View>
                 <Feather name="chevron-right" size={14} color={colors.textMuted} />
@@ -420,28 +461,81 @@ export default function ProfileScreen() {
               ))}
             </View>
 
-            {/* Posts / Bookmarks tabs */}
+            {/* Posts / Bookmarks / Reels tabs */}
             <View style={[styles.tabRow, { borderBottomColor: colors.border }]}>
-              {(["posts", "bookmarks"] as TabType[]).map((tab) => (
+              {([
+                { key: "posts",     icon: "file-text",  label: `Posts (${posts.length})` },
+                { key: "reels",     icon: "video",       label: `Reels (${reels.length})` },
+                { key: "bookmarks", icon: "bookmark",    label: `Saved (${bookmarks.length})` },
+              ] as { key: TabType; icon: string; label: string }[]).map((tab) => (
                 <TouchableOpacity
-                  key={tab}
-                  style={[styles.tabBtn, activeTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
-                  onPress={() => setActiveTab(tab)}
+                  key={tab.key}
+                  style={[styles.tabBtn, activeTab === tab.key && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
+                  onPress={() => setActiveTab(tab.key)}
                 >
                   <Feather
-                    name={tab === "posts" ? "file-text" : "bookmark"}
-                    size={15}
-                    color={activeTab === tab ? colors.primary : colors.textMuted}
+                    name={tab.icon as keyof typeof Feather.glyphMap}
+                    size={14}
+                    color={activeTab === tab.key ? colors.primary : colors.textMuted}
                   />
-                  <Text style={[styles.tabLabel, { color: activeTab === tab ? colors.primary : colors.textMuted }]}>
-                    {tab === "posts" ? `Posts (${posts.length})` : `Saved (${bookmarks.length})`}
+                  <Text style={[styles.tabLabel, { color: activeTab === tab.key ? colors.primary : colors.textMuted }]}>
+                    {tab.label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {displayedLoading && <ActivityIndicator color={colors.primary} style={{ margin: 20 }} />}
-            {!displayedLoading && displayedPosts.length === 0 && (
+
+            {/* Reels grid */}
+            {activeTab === "reels" && !reelsLoading && (
+              <>
+                {/* Post reel CTA */}
+                <TouchableOpacity
+                  style={[styles.reelsCta, { backgroundColor: "#EC489910", borderColor: "#EC489930" }]}
+                  onPress={() => router.push("/reels-upload" as never)}
+                >
+                  <Text style={{ fontSize: 20 }}>🎬</Text>
+                  <Text style={[styles.reelsCtaTxt, { color: colors.text }]}>
+                    {reels.length === 0 ? "Post your first reel" : "Post another reel"}
+                  </Text>
+                  <Feather name="plus-circle" size={18} color="#EC4899" />
+                </TouchableOpacity>
+
+                {reels.length === 0 ? (
+                  <View style={styles.emptyPosts}>
+                    <Text style={{ fontSize: 42 }}>🎬</Text>
+                    <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No reels yet</Text>
+                    <Text style={[styles.emptyHint, { color: colors.textMuted }]}>
+                      Share short scam-awareness videos with your followers
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.reelsGrid}>
+                    {reels.map((reel, idx) => (
+                      <TouchableOpacity
+                        key={reel.id}
+                        style={[styles.reelThumb, { backgroundColor: colors.muted }]}
+                        onPress={() => router.push(`/reels-viewer?userId=${user?.uid}&startIndex=${idx}` as never)}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles.reelPlayOverlay}>
+                          <Feather name="play" size={22} color="#fff" />
+                        </View>
+                        <View style={[styles.reelStats, { backgroundColor: "rgba(0,0,0,0.55)" }]}>
+                          <Feather name="eye" size={10} color="#fff" />
+                          <Text style={styles.reelStatTxt}>{reel.views.toLocaleString()}</Text>
+                          <Feather name="heart" size={10} color="#fff" style={{ marginLeft: 6 }} />
+                          <Text style={styles.reelStatTxt}>{reel.likes.length}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </>
+            )}
+
+            {!displayedLoading && activeTab !== "reels" && displayedPosts.length === 0 && (
               <View style={styles.emptyPosts}>
                 <Feather name={activeTab === "posts" ? "file-text" : "bookmark"} size={36} color={colors.textMuted} />
                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
@@ -739,4 +833,12 @@ const styles = StyleSheet.create({
   },
   achieveEmoji: { fontSize: 15 },
   achieveLabel: { fontFamily: "Inter_600SemiBold", fontSize: 12 },
+
+  reelsCta:     { flexDirection: "row", alignItems: "center", gap: 10, marginHorizontal: 16, marginTop: 10, marginBottom: 6, padding: 14, borderRadius: 14, borderWidth: 1 },
+  reelsCtaTxt:  { fontFamily: "Inter_600SemiBold", fontSize: 14, flex: 1 },
+  reelsGrid:    { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 12, gap: 3, paddingBottom: 16 },
+  reelThumb:    { width: "32%", aspectRatio: 9 / 16, borderRadius: 8, overflow: "hidden", justifyContent: "flex-end" },
+  reelPlayOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.25)" },
+  reelStats:    { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 6, paddingVertical: 4, borderRadius: 4 },
+  reelStatTxt:  { fontFamily: "Inter_600SemiBold", fontSize: 10, color: "#fff", marginLeft: 2 },
 });
