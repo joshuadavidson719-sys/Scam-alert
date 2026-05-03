@@ -34,6 +34,20 @@ export default function EditProfileScreen() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  /**
+   * Convert a local file URI to a Blob using XHR.
+   * fetch(uri).blob() does not work correctly on React Native for local files.
+   */
+  const uriToBlob = (uri: string): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.onload = () => resolve(xhr.response as Blob);
+      xhr.onerror = () => reject(new Error("Failed to read image file."));
+      xhr.responseType = "blob";
+      xhr.open("GET", uri, true);
+      xhr.send(null);
+    });
+
   const pickImage = async (source: "camera" | "gallery") => {
     let result;
     if (source === "camera") {
@@ -65,14 +79,15 @@ export default function EditProfileScreen() {
       setUploading(true);
       try {
         const uri = result.assets[0].uri;
-        const response = await fetch(uri);
-        const blob = await response.blob();
+        const blob = await uriToBlob(uri);
         const storageRef = ref(storage, `avatars/${user?.uid}_${Date.now()}.jpg`);
         await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
         const url = await getDownloadURL(storageRef);
+        if (typeof (blob as any).close === "function") (blob as any).close();
         setAvatarUri(url);
-      } catch {
-        Alert.alert("Upload failed", "Could not upload photo. Please try again.");
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        Alert.alert("Upload failed", `Could not upload photo: ${msg}`);
       } finally {
         setUploading(false);
       }

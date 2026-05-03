@@ -5,6 +5,22 @@ import { Platform } from "react-native";
 
 export type PickSource = "camera" | "gallery";
 
+/**
+ * Converts a local file URI to a Blob using XMLHttpRequest.
+ * `fetch(uri).blob()` does not produce a valid Blob in React Native —
+ * XHR is the correct approach for local file URIs on iOS/Android.
+ */
+function uriToBlob(uri: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = () => resolve(xhr.response as Blob);
+    xhr.onerror = () => reject(new Error("Failed to read file for upload."));
+    xhr.responseType = "blob";
+    xhr.open("GET", uri, true);
+    xhr.send(null);
+  });
+}
+
 export async function pickAndUploadImage(
   uid: string,
   source: PickSource
@@ -36,12 +52,14 @@ export async function pickAndUploadImage(
   if (result.canceled || !result.assets[0]) return null;
 
   const uri = result.assets[0].uri;
-
-  const response = await fetch(uri);
-  const blob = await response.blob();
+  const blob = await uriToBlob(uri);
 
   const storageRef = ref(storage, `avatars/${uid}_${Date.now()}.jpg`);
   await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
   const downloadUrl = await getDownloadURL(storageRef);
+
+  // Release the blob from memory
+  if (typeof (blob as any).close === "function") (blob as any).close();
+
   return downloadUrl;
 }

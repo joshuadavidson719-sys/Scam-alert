@@ -105,8 +105,14 @@ export default function CreateScreen() {
       setImageUri(uri);
       setImageUploading(true);
       try {
-        const response = await fetch(uri);
-        const blob = await response.blob();
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.onload = () => resolve(xhr.response as Blob);
+          xhr.onerror = () => reject(new Error("Failed to read image file."));
+          xhr.responseType = "blob";
+          xhr.open("GET", uri, true);
+          xhr.send(null);
+        });
         const storageRef = ref(storage, `posts/${user?.uid}_${Date.now()}.jpg`);
         await uploadBytes(storageRef, blob, { contentType: "image/jpeg" });
         const url = await getDownloadURL(storageRef);

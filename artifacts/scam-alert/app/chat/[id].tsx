@@ -129,7 +129,14 @@ export default function ChatScreen() {
     setShowVoice(false);
     setSending(true);
     try {
-      const blob = await (await fetch(uri)).blob();
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => resolve(xhr.response as Blob);
+        xhr.onerror = () => reject(new Error("Failed to read voice file."));
+        xhr.responseType = "blob";
+        xhr.open("GET", uri, true);
+        xhr.send(null);
+      });
       const storageRef = ref(storage, `voice/${id}/${user.uid}/${Date.now()}.m4a`);
       await uploadBytes(storageRef, blob);
       const voiceUri = await getDownloadURL(storageRef);
