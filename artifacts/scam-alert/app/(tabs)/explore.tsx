@@ -18,6 +18,7 @@ import {
   limit,
   getDocs,
   getCountFromServer,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
@@ -104,21 +105,41 @@ const CATEGORY_META: Record<string, { color: string; emoji: string; gradient: st
   },
 };
 
-// Animated counter: counts from 0 to `target` (in millions, 1 decimal) over ~1.4 s
+// Which niche strings (stored on user profiles) map to each category ID
+const CATEGORY_NICHES: Record<string, string[]> = {
+  "scam-alert":      ["General Awareness"],
+  news:              ["News & Journalism"],
+  motivation:        [],
+  health:            ["Health & Wellness"],
+  finance:           ["Finance"],
+  "crime-awareness": ["Law & Crime"],
+  technology:        ["Cybersecurity", "Technology"],
+  education:         ["Education"],
+  entertainment:     [],
+};
+
+function formatUserCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}
+
+// Animated counter: counts from 0 → target with ease-out
 const AnimatedCounter = memo(({ target, color }: { target: number; color: string }) => {
   const [display, setDisplay] = useState(0);
   const frameRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    setDisplay(0);
+    if (target === 0) return;
     const steps = 60;
-    const interval = 1400 / steps;
+    const duration = target >= 1_000_000 ? 1800 : target >= 100 ? 1200 : 800;
+    const interval = duration / steps;
     let step = 0;
     frameRef.current = setInterval(() => {
       step += 1;
-      const progress = step / steps;
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(parseFloat((eased * target).toFixed(1)));
+      const eased = 1 - Math.pow(1 - step / steps, 3);
+      setDisplay(Math.round(eased * target));
       if (step >= steps) {
         setDisplay(target);
         if (frameRef.current) clearInterval(frameRef.current);
@@ -130,7 +151,7 @@ const AnimatedCounter = memo(({ target, color }: { target: number; color: string
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", gap: 2, marginTop: 6 }}>
       <Text style={{ fontFamily: "Inter_700Bold", fontSize: 15, color }}>
-        {display.toFixed(1)}M
+        {formatUserCount(display)}
       </Text>
       <Text style={{ fontFamily: "Inter_400Regular", fontSize: 10, color: color + "AA" }}>
         {" "}users
@@ -149,34 +170,20 @@ export default function ExploreScreen() {
   const [searching, setSearching] = useState(false);
   const [postResults, setPostResults] = useState<PostData[]>([]);
   const [userResults, setUserResults] = useState<UserResult[]>([]);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
-  const [countsLoading, setCountsLoading] = useState(true);
+  const [nicheCounts, setNicheCounts] = useState<Record<string, number>>({});
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
 
-  // Fetch category post counts once
+  // Live subscription to niche user counts
   useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const counts: Record<string, number> = {};
-        await Promise.all(
-          CATEGORIES.map(async (cat) => {
-            try {
-              const snap = await getCountFromServer(query(collection(db, "posts")));
-              counts[cat.id] = snap.data().count;
-            } catch {
-              counts[cat.id] = 0;
-            }
-          })
-        );
-        setCategoryCounts(counts);
-      } catch {
-        // ignore
-      } finally {
-        setCountsLoading(false);
-      }
-    };
-    fetchCounts();
+    const unsub = onSnapshot(collection(db, "nicheCounts"), (snap) => {
+      const counts: Record<string, number> = {};
+      snap.docs.forEach((d) => {
+        counts[d.id] = Math.max(0, (d.data().count as number) || 0);
+      });
+      setNicheCounts(counts);
+    }, () => { /* non-fatal */ });
+    return unsub;
   }, []);
 
   const doSearch = useCallback(async (term: string) => {
@@ -250,8 +257,10 @@ export default function ExploreScreen() {
 
   // ── Category tile (2-col grid) ────────────────────────────────────
   const renderCategory = ({ item }: { item: (typeof CATEGORIES)[0] }) => {
-    const meta = CATEGORY_META[item.id] ?? { color: colors.primary, emoji: "📌", tagline: "Browse posts" };
-    const count = countsLoading ? null : (categoryCounts[item.id] ?? 0);
+    const meta = CATEGORY_META[item.id] ?? { color: colors.primary, emoji: "📌", tagline: "Browse posts", users: 0 };
+    // Sum real user counts for every niche that maps to this category
+    const niches = CATEGORY_NICHES[item.id] ?? [];
+    const realCount = niches.reduce((sum, n) => sum + (nicheCounts[n] ?? 0), 0);
 
     return (
       <TouchableOpacity
@@ -274,8 +283,8 @@ export default function ExploreScreen() {
             {meta.tagline}
           </Text>
 
-          {/* Animated user count */}
-          <AnimatedCounter target={meta.users} color={meta.color} />
+          {/* Live animated user count */}
+          <AnimatedCounter target={realCount} color={meta.color} />
         </View>
       </TouchableOpacity>
     );

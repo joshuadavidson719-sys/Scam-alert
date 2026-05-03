@@ -19,6 +19,7 @@ import {
   getDoc,
   updateDoc,
   serverTimestamp,
+  increment,
 } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured } from "@/lib/firebase";
 import {
@@ -161,6 +162,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
     if (!user) return;
+    // If niche is changing, update live counts in Firestore
+    if (data.niche !== undefined && data.niche !== profile?.niche) {
+      const oldNiche = profile?.niche;
+      const newNiche = data.niche;
+      try {
+        if (oldNiche) {
+          await setDoc(doc(db, "nicheCounts", oldNiche), { count: increment(-1) }, { merge: true });
+        }
+        if (newNiche) {
+          await setDoc(doc(db, "nicheCounts", newNiche), { count: increment(1) }, { merge: true });
+        }
+      } catch {
+        // non-fatal — counts are best-effort
+      }
+    }
     await updateDoc(doc(db, "users", user.uid), data as Record<string, unknown>);
     setProfile((prev) => (prev ? { ...prev, ...data } : prev));
   };
