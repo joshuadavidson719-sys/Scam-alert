@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -63,9 +64,11 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoSection}>
-          <View style={[styles.logoCircle, { backgroundColor: colors.primary }]}>
-            <Feather name="shield" size={38} color="#fff" />
-          </View>
+          <Image
+            source={require("@/assets/images/icon.png")}
+            style={styles.logoImage}
+            resizeMode="cover"
+          />
           <Text style={[styles.appName, { color: colors.text }]}>Scam Alert</Text>
           <Text style={[styles.tagline, { color: colors.textSecondary }]}>
             Stay informed. Stay safe.
@@ -174,18 +177,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 40,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
+  logoImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 22,
     marginBottom: 16,
-    shadowColor: "#FF3B3B",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
   },
   appName: {
     fontFamily: "Inter_700Bold",
