@@ -83,25 +83,20 @@ function ReelItem({
         {
           text: "Delete",
           style: "destructive",
-          onPress: async () => {
+          onPress: () => {
+            // Remove from UI immediately — cleanup runs in background
+            onDelete(reel.id);
+            // Firestore + Storage cleanup (non-blocking)
+            deleteDoc(doc(db, "reels", reel.id)).catch(() => {});
             try {
-              // Delete Firestore document
-              await deleteDoc(doc(db, "reels", reel.id));
-              // Attempt to delete the video from Storage
-              try {
-                // Extract the path from the download URL
-                const url = new URL(reel.videoUrl);
-                const pathEncoded = url.pathname.split("/o/")[1]?.split("?")[0];
-                if (pathEncoded) {
-                  const path = decodeURIComponent(pathEncoded);
-                  await deleteObject(storageRef(storage, path));
-                }
-              } catch {
-                // Storage delete non-fatal — doc is already gone
+              const url = new URL(reel.videoUrl);
+              const pathEncoded = url.pathname.split("/o/")[1]?.split("?")[0];
+              if (pathEncoded) {
+                const path = decodeURIComponent(pathEncoded);
+                deleteObject(storageRef(storage, path)).catch(() => {});
               }
-              onDelete(reel.id);
             } catch {
-              Alert.alert("Error", "Could not delete the reel. Please try again.");
+              // non-fatal
             }
           },
         },
