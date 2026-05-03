@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   Dimensions, ActivityIndicator, TextInput, Modal,
-  KeyboardAvoidingView, Platform, Alert,
+  KeyboardAvoidingView, Platform, Alert, Share,
 } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Audio } from "expo-av";
@@ -152,6 +152,25 @@ function ReelItem({
     }
   };
 
+  const handleShare = async () => {
+    const url = `https://${process.env.EXPO_PUBLIC_DOMAIN}/reels-viewer?userId=${reel.userId}`;
+    const message = reel.caption
+      ? `Check out this scam alert reel: "${reel.caption}" — ${url}`
+      : `Check out this scam alert reel — ${url}`;
+    try {
+      if (Platform.OS === "web") {
+        if (navigator.share) {
+          await navigator.share({ title: "Scam Alert Reel", text: reel.caption, url });
+        } else {
+          await navigator.clipboard.writeText(url);
+          Alert.alert("Link copied!", "Reel link copied to clipboard.");
+        }
+      } else {
+        await Share.share({ message });
+      }
+    } catch {}
+  };
+
   const handleDelete = () => {
     Alert.alert(
       "Delete Reel",
@@ -260,7 +279,7 @@ function ReelItem({
           <Feather name="message-circle" size={26} color="#fff" />
           <Text style={S.actionCount}>View</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={S.actionBtn}>
+        <TouchableOpacity style={S.actionBtn} onPress={handleShare}>
           <Feather name="share-2" size={24} color="#fff" />
           <Text style={S.actionCount}>Share</Text>
         </TouchableOpacity>
