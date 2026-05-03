@@ -54,10 +54,6 @@ const ST = StyleSheet.create({
   tickerTxt: { fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#fff", flex: 1 },
 });
 
-// Tracks whether the user has ever tapped to unlock browser autoplay.
-// Once unlocked, subsequent reels can autoplay without needing another tap.
-let webAutoplayUnlocked = false;
-
 // ── Single Reel Item ────────────────────────────────────────────────────────
 function ReelItem({
   reel, isActive, isNear, currentUserId, onLike, onOpenComments, onDelete,
@@ -72,54 +68,29 @@ function ReelItem({
 }) {
   const soundRef    = useRef<Audio.Sound | null>(null);
   const webVideoRef = useRef<HTMLVideoElement | null>(null);
-  const [paused, setPaused]   = useState(false);
-  const [viewed, setViewed]   = useState(false);
-  const [blocked, setBlocked] = useState(Platform.OS === "web" && !webAutoplayUnlocked);
-  const isOwner = !!currentUserId && currentUserId === reel.userId;
-  const liked   = currentUserId ? reel.likes.includes(currentUserId) : false;
+  const [paused, setPaused] = useState(false);
+  const [viewed, setViewed] = useState(false);
+  const isOwner  = !!currentUserId && currentUserId === reel.userId;
+  const liked    = currentUserId ? reel.likes.includes(currentUserId) : false;
   const hasMusic = !!reel.musicUrl;
 
-  // ── expo-video player ────────────────────────────────────────────────────
-  // On web, browsers block autoplay of unmuted video → always mute on web.
-  // Music is handled separately by expo-av Audio and doesn't play on web anyway.
-  const muteVideo = hasMusic || Platform.OS === "web";
-
+  // ── expo-video (native only) ─────────────────────────────────────────────
   const player = useVideoPlayer(
-    isNear ? { uri: reel.videoUrl } : null,
-    (p) => {
-      p.loop = true;
-      p.muted = muteVideo;
-    },
+    (Platform.OS !== "web" && isNear) ? { uri: reel.videoUrl } : null,
+    (p) => { p.loop = true; p.muted = hasMusic; },
   );
 
-  // When this reel moves in/out of the near window, load source
   useEffect(() => {
-    if (isNear) {
-      try { player.replaceAsync({ uri: reel.videoUrl }).catch(() => {}); } catch { /* non-fatal */ }
-    }
-  }, [isNear, reel.videoUrl]);
-
-  // Play or pause based on active state — catch browser autoplay rejections
-  useEffect(() => {
-    if (isActive && !paused && !blocked) {
-      try {
-        Promise.resolve(player.play()).catch(() => setBlocked(true));
-      } catch { setBlocked(true); }
+    if (Platform.OS === "web") return;
+    if (isActive && !paused) {
+      try { player.play(); } catch {}
     } else {
-      try { player.pause(); } catch { /* non-fatal */ }
+      try { player.pause(); } catch {}
     }
-  }, [isActive, paused, blocked]);
+  }, [isActive, paused]);
 
-  // Detect load errors and blocked autoplay via status events
   useEffect(() => {
-    const sub = player.addListener("statusChange", ({ status }: { status: string }) => {
-      if (status === "error") setBlocked(true);
-    });
-    return () => sub.remove();
-  }, []);
-
-  // Track view count once the video starts playing
-  useEffect(() => {
+    if (Platform.OS === "web") return;
     const sub = player.addListener("playingChange", ({ isPlaying }: { isPlaying: boolean }) => {
       if (isPlaying && !viewed) {
         setViewed(true);
@@ -129,9 +100,22 @@ function ReelItem({
     return () => sub.remove();
   }, [reel.id, viewed]);
 
-  // ── Background music (expo-av Audio) ────────────────────────────────────
+  // ── Web video ref callbacks ──────────────────────────────────────────────
+  // When the active reel changes on web, play/pause the <video> element
   useEffect(() => {
-    if (!hasMusic || !reel.musicUrl) return;
+    if (Platform.OS !== "web") return;
+    const el = webVideoRef.current;
+    if (!el) return;
+    if (isActive && !paused) {
+      el.play().catch(() => {});
+    } else {
+      el.pause();
+    }
+  }, [isActive, paused]);
+
+  // ── Background music (native only via expo-av Audio) ────────────────────
+  useEffect(() => {
+    if (Platform.OS === "web" || !hasMusic || !reel.musicUrl) return;
     let cancelled = false;
     Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false }).catch(() => {});
     Audio.Sound.createAsync(
@@ -149,38 +133,22 @@ function ReelItem({
   }, [reel.id]);
 
   useEffect(() => {
-    if (!isActive || paused) {
-      soundRef.current?.pauseAsync().catch(() => {});
-    } else {
-      soundRef.current?.playAsync().catch(() => {});
-    }
+    if (Platform.OS === "web") return;
+    if (!isActive || paused) soundRef.current?.pauseAsync().catch(() => {});
+    else soundRef.current?.playAsync().catch(() => {});
   }, [isActive, paused]);
 
-  // ── Interaction handlers ────────────────────────────────────────────────
+  // ── Tap to pause / resume ────────────────────────────────────────────────
   const handleTap = () => {
-    if (blocked) {
-      webAutoplayUnlocked = true;
-      setBlocked(false);
-      setPaused(false);
-      // Drive the native <video> element on web
-      if (Platform.OS === "web" && webVideoRef.current) {
-        webVideoRef.current.play().catch(() => {});
-      } else {
-        try { player.play(); } catch {}
-      }
-      soundRef.current?.playAsync().catch(() => {});
+    const next = !paused;
+    setPaused(next);
+    if (Platform.OS === "web") {
+      const el = webVideoRef.current;
+      if (el) { next ? el.pause() : el.play().catch(() => {}); }
     } else {
-      const next = !paused;
-      setPaused(next);
-      if (next) {
-        if (Platform.OS === "web" && webVideoRef.current) webVideoRef.current.pause();
-        else try { player.pause(); } catch {}
-        soundRef.current?.pauseAsync().catch(() => {});
-      } else {
-        if (Platform.OS === "web" && webVideoRef.current) webVideoRef.current.play().catch(() => {});
-        else try { player.play(); } catch {}
-        soundRef.current?.playAsync().catch(() => {});
-      }
+      try { next ? player.pause() : player.play(); } catch {}
+      if (next) soundRef.current?.pauseAsync().catch(() => {});
+      else soundRef.current?.playAsync().catch(() => {});
     }
   };
 
@@ -211,35 +179,20 @@ function ReelItem({
 
   return (
     <View style={S.reel}>
-      {/* ── Full-screen tap layer ── */}
-      <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={blocked ? 0.85 : 1} onPress={handleTap}>
+      {/* ── Full-screen tap to pause/resume ── */}
+      <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleTap}>
 
-        {/* ── Video layer (always rendered so browser can show first frame) ── */}
+        {/* ── Video ── */}
         {Platform.OS === "web" ? (
-          // On web use a native <video> element: muted so autoplay is allowed,
-          // and it naturally paints the first frame as a poster/thumbnail.
           React.createElement("video", {
             key: reel.videoUrl,
             src: reel.videoUrl,
+            autoPlay: true,
             muted: true,
             loop: true,
             playsInline: true,
-            autoPlay: !blocked,
-            ref: (el: HTMLVideoElement | null) => {
-              webVideoRef.current = el;
-              if (el) {
-                // Always seek slightly past 0 so browser paints a real frame (not black)
-                el.currentTime = 0.5;
-                if (!blocked) {
-                  el.play().catch(() => {});
-                }
-              }
-            },
-            style: {
-              position: "absolute", inset: 0,
-              width: "100%", height: "100%",
-              objectFit: "cover",
-            },
+            ref: (el: HTMLVideoElement | null) => { webVideoRef.current = el; },
+            style: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" },
           })
         ) : (
           <VideoView
@@ -262,18 +215,8 @@ function ReelItem({
           style={[StyleSheet.absoluteFill, { bottom: "80%" as any }]}
         />
 
-        {/* ── Blocked overlay: sits on top of the video frame ── */}
-        {blocked && (
-          <View style={S.blockedOverlay}>
-            <View style={S.blockedCircle}>
-              <Feather name="play" size={44} color="#fff" />
-            </View>
-            <Text style={S.tapToPlay}>Tap to Play</Text>
-          </View>
-        )}
-
         {/* Pause indicator */}
-        {!blocked && paused && (
+        {paused && (
           <View style={S.pauseIcon}>
             <Feather name="pause" size={40} color="rgba(255,255,255,0.8)" />
           </View>
@@ -608,10 +551,6 @@ const S = StyleSheet.create({
   reel:         { width: SW, height: SH, backgroundColor: "#000" },
   pauseIcon:    { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
 
-  // Tap-to-play overlay — sits ON TOP of the video frame (which is always visible)
-  blockedOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 14, backgroundColor: "rgba(0,0,0,0.35)" },
-  blockedCircle:  { width: 90, height: 90, borderRadius: 45, backgroundColor: "#FF3B3B", alignItems: "center", justifyContent: "center" },
-  tapToPlay:      { fontFamily: "Inter_700Bold", fontSize: 20, color: "#fff", letterSpacing: 0.4 },
 
   bottomOverlay:{ position: "absolute", bottom: 90, left: 16, right: 80 },
   userRow:      { flexDirection: "row", alignItems: "center", marginBottom: 10 },
