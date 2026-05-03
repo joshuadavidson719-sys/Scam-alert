@@ -9,7 +9,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { db, storage } from "@/lib/firebase";
@@ -41,6 +41,12 @@ export default function ReelsUpload() {
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
   const videoRef = useRef<InstanceType<typeof Video>>(null);
+  const params = useLocalSearchParams<{
+    remixCaption?: string;
+    remixMusicUrl?: string;
+    remixMusicName?: string;
+    remixMusicEmoji?: string;
+  }>();
 
   const [videoUri, setVideoUri]         = useState<string | null>(null);
   const [caption, setCaption]           = useState("");
@@ -51,6 +57,7 @@ export default function ReelsUpload() {
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const previewSound = useRef<InstanceType<typeof Sound> | null>(null);
+  const [isRemix, setIsRemix]           = useState(false);
 
   // Stop preview sound on unmount
   useEffect(() => {
@@ -58,6 +65,28 @@ export default function ReelsUpload() {
     return () => {
       previewSound.current?.unloadAsync().catch(() => {});
     };
+  }, []);
+
+  // Pre-fill remix data if coming from Remix button
+  useEffect(() => {
+    if (params.remixCaption) {
+      setCaption(`🔄 ${params.remixCaption}`);
+      setIsRemix(true);
+    }
+    if (params.remixMusicUrl) {
+      const match = MUSIC_LIBRARY.find((t) => t.url === params.remixMusicUrl);
+      if (match) {
+        setSelectedMusic(match);
+      } else if (params.remixMusicName) {
+        setSelectedMusic({
+          id: "remix",
+          name: params.remixMusicName,
+          emoji: params.remixMusicEmoji ?? "🎵",
+          genre: "Remix",
+          url: params.remixMusicUrl,
+        });
+      }
+    }
   }, []);
 
   const stopPreview = async () => {
@@ -245,9 +274,20 @@ export default function ReelsUpload() {
         {/* ── STEP 1: Pick ── */}
         {step === "pick" && (
           <View style={S.pickArea}>
+            {isRemix && (
+              <View style={[S.remixBanner, { backgroundColor: "#EC489918", borderColor: "#EC489940" }]}>
+                <Text style={{ fontSize: 18 }}>🔄</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[S.remixTitle, { color: "#EC4899" }]}>Remixing a Reel</Text>
+                  <Text style={[S.remixSub, { color: colors.textSecondary }]}>
+                    Caption &amp; music pre-filled — just record or pick your video
+                  </Text>
+                </View>
+              </View>
+            )}
             <View style={[S.pickCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={{ fontSize: 52 }}>🎬</Text>
-              <Text style={[S.pickTitle, { color: colors.text }]}>Create a Scam Alert Reel</Text>
+              <Text style={[S.pickTitle, { color: colors.text }]}>{isRemix ? "Pick Your Remix Video" : "Create a Scam Alert Reel"}</Text>
               <Text style={[S.pickSub, { color: colors.textMuted }]}>
                 Share scam warnings, tips, or awareness clips. Up to 60 seconds.
               </Text>
@@ -446,6 +486,9 @@ const S = StyleSheet.create({
   stepDot:      { width: 28, height: 4, borderRadius: 2 },
 
   pickArea:     { padding: 16, gap: 16 },
+  remixBanner:  { flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
+  remixTitle:   { fontFamily: "Inter_700Bold", fontSize: 14 },
+  remixSub:     { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 },
   pickCard:     { borderRadius: 20, borderWidth: 1, padding: 24, alignItems: "center", gap: 12 },
   pickTitle:    { fontFamily: "Inter_700Bold", fontSize: 18, textAlign: "center" },
   pickSub:      { fontFamily: "Inter_400Regular", fontSize: 13, lineHeight: 20, textAlign: "center" },

@@ -27,6 +27,11 @@ import {
   doc,
   getDoc,
   getDocs,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  setDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
@@ -48,7 +53,8 @@ type TabType = "posts" | "bookmarks" | "reels";
 
 type ReelItem = {
   id: string; userId: string; videoUrl: string;
-  caption: string; likes: string[]; views: number; createdAt: number;
+  caption: string; likes: string[]; dislikes: string[]; views: number; createdAt: number;
+  musicUrl?: string | null; musicName?: string | null; musicEmoji?: string | null;
 };
 
 // ── Social sharing constants ─────────────────────────────────────────────────
@@ -220,6 +226,9 @@ export default function ProfileScreen() {
   const [reels, setReels] = useState<ReelItem[]>([]);
   const [reelsLoading, setReelsLoading] = useState(false);
   const [shareReel, setShareReel] = useState<ReelItem | null>(null);
+  const [savedReelIds, setSavedReelIds] = useState<Set<string>>(new Set());
+  const [localLikes, setLocalLikes] = useState<Record<string, string[]>>({});
+  const [localDislikes, setLocalDislikes] = useState<Record<string, string[]>>({});
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   // My posts
@@ -250,12 +259,24 @@ export default function ProfileScreen() {
       query(collection(db, "reels"), where("userId", "==", user.uid))
     ).then((snap) => {
       const data = snap.docs
-        .map((d) => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toMillis?.() ?? Date.now() } as ReelItem))
+        .map((d) => ({
+          id: d.id, ...d.data(),
+          createdAt: d.data().createdAt?.toMillis?.() ?? Date.now(),
+          dislikes: d.data().dislikes ?? [],
+        } as ReelItem))
         .sort((a, b) => b.createdAt - a.createdAt);
       setReels(data);
       setReelsLoading(false);
     }).catch(() => setReelsLoading(false));
   }, [activeTab, user]);
+
+  // Load saved reel IDs
+  useEffect(() => {
+    if (!user) return;
+    getDocs(collection(db, "users", user.uid, "savedReels"))
+      .then((snap) => setSavedReelIds(new Set(snap.docs.map((d) => d.id))))
+      .catch(() => {});
+  }, [user]);
 
   // Bookmarked posts — fetch when tab switches
   useEffect(() => {
@@ -320,6 +341,72 @@ export default function ProfileScreen() {
       Alert.alert("Error", "Failed to upload photo. Please try again.");
     } finally {
       setUploadingPhoto(false);
+    }
+  };
+
+  const handleReelLike = async (reel: ReelItem) => {
+    if (!user) return;
+    const current = localLikes[reel.id] ?? reel.likes;
+    const liked = current.includes(user.uid);
+    setLocalLikes((p) => ({ ...p, [reel.id]: liked ? current.filter((u) => u !== user.uid) : [...current, user.uid] }));
+    if (!liked) {
+      setLocalDislikes((p) => ({ ...p, [reel.id]: (p[reel.id] ?? reel.dislikes ?? []).filter((u) => u !== user.uid) }));
+      updateDoc(doc(db, "reels", reel.id), { likes: arrayUnion(user.uid), dislikes: arrayRemove(user.uid) }).catch(() => {});
+    } else {
+      updateDoc(doc(db, "reels", reel.id), { likes: arrayRemove(user.uid) }).catch(() => {});
+    }
+  };
+
+  const handleReelDislike = async (reel: ReelItem) => {
+    if (!user) return;
+    const current = localDislikes[reel.id] ?? reel.dislikes ?? [];
+    const disliked = current.includes(user.uid);
+    setLocalDislikes((p) => ({ ...p, [reel.id]: disliked ? current.filter((u) => u !== user.uid) : [...current, user.uid] }));
+    if (!disliked) {
+      setLocalLikes((p) => ({ ...p, [reel.id]: (p[reel.id] ?? reel.likes).filter((u) => u !== user.uid) }));
+      updateDoc(doc(db, "reels", reel.id), { dislikes: arrayUnion(user.uid), likes: arrayRemove(user.uid) }).catch(() => {});
+    } else {
+      updateDoc(doc(db, "reels", reel.id), { dislikes: arrayRemove(user.uid) }).catch(() => {});
+    }
+  };
+
+  const handleReelSave = async (reel: ReelItem) => {
+    if (!user) return;
+    const saved = savedReelIds.has(reel.id);
+    const next = new Set(savedReelIds);
+    if (saved) {
+      next.delete(reel.id);
+      setSavedReelIds(next);
+      deleteDoc(doc(db, "users", user.uid, "savedReels", reel.id)).catch(() => {});
+    } else {
+      next.add(reel.id);
+      setSavedReelIds(next);
+      setDoc(doc(db, "users", user.uid, "savedReels", reel.id), { reelId: reel.id, savedAt: Date.now() }).catch(() => {});
+    }
+  };
+
+  const handleReelRemix = (reel: ReelItem) => {
+    const p: Record<string, string> = { remixCaption: reel.caption || "" };
+    if (reel.musicUrl) p.remixMusicUrl = reel.musicUrl;
+    if (reel.musicName) p.remixMusicName = reel.musicName;
+    if (reel.musicEmoji) p.remixMusicEmoji = reel.musicEmoji;
+    router.push(("/reels-upload?" + new URLSearchParams(p).toString()) as never);
+  };
+
+  const handleReelReport = async (reel: ReelItem, reason: string) => {
+    if (!user) return;
+    try {
+      const { addDoc, collection: col, serverTimestamp: sts } = await import("firebase/firestore");
+      await addDoc(col(db, "reports"), {
+        type: "reel",
+        contentId: reel.id,
+        reportedBy: user.uid,
+        reason,
+        createdAt: sts(),
+      });
+      Alert.alert("Report Submitted", "Thanks for keeping the community safe. We'll review this reel.");
+    } catch {
+      Alert.alert("Error", "Could not submit report. Please try again.");
     }
   };
 
@@ -689,32 +776,106 @@ export default function ProfileScreen() {
                   </View>
                 ) : (
                   <View style={styles.reelsGrid}>
-                    {reels.map((reel, idx) => (
-                      <TouchableOpacity
-                        key={reel.id}
-                        style={[styles.reelThumb, { backgroundColor: colors.muted }]}
-                        onPress={() => router.push(`/reels-viewer?userId=${user?.uid}&startIndex=${idx}` as never)}
-                        activeOpacity={0.8}
-                      >
-                        <View style={styles.reelPlayOverlay}>
-                          <Feather name="play" size={22} color="#fff" />
+                    {reels.map((reel, idx) => {
+                      const likes = localLikes[reel.id] ?? reel.likes;
+                      const dislikes = localDislikes[reel.id] ?? reel.dislikes ?? [];
+                      const liked = user ? likes.includes(user.uid) : false;
+                      const disliked = user ? dislikes.includes(user.uid) : false;
+                      const saved = savedReelIds.has(reel.id);
+                      return (
+                        <View key={reel.id} style={[styles.reelCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                          {/* Thumbnail */}
+                          <TouchableOpacity
+                            style={[styles.reelThumb, { backgroundColor: colors.muted }]}
+                            onPress={() => router.push(`/reels-viewer?userId=${user?.uid}&startIndex=${idx}` as never)}
+                            activeOpacity={0.85}
+                          >
+                            <View style={styles.reelPlayOverlay}>
+                              <Feather name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
+                            </View>
+                            {reel.caption ? (
+                              <View style={styles.reelCaptionOverlay}>
+                                <Text style={styles.reelCaptionTxt} numberOfLines={1}>{reel.caption}</Text>
+                              </View>
+                            ) : null}
+                            <View style={[styles.reelStats, { backgroundColor: "rgba(0,0,0,0.55)" }]}>
+                              <Feather name="eye" size={9} color="#fff" />
+                              <Text style={styles.reelStatTxt}>{reel.views.toLocaleString()}</Text>
+                            </View>
+                          </TouchableOpacity>
+
+                          {/* Action row */}
+                          <View style={[styles.reelActions, { borderTopColor: colors.border }]}>
+                            {/* Like */}
+                            <TouchableOpacity
+                              style={styles.reelActionBtn}
+                              onPress={() => handleReelLike(reel)}
+                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                              <Feather name="heart" size={15} color={liked ? "#FF3B3B" : colors.textMuted} />
+                              <Text style={[styles.reelActionCount, { color: liked ? "#FF3B3B" : colors.textMuted }]}>
+                                {likes.length}
+                              </Text>
+                            </TouchableOpacity>
+
+                            {/* Dislike */}
+                            <TouchableOpacity
+                              style={styles.reelActionBtn}
+                              onPress={() => handleReelDislike(reel)}
+                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                              <Feather name="thumbs-down" size={15} color={disliked ? "#F59E0B" : colors.textMuted} />
+                              <Text style={[styles.reelActionCount, { color: disliked ? "#F59E0B" : colors.textMuted }]}>
+                                {dislikes.length}
+                              </Text>
+                            </TouchableOpacity>
+
+                            {/* Remix */}
+                            <TouchableOpacity
+                              style={styles.reelActionBtn}
+                              onPress={() => handleReelRemix(reel)}
+                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                              <Feather name="repeat" size={15} color="#EC4899" />
+                              <Text style={[styles.reelActionCount, { color: "#EC4899" }]}>Remix</Text>
+                            </TouchableOpacity>
+
+                            {/* Save */}
+                            <TouchableOpacity
+                              style={styles.reelActionBtn}
+                              onPress={() => handleReelSave(reel)}
+                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                              <Feather name="bookmark" size={15} color={saved ? colors.primary : colors.textMuted} />
+                              <Text style={[styles.reelActionCount, { color: saved ? colors.primary : colors.textMuted }]}>
+                                {saved ? "Saved" : "Save"}
+                              </Text>
+                            </TouchableOpacity>
+
+                            {/* Report */}
+                            <TouchableOpacity
+                              style={styles.reelActionBtn}
+                              onPress={() =>
+                                Alert.alert(
+                                  "Report Reel",
+                                  "Why are you reporting this reel?",
+                                  [
+                                    { text: "Spam", onPress: () => handleReelReport(reel, "Spam") },
+                                    { text: "Misinformation", onPress: () => handleReelReport(reel, "Misinformation") },
+                                    { text: "Inappropriate", onPress: () => handleReelReport(reel, "Inappropriate") },
+                                    { text: "Cancel", style: "cancel" },
+                                  ]
+                                )
+                              }
+                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                              <Feather name="flag" size={15} color="#EF4444" />
+                              <Text style={[styles.reelActionCount, { color: "#EF4444" }]}>Report</Text>
+                            </TouchableOpacity>
+                          </View>
                         </View>
-                        {/* Share button */}
-                        <TouchableOpacity
-                          style={styles.reelShareBtn}
-                          onPress={(e) => { e.stopPropagation(); setShareReel(reel); }}
-                          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                        >
-                          <Feather name="share-2" size={12} color="#fff" />
-                        </TouchableOpacity>
-                        <View style={[styles.reelStats, { backgroundColor: "rgba(0,0,0,0.55)" }]}>
-                          <Feather name="eye" size={10} color="#fff" />
-                          <Text style={styles.reelStatTxt}>{reel.views.toLocaleString()}</Text>
-                          <Feather name="heart" size={10} color="#fff" style={{ marginLeft: 6 }} />
-                          <Text style={styles.reelStatTxt}>{reel.likes.length}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
+                      );
+                    })}
                   </View>
                 )}
               </>
@@ -1030,10 +1191,15 @@ const styles = StyleSheet.create({
 
   reelsCta:     { flexDirection: "row", alignItems: "center", gap: 10, marginHorizontal: 16, marginTop: 10, marginBottom: 6, padding: 14, borderRadius: 14, borderWidth: 1 },
   reelsCtaTxt:  { fontFamily: "Inter_600SemiBold", fontSize: 14, flex: 1 },
-  reelsGrid:    { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 12, gap: 3, paddingBottom: 16 },
-  reelThumb:    { width: "32%", aspectRatio: 9 / 16, borderRadius: 8, overflow: "hidden", justifyContent: "flex-end" },
-  reelPlayOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.25)" },
-  reelShareBtn:    { position: "absolute", top: 6, right: 6, backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 10, padding: 5, zIndex: 2 },
-  reelStats:    { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 6, paddingVertical: 4, borderRadius: 4 },
-  reelStatTxt:  { fontFamily: "Inter_600SemiBold", fontSize: 10, color: "#fff", marginLeft: 2 },
+  reelsGrid:        { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 12, gap: 10, paddingBottom: 16 },
+  reelCard:         { width: "47%", borderRadius: 12, overflow: "hidden", borderWidth: 1 },
+  reelThumb:        { width: "100%", aspectRatio: 9 / 16, overflow: "hidden", justifyContent: "flex-end" },
+  reelPlayOverlay:  { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.28)" },
+  reelCaptionOverlay: { position: "absolute", bottom: 24, left: 0, right: 0, paddingHorizontal: 7, paddingVertical: 3, backgroundColor: "rgba(0,0,0,0.45)" },
+  reelCaptionTxt:   { fontFamily: "Inter_400Regular", fontSize: 10, color: "#fff" },
+  reelStats:        { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 4 },
+  reelStatTxt:      { fontFamily: "Inter_600SemiBold", fontSize: 9, color: "#fff", marginLeft: 2 },
+  reelActions:      { flexDirection: "row", flexWrap: "wrap", borderTopWidth: 1, paddingVertical: 6, paddingHorizontal: 4, gap: 2 },
+  reelActionBtn:    { flex: 1, alignItems: "center", justifyContent: "center", gap: 2, paddingVertical: 3 },
+  reelActionCount:  { fontFamily: "Inter_500Medium", fontSize: 9 },
 });
