@@ -735,21 +735,36 @@ export default function CreatorStudio() {
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Creator Studio</Text>
         <View style={styles.navRight}>
-          <TouchableOpacity onPress={undo} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={[styles.navIconBtn, { backgroundColor: history.length > 1 ? colors.card : "transparent" }]}>
-            <Feather name="corner-up-left" size={18} color={history.length > 1 ? colors.text : colors.textMuted} />
+          <TouchableOpacity
+            onPress={undo}
+            style={[styles.navLabelBtn, { backgroundColor: history.length > 1 ? colors.card : "transparent", opacity: history.length > 1 ? 1 : 0.35 }]}
+          >
+            <Feather name="corner-up-left" size={15} color={colors.text} />
+            <Text style={[styles.navLabelBtnText, { color: colors.text }]}>Undo</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { setDraftsModal(true); }}
-            style={[styles.navIconBtn, { backgroundColor: colors.card }]}>
-            <Feather name="folder" size={18} color={colors.text} />
+
+          <TouchableOpacity
+            onPress={() => setDraftsModal(true)}
+            style={[styles.navLabelBtn, { backgroundColor: colors.card }]}
+          >
+            <Feather name="folder" size={15} color={colors.text} />
+            <Text style={[styles.navLabelBtnText, { color: colors.text }]}>Drafts</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={saveDraft}
-            style={[styles.navIconBtn, { backgroundColor: colors.card }]}>
-            <Feather name="save" size={18} color={colors.text} />
+
+          <TouchableOpacity
+            onPress={saveDraft}
+            style={[styles.navLabelBtn, { backgroundColor: colors.card }]}
+          >
+            <Feather name="save" size={15} color={colors.text} />
+            <Text style={[styles.navLabelBtnText, { color: colors.text }]}>Save</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.exportBtn, { backgroundColor: colors.primary }]} onPress={handleExport}>
-            <Feather name="share" size={13} color="#fff" />
-            <Text style={styles.exportBtnLabel}>Export</Text>
+
+          <TouchableOpacity
+            style={[styles.navLabelBtn, { backgroundColor: colors.primary }]}
+            onPress={handleExport}
+          >
+            <Feather name="share" size={15} color="#fff" />
+            <Text style={[styles.navLabelBtnText, { color: "#fff" }]}>Export</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -982,13 +997,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingBottom: 10, borderBottomWidth: 1,
   },
   navTitle: { fontFamily: "Inter_700Bold", fontSize: 16 },
-  navRight: { flexDirection: "row", alignItems: "center", gap: 6 },
-  navIconBtn: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  exportBtn: {
-    flexDirection: "row", alignItems: "center", gap: 5,
-    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 18,
+  navRight: { flexDirection: "row", alignItems: "center", gap: 5 },
+  navLabelBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 9, paddingVertical: 6, borderRadius: 20,
   },
-  exportBtnLabel: { fontFamily: "Inter_700Bold", fontSize: 13, color: "#fff" },
+  navLabelBtnText: { fontFamily: "Inter_700Bold", fontSize: 11 },
 
   canvasWrapper: {
     alignItems: "center", justifyContent: "center",
