@@ -485,9 +485,9 @@ export default function CreatorStudio() {
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"] as any,
-        quality: 0.85,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
+        quality: 0.85,
       });
       if (!result.canceled && result.assets[0]) {
         const { uri, width: iw, height: ih } = result.assets[0];
@@ -611,9 +611,9 @@ export default function CreatorStudio() {
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"] as any,
-        quality: 0.85,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
+        quality: 0.85,
       });
       if (!result.canceled && result.assets[0]) {
         setBg({ type: "image", colors: [], imageUri: result.assets[0].uri });
