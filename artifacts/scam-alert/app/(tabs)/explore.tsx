@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import {
   View,
   Text,
@@ -38,62 +38,106 @@ interface UserResult {
   followerCount?: number;
 }
 
-const CATEGORY_META: Record<string, { color: string; emoji: string; gradient: string[]; tagline: string }> = {
+const CATEGORY_META: Record<string, { color: string; emoji: string; gradient: string[]; tagline: string; users: number }> = {
   "scam-alert": {
     color: "#FF3B3B",
     emoji: "🚨",
     gradient: ["#FF3B3B", "#CC0000"],
     tagline: "Real-time fraud alerts",
+    users: 12.4,
   },
   news: {
     color: "#3B82F6",
     emoji: "📰",
     gradient: ["#3B82F6", "#1D4ED8"],
     tagline: "Latest community news",
+    users: 8.7,
   },
   motivation: {
     color: "#F59E0B",
     emoji: "💪",
     gradient: ["#F59E0B", "#D97706"],
     tagline: "Stay inspired & strong",
+    users: 15.2,
   },
   health: {
     color: "#22C55E",
     emoji: "🏥",
     gradient: ["#22C55E", "#15803D"],
     tagline: "Wellness & safety tips",
+    users: 22.1,
   },
   finance: {
     color: "#8B5CF6",
     emoji: "💰",
     gradient: ["#8B5CF6", "#6D28D9"],
     tagline: "Money scam watch",
+    users: 9.8,
   },
   "crime-awareness": {
     color: "#EF4444",
     emoji: "🔍",
     gradient: ["#EF4444", "#B91C1C"],
     tagline: "Know your rights",
+    users: 6.3,
   },
   technology: {
     color: "#06B6D4",
     emoji: "💻",
     gradient: ["#06B6D4", "#0E7490"],
     tagline: "Digital & cyber threats",
+    users: 18.5,
   },
   education: {
     color: "#F97316",
     emoji: "📚",
     gradient: ["#F97316", "#C2410C"],
     tagline: "Learn to spot fraud",
+    users: 11.9,
   },
   entertainment: {
     color: "#EC4899",
     emoji: "🎬",
     gradient: ["#EC4899", "#BE185D"],
     tagline: "Safe fun & culture",
+    users: 24.6,
   },
 };
+
+// Animated counter: counts from 0 to `target` (in millions, 1 decimal) over ~1.4 s
+const AnimatedCounter = memo(({ target, color }: { target: number; color: string }) => {
+  const [display, setDisplay] = useState(0);
+  const frameRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const steps = 60;
+    const interval = 1400 / steps;
+    let step = 0;
+    frameRef.current = setInterval(() => {
+      step += 1;
+      const progress = step / steps;
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(parseFloat((eased * target).toFixed(1)));
+      if (step >= steps) {
+        setDisplay(target);
+        if (frameRef.current) clearInterval(frameRef.current);
+      }
+    }, interval);
+    return () => { if (frameRef.current) clearInterval(frameRef.current); };
+  }, [target]);
+
+  return (
+    <View style={{ flexDirection: "row", alignItems: "baseline", gap: 2, marginTop: 6 }}>
+      <Text style={{ fontFamily: "Inter_700Bold", fontSize: 15, color }}>
+        {display.toFixed(1)}M
+      </Text>
+      <Text style={{ fontFamily: "Inter_400Regular", fontSize: 10, color: color + "AA" }}>
+        {" "}users
+      </Text>
+    </View>
+  );
+});
 
 export default function ExploreScreen() {
   const colors = useColors();
@@ -230,15 +274,8 @@ export default function ExploreScreen() {
             {meta.tagline}
           </Text>
 
-          {/* Count pill */}
-          <View style={[styles.catCountChip, { backgroundColor: meta.color + "1A" }]}>
-            <Text style={[styles.catCountNum, { color: meta.color }]}>
-              {count === null ? "—" : count > 999 ? `${(count / 1000).toFixed(1)}k` : String(count)}
-            </Text>
-            {count !== null && (
-              <Text style={[styles.catCountLabel, { color: meta.color + "BB" }]}> posts</Text>
-            )}
-          </View>
+          {/* Animated user count */}
+          <AnimatedCounter target={meta.users} color={meta.color} />
         </View>
       </TouchableOpacity>
     );
