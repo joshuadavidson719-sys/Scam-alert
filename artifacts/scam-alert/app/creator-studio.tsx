@@ -474,24 +474,36 @@ export default function CreatorStudio() {
 
   // ── Image sticker ──────────────────────────────────────────────────────────
   const pickImageSticker = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      const { uri, width: iw, height: ih } = result.assets[0];
-      const displayH = 100;
-      const displayW = iw && ih ? (iw / ih) * displayH : 100;
-      addElement({
-        id: Date.now().toString(), type: "image", content: "",
-        x: canvasW / 2 - displayW / 2, y: canvasH / 2 - displayH / 2,
-        color: "#000", fontSize: 14, bold: false, italic: false,
-        scale: 1, rotation: 0,
-        imageUri: uri, imageW: displayW, imageH: displayH,
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          "Photo Access Needed",
+          "Allow Scam Alert to access your photos so you can add images to your design.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"] as any,
+        quality: 0.85,
+        allowsEditing: false,
       });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (!result.canceled && result.assets[0]) {
+        const { uri, width: iw, height: ih } = result.assets[0];
+        const displayH = 120;
+        const displayW = iw && ih ? (iw / ih) * displayH : 120;
+        addElement({
+          id: Date.now().toString(), type: "image", content: "",
+          x: canvasW / 2 - displayW / 2, y: canvasH / 2 - displayH / 2,
+          color: "#000", fontSize: 14, bold: false, italic: false,
+          scale: 1, rotation: 0,
+          imageUri: uri, imageW: displayW, imageH: displayH,
+        });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+    } catch {
+      Alert.alert("Error", "Could not open your photo library. Please try again.");
     }
   };
 
@@ -588,13 +600,27 @@ export default function CreatorStudio() {
   };
 
   const pickBgImage = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.85,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setBg({ type: "image", colors: [], imageUri: result.assets[0].uri });
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          "Photo Access Needed",
+          "Allow Scam Alert to access your photos to use them as a canvas background.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"] as any,
+        quality: 0.85,
+        allowsEditing: false,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setBg({ type: "image", colors: [], imageUri: result.assets[0].uri });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    } catch {
+      Alert.alert("Error", "Could not open your photo library. Please try again.");
     }
   };
 
