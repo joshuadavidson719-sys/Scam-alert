@@ -329,6 +329,20 @@ export default function ProfileScreen() {
             {/* Quick Actions */}
             <View style={styles.quickLinks}>
               <TouchableOpacity
+                style={[styles.quickLink, { borderColor: "#7C3AED60", backgroundColor: "#7C3AED0D" }]}
+                onPress={() => router.push("/scam-game" as never)}
+              >
+                <Text style={{ fontSize: 16 }}>🎮</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.quickLinkText, { color: colors.text }]}>Scam Surfer</Text>
+                  <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
+                    Dodge scams & beat your friends' scores
+                  </Text>
+                </View>
+                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={[styles.quickLink, { borderColor: "#FF3B3B60", backgroundColor: "#FF3B3B0D" }]}
                 onPress={() => router.push("/creator-studio" as never)}
               >
