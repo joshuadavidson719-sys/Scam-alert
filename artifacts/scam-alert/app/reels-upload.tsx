@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, ScrollView, FlatList,
+  Alert, ActivityIndicator, ScrollView, FlatList, Platform,
 } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Audio } from "expo-av";
@@ -17,23 +17,68 @@ import { db, storage } from "@/lib/firebase";
 
 type Step = "pick" | "music" | "caption";
 
-// Small wrapper so useVideoPlayer can be called at component top level
+// Small wrapper so useVideoPlayer can be called at component top level.
+// Handles browser autoplay-block gracefully with a visible "Tap to play" overlay.
 function VideoPreview({ uri, style }: { uri: string; style: object }) {
+  const [blocked, setBlocked] = useState(false);
+
   const player = useVideoPlayer({ uri }, (p) => {
     p.loop = true;
-    p.muted = true;
-    p.play();
+    p.muted = true; // must be muted for browser autoplay
   });
+
+  const tryPlay = useCallback(() => {
+    setBlocked(false);
+    try {
+      const result: unknown = player.play();
+      if (result instanceof Promise) {
+        (result as Promise<void>).catch(() => setBlocked(true));
+      }
+    } catch {
+      setBlocked(true);
+    }
+  }, [player]);
+
+  useEffect(() => {
+    // Listen for player errors (covers native autoplay failures)
+    const sub = player.addListener("statusChange", ({ error }: any) => {
+      if (error) setBlocked(true);
+    });
+    // On web, play() returns a Promise that rejects if autoplay is blocked
+    tryPlay();
+    return () => sub.remove();
+  }, []);
+
   return (
-    <VideoView
-      player={player}
+    <TouchableOpacity
+      activeOpacity={blocked ? 0.8 : 1}
       style={style as any}
-      contentFit="cover"
-      nativeControls={false}
-      allowsPictureInPicture={false}
-    />
+      onPress={blocked ? tryPlay : undefined}
+    >
+      <VideoView
+        player={player}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        nativeControls={false}
+        allowsPictureInPicture={false}
+      />
+      {blocked && (
+        <View style={[StyleSheet.absoluteFill, styles.tapOverlay]}>
+          <View style={styles.tapCircle}>
+            <Feather name="play" size={28} color="#fff" />
+          </View>
+          <Text style={styles.tapLabel}>Tap to play</Text>
+        </View>
+      )}
+    </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  tapOverlay: { alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.55)" },
+  tapCircle:  { width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "rgba(255,255,255,0.6)" },
+  tapLabel:   { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 13, marginTop: 10, letterSpacing: 0.3 },
+});
 
 type MusicTrack = {
   id: string;
