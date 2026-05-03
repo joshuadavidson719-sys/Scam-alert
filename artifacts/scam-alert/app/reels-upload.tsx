@@ -30,7 +30,6 @@ function VideoPreview({ uri, style }: { uri: string; style: object }) {
       style={style as any}
       contentFit="cover"
       nativeControls={false}
-      allowsFullscreen={false}
       allowsPictureInPicture={false}
     />
   );

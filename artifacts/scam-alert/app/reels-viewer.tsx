@@ -86,7 +86,7 @@ function ReelItem({
   // When this reel moves in/out of the near window, load or stop
   useEffect(() => {
     if (isNear) {
-      try { player.replace({ uri: reel.videoUrl }); } catch { /* non-fatal */ }
+      try { player.replaceAsync({ uri: reel.videoUrl }).catch(() => {}); } catch { /* non-fatal */ }
     }
   }, [isNear, reel.videoUrl]);
 
@@ -191,7 +191,6 @@ function ReelItem({
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           nativeControls={false}
-          allowsFullscreen={false}
           allowsPictureInPicture={false}
         />
         <LinearGradient
