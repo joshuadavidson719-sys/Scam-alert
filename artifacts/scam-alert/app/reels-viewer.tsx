@@ -262,36 +262,46 @@ function ReelItem({
           <MusicTicker name={reel.musicName} emoji={reel.musicEmoji ?? "🎵"} />
         )}
 
-        <View style={[S.statsRow, { marginTop: 8 }]}>
-          <Feather name="eye" size={12} color="rgba(255,255,255,0.6)" />
-          <Text style={S.statTxt}>{reel.views.toLocaleString()} views</Text>
-          <Text style={[S.statTxt, { marginLeft: 10 }]}>❤️ {reel.likes.length.toLocaleString()}</Text>
-        </View>
       </View>
 
-      {/* Right actions */}
+      {/* ── Right action column (TikTok-style floating icons) ── */}
       <View style={S.rightActions}>
+        {/* Like */}
         <TouchableOpacity style={S.actionBtn} onPress={() => onLike(reel.id, liked)}>
-          <Feather name="heart" size={26} color={liked ? "#FF3B3B" : "#fff"} />
+          <Feather name="heart" size={30} color={liked ? "#FF3B3B" : "#fff"} />
           <Text style={S.actionCount}>{reel.likes.length}</Text>
         </TouchableOpacity>
+
+        {/* Comments */}
         <TouchableOpacity style={S.actionBtn} onPress={() => onOpenComments(reel)}>
-          <Feather name="message-circle" size={26} color="#fff" />
-          <Text style={S.actionCount}>View</Text>
+          <Feather name="message-circle" size={28} color="#fff" />
+          <Text style={S.actionCount}>Comment</Text>
         </TouchableOpacity>
+
+        {/* Views */}
+        <View style={S.actionBtn}>
+          <Feather name="eye" size={26} color="rgba(255,255,255,0.85)" />
+          <Text style={S.actionCount}>{reel.views.toLocaleString()}</Text>
+        </View>
+
+        {/* Share */}
         <TouchableOpacity style={S.actionBtn} onPress={handleShare}>
-          <Feather name="share-2" size={24} color="#fff" />
+          <Feather name="share-2" size={26} color="#fff" />
           <Text style={S.actionCount}>Share</Text>
         </TouchableOpacity>
+
+        {/* Music toggle */}
         {hasMusic && (
           <TouchableOpacity style={S.actionBtn} onPress={handleTap}>
-            <Feather name={paused ? "volume-x" : "music"} size={22} color="#EC4899" />
+            <Feather name={paused ? "volume-x" : "music"} size={24} color="#EC4899" />
             <Text style={[S.actionCount, { color: "#EC4899" }]}>Music</Text>
           </TouchableOpacity>
         )}
+
+        {/* Delete (owner only) */}
         {isOwner && (
           <TouchableOpacity style={S.actionBtn} onPress={handleDelete}>
-            <Feather name="trash-2" size={22} color="#FF3B3B" />
+            <Feather name="trash-2" size={24} color="#FF3B3B" />
             <Text style={[S.actionCount, { color: "#FF3B3B" }]}>Delete</Text>
           </TouchableOpacity>
         )}
@@ -583,9 +593,9 @@ const S = StyleSheet.create({
   statsRow:     { flexDirection: "row", alignItems: "center" },
   statTxt:      { fontFamily: "Inter_400Regular", fontSize: 12, color: "rgba(255,255,255,0.7)", marginLeft: 4 },
 
-  rightActions: { position: "absolute", right: 12, bottom: 100, alignItems: "center", gap: 20 },
-  actionBtn:    { alignItems: "center", gap: 4 },
-  actionCount:  { fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#fff" },
+  rightActions: { position: "absolute", right: 10, bottom: 110, alignItems: "center", gap: 22 },
+  actionBtn:    { alignItems: "center", gap: 5 },
+  actionCount:  { fontFamily: "Inter_600SemiBold", fontSize: 11, color: "#fff", textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
 
   sheet:        { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 12 },
   sheetHandle:  { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 12 },
