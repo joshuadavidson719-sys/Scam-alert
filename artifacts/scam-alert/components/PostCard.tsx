@@ -15,6 +15,7 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { doc, updateDoc, arrayUnion, arrayRemove, increment, deleteDoc } from "firebase/firestore";
+import { ScamVoteBar } from "./ScamVoteBar";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
@@ -42,6 +43,8 @@ export interface PostData {
   shareCount: number;
   reports: string[];
   createdAt: number;
+  scamVotes?: string[];
+  notScamVotes?: string[];
 }
 
 interface Props {
@@ -315,6 +318,14 @@ export function PostCard({ post, onComment, onReport, onDelete }: Props) {
           ))}
         </View>
       )}
+
+      {/* Scam verification voting */}
+      <ScamVoteBar
+        postId={post.id}
+        scamVotes={post.scamVotes}
+        notScamVotes={post.notScamVotes}
+        compact
+      />
 
       {/* Reaction picker popup */}
       {showReactions && (

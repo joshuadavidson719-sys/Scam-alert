@@ -21,6 +21,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { CategoryPill } from "@/components/CategoryPill";
+import { ScamVoteBar } from "@/components/ScamVoteBar";
 import { formatTimeAgo } from "@/lib/utils";
 import type { PostData } from "@/components/PostCard";
 
@@ -129,6 +130,13 @@ export default function PostDetail() {
             resizeMode="cover"
           />
         )}
+
+        <ScamVoteBar
+          postId={post.id}
+          scamVotes={post.scamVotes}
+          notScamVotes={post.notScamVotes}
+          compact={false}
+        />
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
