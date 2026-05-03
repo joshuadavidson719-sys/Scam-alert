@@ -212,6 +212,9 @@ export default function ProfileScreen() {
                     )}
                   </View>
                 </TouchableOpacity>
+                <Text style={[styles.changePhotoLabel, { color: colors.primary }]}>
+                  {uploadingPhoto ? "Uploading…" : "Change Photo"}
+                </Text>
 
                 <View style={styles.nameRow}>
                   <Text style={[styles.username, { color: colors.text }]}>{profile.username}</Text>
@@ -524,6 +527,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   avatarWrapper: { position: "relative", marginBottom: 4 },
+  changePhotoLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
+    marginTop: 2,
+  },
   cameraOverlay: {
     position: "absolute",
     bottom: 0,
