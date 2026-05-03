@@ -61,6 +61,17 @@ const GAMES: GameMeta[] = [
     scoreCollection: "swipeScores",
     tags: ["Knowledge", "Education", "25 cards"],
   },
+  {
+    id: "racer",
+    route: "/scam-racer",
+    emoji: "🏎️",
+    title: "Scam Racer",
+    subtitle: "High-Speed Racing",
+    description: "Race through 4 lanes and dodge scam vehicles at high speed. Grab shield power-ups, fire your nitro boost and outrun the fraud fleet!",
+    color: "#FF3B3B",
+    scoreCollection: "racerScores",
+    tags: ["Racing", "Action", "Nitro Boost"],
+  },
 ];
 
 export default function GamesHub() {
