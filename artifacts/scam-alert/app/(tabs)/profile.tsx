@@ -17,7 +17,6 @@ import {
   Share,
   Linking,
 } from "react-native";
-import { Video, ResizeMode } from "expo-av";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import {
@@ -787,18 +786,10 @@ export default function ProfileScreen() {
                         <View key={reel.id} style={[styles.reelCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                           {/* Thumbnail */}
                           <TouchableOpacity
-                            style={[styles.reelThumb, { backgroundColor: "#000" }]}
+                            style={[styles.reelThumb, { backgroundColor: "#111" }]}
                             onPress={() => router.push(`/reels-viewer?userId=${user?.uid}&startIndex=${idx}` as never)}
                             activeOpacity={0.85}
                           >
-                            <Video
-                              source={{ uri: reel.videoUrl }}
-                              style={StyleSheet.absoluteFill}
-                              resizeMode={ResizeMode.COVER}
-                              shouldPlay={false}
-                              isMuted
-                              isLooping={false}
-                            />
                             <View style={styles.reelPlayOverlay}>
                               <Feather name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
                             </View>

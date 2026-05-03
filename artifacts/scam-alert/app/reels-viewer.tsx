@@ -287,14 +287,17 @@ function CommentsModal({
 
   useEffect(() => {
     if (!reel || !visible) return;
+    // where + orderBy on different fields needs a composite index — sort client-side
     const q = query(
       collection(db, "reelComments"),
       where("reelId", "==", reel.id),
-      orderBy("createdAt", "desc"),
       limit(50),
     );
     const unsub = onSnapshot(q, (snap) => {
-      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Comment)));
+      const data = snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as Comment))
+        .sort((a, b) => b.createdAt - a.createdAt);
+      setComments(data);
     });
     return unsub;
   }, [reel?.id, visible]);
