@@ -128,6 +128,24 @@ const SHAPE_COLORS: { hex: string; icon: string; name: string }[] = [
   { hex: "#6B7280", icon: "🩶", name: "Grey" },
 ];
 
+const TEXT_PRESETS = [
+  { icon: "🔠", name: "Heading",   color: "#FFFFFF", size: 36, bold: true,  italic: false, sample: "HEADING" },
+  { icon: "📝", name: "Body",      color: "#FFFFFF", size: 20, bold: false, italic: false, sample: "Body text" },
+  { icon: "💬", name: "Caption",   color: "#CCCCCC", size: 14, bold: false, italic: true,  sample: "Caption..." },
+  { icon: "🚨", name: "Alert",     color: "#FF3B3B", size: 28, bold: true,  italic: false, sample: "ALERT!" },
+  { icon: "💡", name: "Tip",       color: "#FFD93D", size: 20, bold: false, italic: true,  sample: "Pro tip:" },
+  { icon: "⬛", name: "Dark",      color: "#000000", size: 22, bold: true,  italic: false, sample: "Dark text" },
+];
+
+const STICKER_CATEGORIES = [
+  { icon: "🚨", label: "Alerts & Danger" },
+  { icon: "😱", label: "Reactions" },
+  { icon: "🔍", label: "Investigation" },
+  { icon: "✅", label: "Status & Actions" },
+  { icon: "💰", label: "Cyber & Scams" },
+  { icon: "📢", label: "Broadcast" },
+];
+
 const DRAFTS_KEY = "@studio_drafts_v2";
 const MAX_DRAFTS = 8;
 
@@ -555,17 +573,51 @@ export default function CreatorStudio() {
       case "text":
         return (
           <View style={styles.toolPanel}>
-            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Text</Text>
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={() => openTextModal()}>
-              <Feather name="plus" size={16} color="#fff" />
-              <Text style={styles.actionBtnLabel}>Add Text</Text>
-            </TouchableOpacity>
+            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Quick Styles</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {TEXT_PRESETS.map((p) => (
+                  <TouchableOpacity
+                    key={p.name}
+                    style={[styles.textPresetCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => {
+                      setTextInput("");
+                      setTextColor(p.color);
+                      setTextSize(p.size);
+                      setTextBold(p.bold);
+                      setTextItalic(p.italic);
+                      setEditingId(null);
+                      setTextModal(true);
+                      Haptics.selectionAsync();
+                    }}
+                  >
+                    <Text style={styles.textPresetIcon}>{p.icon}</Text>
+                    <Text style={[
+                      styles.textPresetSample,
+                      { color: p.color, fontSize: Math.min(p.size * 0.55, 15),
+                        fontWeight: p.bold ? "bold" : "normal",
+                        fontStyle: p.italic ? "italic" : "normal" }
+                    ]} numberOfLines={1}>{p.sample}</Text>
+                    <Text style={[styles.textPresetLabel, { color: colors.textMuted }]}>{p.name}</Text>
+                  </TouchableOpacity>
+                ))}
+                {/* Custom */}
+                <TouchableOpacity
+                  style={[styles.textPresetCard, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "60" }]}
+                  onPress={() => openTextModal()}
+                >
+                  <Text style={styles.textPresetIcon}>✏️</Text>
+                  <Text style={[styles.textPresetSample, { color: colors.primary, fontSize: 13, fontWeight: "bold" }]}>Custom</Text>
+                  <Text style={[styles.textPresetLabel, { color: colors.primary }]}>Your own</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
             {selectedEl?.type === "text" && (
               <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, marginTop: 8 }]}
+                style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, marginTop: 10 }]}
                 onPress={() => openTextModal(selectedEl.id)}
               >
-                <Feather name="edit-2" size={14} color={colors.text} />
+                <Text style={{ fontSize: 15 }}>✏️</Text>
                 <Text style={[styles.actionBtnLabel, { color: colors.text }]}>Edit Selected Text</Text>
               </TouchableOpacity>
             )}
@@ -575,14 +627,21 @@ export default function CreatorStudio() {
       case "sticker":
         return (
           <ScrollView style={styles.toolPanel} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Stickers</Text>
             {STICKER_ROWS.map((row, ri) => (
-              <View key={ri} style={styles.stickerRow}>
-                {row.map((emoji) => (
-                  <TouchableOpacity key={emoji} style={styles.stickerBtn} onPress={() => addSticker(emoji)}>
-                    <Text style={styles.stickerEmoji}>{emoji}</Text>
-                  </TouchableOpacity>
-                ))}
+              <View key={ri}>
+                <View style={styles.stickerCategoryHeader}>
+                  <Text style={styles.stickerCategoryIcon}>{STICKER_CATEGORIES[ri].icon}</Text>
+                  <Text style={[styles.stickerCategoryLabel, { color: colors.textMuted }]}>
+                    {STICKER_CATEGORIES[ri].label}
+                  </Text>
+                </View>
+                <View style={styles.stickerRow}>
+                  {row.map((emoji) => (
+                    <TouchableOpacity key={emoji} style={[styles.stickerBtn, { backgroundColor: colors.card }]} onPress={() => addSticker(emoji)}>
+                      <Text style={styles.stickerEmoji}>{emoji}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             ))}
           </ScrollView>
@@ -591,12 +650,23 @@ export default function CreatorStudio() {
       case "image":
         return (
           <View style={styles.toolPanel}>
-            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Image Sticker</Text>
-            <Text style={[styles.panelHint, { color: colors.textMuted }]}>
-              Pick a photo from your gallery and place it on the canvas. Drag to reposition, use scale buttons to resize.
-            </Text>
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary, marginTop: 12 }]} onPress={pickImageSticker}>
-              <Feather name="image" size={16} color="#fff" />
+            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Photo Sticker</Text>
+            <View style={styles.photoFeatureGrid}>
+              {[
+                { icon: "🖼️", title: "Any Photo",   desc: "Pick any image from your gallery" },
+                { icon: "↔️", title: "Free Resize",  desc: "Scale up or down with +/− buttons" },
+                { icon: "🔄", title: "Rotate",       desc: "Spin it to any angle you like" },
+                { icon: "📐", title: "Free Move",    desc: "Drag anywhere on the canvas" },
+              ].map((f) => (
+                <View key={f.title} style={[styles.photoFeatureCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Text style={styles.photoFeatureCardIcon}>{f.icon}</Text>
+                  <Text style={[styles.photoFeatureCardTitle, { color: colors.text }]}>{f.title}</Text>
+                  <Text style={[styles.photoFeatureCardDesc, { color: colors.textMuted }]}>{f.desc}</Text>
+                </View>
+              ))}
+            </View>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary, marginTop: 8 }]} onPress={pickImageSticker}>
+              <Text style={{ fontSize: 16 }}>🖼️</Text>
               <Text style={styles.actionBtnLabel}>Pick from Gallery</Text>
             </TouchableOpacity>
           </View>
@@ -605,20 +675,32 @@ export default function CreatorStudio() {
       case "shape":
         return (
           <View style={styles.toolPanel}>
-            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Shapes</Text>
+            <Text style={[styles.panelTitle, { color: colors.textMuted }]}>Shape</Text>
             <View style={styles.shapeTypeRow}>
-              {(["rect", "circle"] as const).map((t) => (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.shapeTypeBtn, { backgroundColor: shapeType === t ? colors.primary : colors.muted }]}
-                  onPress={() => setShapeType(t)}
-                >
-                  <Text style={[styles.shapeTypeBtnLabel, { color: shapeType === t ? "#fff" : colors.text }]}>
-                    {t === "rect" ? "Rectangle" : "Circle"}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {([
+                { t: "rect",   icon: "▬", label: "Rectangle" },
+                { t: "circle", icon: "⬤", label: "Circle" },
+              ] as const).map(({ t, icon, label }) => {
+                const active = shapeType === t;
+                return (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.shapeCard, { backgroundColor: active ? shapeColor + "22" : colors.card, borderColor: active ? shapeColor : colors.border }]}
+                    onPress={() => setShapeType(t)}
+                  >
+                    <View style={[
+                      styles.shapePreview,
+                      { backgroundColor: active ? shapeColor : colors.muted },
+                      t === "circle" ? { borderRadius: 999 } : { borderRadius: 6 },
+                    ]} />
+                    <Text style={styles.shapeCardIcon}>{icon}</Text>
+                    <Text style={[styles.shapeCardLabel, { color: active ? shapeColor : colors.text }]}>{label}</Text>
+                    {active && <Text style={[styles.shapeCardCheck, { color: shapeColor }]}>✓ Selected</Text>}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
+            <Text style={[styles.panelTitle, { color: colors.textMuted, marginTop: 8 }]}>Colour</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
               <View style={{ flexDirection: "row", gap: 6, paddingVertical: 4 }}>
                 {SHAPE_COLORS.map((c) => (
@@ -634,7 +716,7 @@ export default function CreatorStudio() {
               </View>
             </ScrollView>
             <TouchableOpacity style={[styles.actionBtn, { backgroundColor: shapeColor }]} onPress={addShape}>
-              <Feather name="plus" size={16} color="#fff" />
+              <Text style={{ fontSize: 16 }}>{shapeType === "rect" ? "▬" : "⬤"}</Text>
               <Text style={styles.actionBtnLabel}>Add {shapeType === "rect" ? "Rectangle" : "Circle"}</Text>
             </TouchableOpacity>
           </View>
@@ -987,15 +1069,44 @@ const styles = StyleSheet.create({
   },
   actionBtnLabel: { fontFamily: "Inter_700Bold", fontSize: 14, color: "#fff" },
 
+  // Text presets
+  textPresetCard: {
+    width: 80, paddingVertical: 10, paddingHorizontal: 8,
+    borderRadius: 14, borderWidth: 1,
+    alignItems: "center", gap: 4,
+  },
+  textPresetIcon: { fontSize: 20 },
+  textPresetSample: { fontFamily: "Inter_700Bold", textAlign: "center" },
+  textPresetLabel: { fontFamily: "Inter_600SemiBold", fontSize: 10 },
+
   // Stickers
-  stickerRow: { flexDirection: "row", gap: 2, marginBottom: 2 },
-  stickerBtn: { flex: 1, alignItems: "center", paddingVertical: 4 },
-  stickerEmoji: { fontSize: 26 },
+  stickerCategoryHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8, marginBottom: 4 },
+  stickerCategoryIcon: { fontSize: 14 },
+  stickerCategoryLabel: { fontFamily: "Inter_700Bold", fontSize: 10, textTransform: "uppercase", letterSpacing: 0.6 },
+  stickerRow: { flexDirection: "row", gap: 4, marginBottom: 4 },
+  stickerBtn: { flex: 1, alignItems: "center", paddingVertical: 6, borderRadius: 10 },
+  stickerEmoji: { fontSize: 24 },
+
+  // Photo features
+  photoFeatureGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
+  photoFeatureCard: {
+    width: "47%", borderRadius: 12, borderWidth: 1,
+    padding: 10, gap: 3,
+  },
+  photoFeatureCardIcon: { fontSize: 22 },
+  photoFeatureCardTitle: { fontFamily: "Inter_700Bold", fontSize: 12 },
+  photoFeatureCardDesc: { fontFamily: "Inter_400Regular", fontSize: 10, lineHeight: 14 },
 
   // Shapes
-  shapeTypeRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  shapeTypeBtn: { flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 10 },
-  shapeTypeBtnLabel: { fontFamily: "Inter_600SemiBold", fontSize: 13 },
+  shapeTypeRow: { flexDirection: "row", gap: 10, marginBottom: 4 },
+  shapeCard: {
+    flex: 1, borderRadius: 14, borderWidth: 2,
+    alignItems: "center", paddingVertical: 10, paddingHorizontal: 6, gap: 4,
+  },
+  shapePreview: { width: 36, height: 22 },
+  shapeCardIcon: { fontSize: 18 },
+  shapeCardLabel: { fontFamily: "Inter_700Bold", fontSize: 12 },
+  shapeCardCheck: { fontFamily: "Inter_600SemiBold", fontSize: 9 },
 
   // Color pills
   colorPill: {
