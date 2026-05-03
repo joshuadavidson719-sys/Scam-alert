@@ -4,7 +4,7 @@ import {
   Dimensions, ActivityIndicator, TextInput, Modal,
   KeyboardAvoidingView, Platform,
 } from "react-native";
-import { Video, ResizeMode, AVPlaybackStatus, Audio, Sound } from "expo-av";
+import { Video, ResizeMode, AVPlaybackStatus, Audio } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -63,9 +63,10 @@ function ReelItem({
   onOpenComments: (reel: ReelDoc) => void;
 }) {
   const videoRef  = useRef<InstanceType<typeof Video>>(null);
-  const soundRef  = useRef<InstanceType<typeof Sound> | null>(null);
-  const [paused, setPaused]   = useState(false);
-  const [viewed, setViewed]   = useState(false);
+  const soundRef  = useRef<Audio.Sound | null>(null);
+  const [paused, setPaused]     = useState(false);
+  const [viewed, setViewed]     = useState(false);
+  const [blocked, setBlocked]   = useState(false); // autoplay blocked by browser
   const liked = currentUserId ? reel.likes.includes(currentUserId) : false;
   const hasMusic = !!reel.musicUrl;
 
@@ -120,19 +121,39 @@ function ReelItem({
     }
   };
 
+  const handlePlaybackError = () => {
+    // Autoplay blocked by browser — show tap-to-play prompt
+    setBlocked(true);
+  };
+
+  const handleTap = () => {
+    if (blocked) {
+      setBlocked(false);
+      setPaused(false);
+      videoRef.current?.playAsync().catch(() => {});
+      soundRef.current?.playAsync().catch(() => {});
+    } else {
+      togglePause();
+    }
+  };
+
   return (
     <View style={S.reel}>
       {/* Video — muted when music track is attached */}
-      <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={togglePause}>
+      <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleTap}>
         <Video
           ref={videoRef}
           source={{ uri: reel.videoUrl }}
           style={StyleSheet.absoluteFill}
           resizeMode={ResizeMode.COVER}
-          shouldPlay={isActive && !paused}
+          shouldPlay={isActive && !paused && !blocked}
           isLooping
           isMuted={hasMusic}
-          onPlaybackStatusUpdate={handlePlayback}
+          onPlaybackStatusUpdate={(status) => {
+            handlePlayback(status);
+            if (!status.isLoaded && (status as any).error) handlePlaybackError();
+          }}
+          onError={handlePlaybackError}
         />
         <LinearGradient
           colors={["transparent", "transparent", "rgba(0,0,0,0.82)"]}
@@ -143,9 +164,12 @@ function ReelItem({
           colors={["rgba(0,0,0,0.45)", "transparent"]}
           style={[StyleSheet.absoluteFill, { bottom: "80%" as any }]}
         />
-        {paused && (
+        {(paused || blocked) && (
           <View style={S.pauseIcon}>
-            <Feather name="pause" size={40} color="rgba(255,255,255,0.8)" />
+            <Feather name={blocked ? "play" : "pause"} size={40} color="rgba(255,255,255,0.8)" />
+            {blocked && (
+              <Text style={S.tapToPlay}>Tap to play</Text>
+            )}
           </View>
         )}
       </TouchableOpacity>
@@ -446,7 +470,8 @@ const S = StyleSheet.create({
   uploadEmpty:  { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#FF3B3B", paddingHorizontal: 20, paddingVertical: 11, borderRadius: 14 },
 
   reel:         { width: SW, height: SH, backgroundColor: "#000" },
-  pauseIcon:    { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
+  pauseIcon:    { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 10 },
+  tapToPlay:    { fontFamily: "Inter_600SemiBold", fontSize: 14, color: "rgba(255,255,255,0.85)", backgroundColor: "rgba(0,0,0,0.4)", paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
 
   bottomOverlay:{ position: "absolute", bottom: 90, left: 16, right: 80 },
   userRow:      { flexDirection: "row", alignItems: "center", marginBottom: 10 },
