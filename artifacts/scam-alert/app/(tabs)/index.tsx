@@ -37,6 +37,7 @@ import { NearbyAlerts } from "@/components/NearbyAlerts";
 import { ActivePoll } from "@/components/CommunityPoll";
 import { LiveScamCounter } from "@/components/LiveScamCounter";
 import { ScamRadar } from "@/components/ScamRadar";
+import { DailyBriefingModal } from "@/components/DailyBriefingModal";
 import { router } from "expo-router";
 
 const HEADER_HEIGHT = 60;
@@ -233,6 +234,7 @@ export default function HomeScreen() {
           onClose={() => setReportPostId(null)}
         />
       )}
+      <DailyBriefingModal />
     </View>
   );
 }
