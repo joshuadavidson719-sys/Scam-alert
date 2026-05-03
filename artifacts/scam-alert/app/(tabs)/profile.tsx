@@ -49,6 +49,36 @@ import { useAchievements, getRarityColor, ALL_ACHIEVEMENTS } from "@/hooks/useAc
 import { AchievementToast } from "@/components/AchievementToast";
 import { CustomThemePicker } from "@/components/CustomThemePicker";
 
+// ── ReelThumbnail ────────────────────────────────────────────────────────────
+// On web: renders a native <video> element with preload="metadata" so the
+// browser automatically decodes and displays the first video frame as a still.
+// On native: shows a styled dark placeholder (no thumbnail library needed).
+function ReelThumbnail({ videoUrl, style }: { videoUrl: string; style: object }) {
+  if (Platform.OS === "web") {
+    return (
+      <View style={style}>
+        {React.createElement("video", {
+          src: videoUrl,
+          preload: "metadata",
+          muted: true,
+          playsInline: true,
+          style: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
+          onLoadedMetadata: (e: any) => {
+            // Seek slightly past 0 so the browser paints a real frame, not a black canvas
+            e.target.currentTime = 0.5;
+          },
+        })}
+      </View>
+    );
+  }
+  // Native fallback — styled dark card with a film icon
+  return (
+    <View style={[style, { backgroundColor: "#1a1a1a", alignItems: "center", justifyContent: "center" }]}>
+      <Feather name="film" size={22} color="rgba(255,255,255,0.25)" />
+    </View>
+  );
+}
+
 type TabType = "posts" | "bookmarks" | "reels";
 
 type ReelItem = {
@@ -784,12 +814,13 @@ export default function ProfileScreen() {
                       const saved = savedReelIds.has(reel.id);
                       return (
                         <View key={reel.id} style={[styles.reelCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                          {/* Thumbnail */}
+                          {/* Thumbnail — shows real first video frame on web */}
                           <TouchableOpacity
-                            style={[styles.reelThumb, { backgroundColor: "#111" }]}
+                            style={styles.reelThumb}
                             onPress={() => router.push(`/reels-viewer?userId=${user?.uid}&startIndex=${idx}` as never)}
                             activeOpacity={0.85}
                           >
+                            <ReelThumbnail videoUrl={reel.videoUrl} style={StyleSheet.absoluteFill} />
                             <View style={styles.reelPlayOverlay}>
                               <Feather name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
                             </View>
