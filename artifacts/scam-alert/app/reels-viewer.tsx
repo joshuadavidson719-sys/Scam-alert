@@ -70,11 +70,10 @@ function ReelItem({
   onOpenComments: (reel: ReelDoc) => void;
   onDelete: (id: string) => void;
 }) {
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef    = useRef<Audio.Sound | null>(null);
+  const webVideoRef = useRef<HTMLVideoElement | null>(null);
   const [paused, setPaused]   = useState(false);
   const [viewed, setViewed]   = useState(false);
-  // On web, start blocked until user has made their first gesture.
-  // After that first tap, webAutoplayUnlocked = true so new reels autoplay.
   const [blocked, setBlocked] = useState(Platform.OS === "web" && !webAutoplayUnlocked);
   const isOwner = !!currentUserId && currentUserId === reel.userId;
   const liked   = currentUserId ? reel.likes.includes(currentUserId) : false;
@@ -160,20 +159,26 @@ function ReelItem({
   // ── Interaction handlers ────────────────────────────────────────────────
   const handleTap = () => {
     if (blocked) {
-      // First user gesture — unlock browser autoplay for all future reels
       webAutoplayUnlocked = true;
       setBlocked(false);
       setPaused(false);
-      try { player.play(); } catch {}
+      // Drive the native <video> element on web
+      if (Platform.OS === "web" && webVideoRef.current) {
+        webVideoRef.current.play().catch(() => {});
+      } else {
+        try { player.play(); } catch {}
+      }
       soundRef.current?.playAsync().catch(() => {});
     } else {
       const next = !paused;
       setPaused(next);
       if (next) {
-        try { player.pause(); } catch {}
+        if (Platform.OS === "web" && webVideoRef.current) webVideoRef.current.pause();
+        else try { player.pause(); } catch {}
         soundRef.current?.pauseAsync().catch(() => {});
       } else {
-        try { player.play(); } catch {}
+        if (Platform.OS === "web" && webVideoRef.current) webVideoRef.current.play().catch(() => {});
+        else try { player.play(); } catch {}
         soundRef.current?.playAsync().catch(() => {});
       }
     }
@@ -206,42 +211,37 @@ function ReelItem({
 
   return (
     <View style={S.reel}>
-      {/* ── Blocked state: skip VideoView entirely, show branded tap-to-play card ── */}
-      {blocked ? (
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={0.85} onPress={handleTap}>
-          {/* Clearly visible dark-charcoal background — NOT black */}
-          <LinearGradient
-            colors={["#1c1c1e", "#2c1010", "#1c1c1e"]}
-            style={StyleSheet.absoluteFill}
-            locations={[0, 0.5, 1]}
-          />
-          {/* Vivid red decorative rings — makes clear something is here */}
-          <View style={S.ringOuter} />
-          <View style={S.ringInner} />
+      {/* ── Full-screen tap layer ── */}
+      <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={blocked ? 0.85 : 1} onPress={handleTap}>
 
-          {/* Big visible play button */}
-          <View style={S.blockedCenter}>
-            <View style={S.blockedCircle}>
-              <Feather name="play" size={44} color="#fff" />
-            </View>
-            <Text style={S.tapToPlay}>Tap to Play</Text>
-            <Text style={S.tapToPlaySub}>Video paused · tap anywhere</Text>
-          </View>
-
-          {/* Reel info at bottom */}
-          <View style={S.blockedInfo}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <UserAvatar uri={reel.profilePhoto} name={reel.username} size={32} />
-              <Text style={S.blockedUser}>@{reel.username}</Text>
-            </View>
-            {reel.caption ? (
-              <Text style={S.blockedCaption} numberOfLines={2}>{reel.caption}</Text>
-            ) : null}
-          </View>
-        </TouchableOpacity>
-      ) : (
-        /* ── Playing state: normal video layer ── */
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleTap}>
+        {/* ── Video layer (always rendered so browser can show first frame) ── */}
+        {Platform.OS === "web" ? (
+          // On web use a native <video> element: muted so autoplay is allowed,
+          // and it naturally paints the first frame as a poster/thumbnail.
+          React.createElement("video", {
+            key: reel.videoUrl,
+            src: reel.videoUrl,
+            muted: true,
+            loop: true,
+            playsInline: true,
+            autoPlay: !blocked,
+            ref: (el: HTMLVideoElement | null) => {
+              webVideoRef.current = el;
+              if (el) {
+                // Always seek slightly past 0 so browser paints a real frame (not black)
+                el.currentTime = 0.5;
+                if (!blocked) {
+                  el.play().catch(() => {});
+                }
+              }
+            },
+            style: {
+              position: "absolute", inset: 0,
+              width: "100%", height: "100%",
+              objectFit: "cover",
+            },
+          })
+        ) : (
           <VideoView
             player={player}
             style={StyleSheet.absoluteFill}
@@ -249,22 +249,36 @@ function ReelItem({
             nativeControls={false}
             allowsPictureInPicture={false}
           />
-          <LinearGradient
-            colors={["transparent", "transparent", "rgba(0,0,0,0.82)"]}
-            style={StyleSheet.absoluteFill}
-            locations={[0, 0.4, 1]}
-          />
-          <LinearGradient
-            colors={["rgba(0,0,0,0.45)", "transparent"]}
-            style={[StyleSheet.absoluteFill, { bottom: "80%" as any }]}
-          />
-          {paused && (
-            <View style={S.pauseIcon}>
-              <Feather name="pause" size={40} color="rgba(255,255,255,0.8)" />
+        )}
+
+        {/* Gradient overlays */}
+        <LinearGradient
+          colors={["transparent", "transparent", "rgba(0,0,0,0.82)"]}
+          style={StyleSheet.absoluteFill}
+          locations={[0, 0.4, 1]}
+        />
+        <LinearGradient
+          colors={["rgba(0,0,0,0.45)", "transparent"]}
+          style={[StyleSheet.absoluteFill, { bottom: "80%" as any }]}
+        />
+
+        {/* ── Blocked overlay: sits on top of the video frame ── */}
+        {blocked && (
+          <View style={S.blockedOverlay}>
+            <View style={S.blockedCircle}>
+              <Feather name="play" size={44} color="#fff" />
             </View>
-          )}
-        </TouchableOpacity>
-      )}
+            <Text style={S.tapToPlay}>Tap to Play</Text>
+          </View>
+        )}
+
+        {/* Pause indicator */}
+        {!blocked && paused && (
+          <View style={S.pauseIcon}>
+            <Feather name="pause" size={40} color="rgba(255,255,255,0.8)" />
+          </View>
+        )}
+      </TouchableOpacity>
 
       {/* Bottom info */}
       <View style={S.bottomOverlay}>
@@ -594,16 +608,10 @@ const S = StyleSheet.create({
   reel:         { width: SW, height: SH, backgroundColor: "#000" },
   pauseIcon:    { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
 
-  // Blocked / tap-to-play card styles
-  ringOuter:      { position: "absolute", width: 240, height: 240, borderRadius: 120, borderWidth: 2, borderColor: "rgba(255,59,59,0.45)", alignSelf: "center", top: "50%" as any, marginTop: -120 },
-  ringInner:      { position: "absolute", width: 160, height: 160, borderRadius: 80,  borderWidth: 2, borderColor: "rgba(255,59,59,0.65)", alignSelf: "center", top: "50%" as any, marginTop: -80 },
-  blockedCenter:  { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 14 },
-  blockedCircle:  { width: 96, height: 96, borderRadius: 48, backgroundColor: "#FF3B3B", alignItems: "center", justifyContent: "center" },
+  // Tap-to-play overlay — sits ON TOP of the video frame (which is always visible)
+  blockedOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 14, backgroundColor: "rgba(0,0,0,0.35)" },
+  blockedCircle:  { width: 90, height: 90, borderRadius: 45, backgroundColor: "#FF3B3B", alignItems: "center", justifyContent: "center" },
   tapToPlay:      { fontFamily: "Inter_700Bold", fontSize: 20, color: "#fff", letterSpacing: 0.4 },
-  tapToPlaySub:   { fontFamily: "Inter_400Regular", fontSize: 13, color: "rgba(255,255,255,0.6)" },
-  blockedInfo:    { position: "absolute", bottom: 110, left: 20, right: 20 },
-  blockedUser:    { fontFamily: "Inter_700Bold", fontSize: 15, color: "#fff" },
-  blockedCaption: { fontFamily: "Inter_400Regular", fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 19 },
 
   bottomOverlay:{ position: "absolute", bottom: 90, left: 16, right: 80 },
   userRow:      { flexDirection: "row", alignItems: "center", marginBottom: 10 },
