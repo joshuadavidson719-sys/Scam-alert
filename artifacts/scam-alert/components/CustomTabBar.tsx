@@ -5,24 +5,23 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Image,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import { Feather } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/context/ThemeContext";
 
-const TAB_CONFIG: Record<
-  string,
-  { label: string; icon: keyof typeof Feather.glyphMap; activeIcon: keyof typeof Feather.glyphMap }
-> = {
-  index:         { label: "Home",     icon: "home",           activeIcon: "home" },
-  explore:       { label: "Explore",  icon: "compass",        activeIcon: "compass" },
-  create:        { label: "Post",     icon: "plus-circle",    activeIcon: "plus-circle" },
-  notifications: { label: "Alerts",  icon: "bell",           activeIcon: "bell" },
-  messages:      { label: "Messages", icon: "message-circle", activeIcon: "message-circle" },
-  profile:       { label: "Profile", icon: "user",           activeIcon: "user" },
+const APP_ICON = require("@/assets/images/icon.png");
+
+const TAB_CONFIG: Record<string, { label: string }> = {
+  index:         { label: "Home"     },
+  explore:       { label: "Explore"  },
+  create:        { label: "Post"     },
+  notifications: { label: "Alerts"  },
+  messages:      { label: "Messages" },
+  profile:       { label: "Profile"  },
 };
 
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -67,12 +66,15 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
               onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
               activeOpacity={0.7}
             >
-              {/* Plain icon — no circle/bucket background */}
+              {/* App icon above each tab */}
               <View style={styles.iconWrap}>
-                <Feather
-                  name={isFocused ? cfg.activeIcon : cfg.icon}
-                  size={22}
-                  color={isFocused ? colors.primary : (colors.mutedForeground ?? colors.textSecondary)}
+                <Image
+                  source={APP_ICON}
+                  style={[
+                    styles.tabIcon,
+                    { opacity: isFocused ? 1 : 0.45 },
+                  ]}
+                  resizeMode="cover"
                 />
                 {badge !== undefined && badge !== null && (
                   <View style={styles.badge}>
@@ -125,6 +127,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     height: 28,
+  },
+  tabIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
   },
   badge: {
     position: "absolute",

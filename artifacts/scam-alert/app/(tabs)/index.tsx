@@ -9,7 +9,6 @@ import {
   RefreshControl,
   ScrollView,
   Platform,
-  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -103,11 +102,6 @@ export default function HomeScreen() {
       >
         <View style={styles.headerTop}>
           <View style={styles.logoRow}>
-            <Image
-              source={require("@/assets/images/icon.png")}
-              style={styles.headerLogoCircle}
-              resizeMode="cover"
-            />
             <Text style={[styles.headerTitle, { color: colors.text }]}>
               Scam Alert
             </Text>
