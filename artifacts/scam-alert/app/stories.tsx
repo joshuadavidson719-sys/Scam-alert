@@ -71,9 +71,11 @@ export default function StoriesScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
-  const params = useLocalSearchParams<{ authorId?: string; storyIndex?: string }>();
+  const params = useLocalSearchParams<{ authorId?: string; storyIndex?: string; create?: string }>();
 
-  const [mode, setMode] = useState<"browse" | "view" | "create">("browse");
+  const [mode, setMode] = useState<"browse" | "view" | "create">(
+    params.create === "1" ? "create" : "browse"
+  );
   const [groups, setGroups] = useState<StoryGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeGroup, setActiveGroup] = useState<StoryGroup | null>(null);

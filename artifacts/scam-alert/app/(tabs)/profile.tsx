@@ -278,6 +278,7 @@ export default function ProfileScreen() {
   const [savedReelIds, setSavedReelIds] = useState<Set<string>>(new Set());
   const [localLikes, setLocalLikes] = useState<Record<string, string[]>>({});
   const [localDislikes, setLocalDislikes] = useState<Record<string, string[]>>({});
+  const [myStoryCount, setMyStoryCount] = useState(0);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   // My posts
@@ -298,6 +299,18 @@ export default function ProfileScreen() {
       setLoading(false);
     });
     return unsub;
+  }, [user]);
+
+  // My active stories count
+  useEffect(() => {
+    if (!user) return;
+    getDocs(
+      query(
+        collection(db, "stories"),
+        where("authorId", "==", user.uid),
+        where("expiresAt", ">", Date.now()),
+      )
+    ).then((snap) => setMyStoryCount(snap.size)).catch(() => {});
   }, [user]);
 
   // My reels — always fetch on mount so count is accurate
@@ -510,16 +523,55 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.avatarSection}>
-                <TouchableOpacity onPress={handlePickPhoto} disabled={uploadingPhoto} activeOpacity={0.8} style={styles.avatarWrapper}>
-                  <UserAvatar uri={profile.profilePhoto} name={profile.username} size={90} />
-                  <View style={[styles.cameraOverlay, { backgroundColor: colors.primary }]}>
-                    {uploadingPhoto ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Image source={APP_ICON} style={{ width: 16, height: 16, borderRadius: 4 }} resizeMode="cover" />
-                    )}
-                  </View>
-                </TouchableOpacity>
+                {/* Story ring + avatar */}
+                <View style={styles.storyRingWrap}>
+                  {myStoryCount > 0 && (
+                    <TouchableOpacity
+                      style={[styles.storyRing, { borderColor: colors.primary }]}
+                      onPress={() => router.push("/stories" as never)}
+                      activeOpacity={0.85}
+                    >
+                      <View style={[styles.storyRingInner, { backgroundColor: colors.background }]} />
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity onPress={handlePickPhoto} disabled={uploadingPhoto} activeOpacity={0.8} style={styles.avatarWrapper}>
+                    <UserAvatar uri={profile.profilePhoto} name={profile.username} size={90} />
+                    <View style={[styles.cameraOverlay, { backgroundColor: colors.primary }]}>
+                      {uploadingPhoto ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Image source={APP_ICON} style={{ width: 16, height: 16, borderRadius: 4 }} resizeMode="cover" />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                  {/* Story count badge */}
+                  {myStoryCount > 0 && (
+                    <View style={[styles.storyBadge, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.storyBadgeTxt}>{myStoryCount}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Post to Story / View Story buttons */}
+                <View style={styles.storyBtnRow}>
+                  <TouchableOpacity
+                    style={[styles.storyActionBtn, { backgroundColor: colors.primary }]}
+                    onPress={() => router.push("/stories?create=1" as never)}
+                  >
+                    <Text style={styles.storyActionBtnTxt}>+ Post Story</Text>
+                  </TouchableOpacity>
+                  {myStoryCount > 0 && (
+                    <TouchableOpacity
+                      style={[styles.storyActionBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+                      onPress={() => router.push("/stories" as never)}
+                    >
+                      <Text style={[styles.storyActionBtnTxt, { color: colors.text }]}>
+                        View ({myStoryCount})
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
                 <Text style={[styles.changePhotoLabel, { color: colors.primary }]}>
                   {uploadingPhoto ? "Uploading…" : "Change Photo"}
                 </Text>
@@ -1057,6 +1109,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     gap: 6,
   },
+  storyRingWrap:   { position: "relative", alignItems: "center", justifyContent: "center" },
+  storyRing:       { position: "absolute", width: 106, height: 106, borderRadius: 53, borderWidth: 3, zIndex: 1 },
+  storyRingInner:  { position: "absolute", width: 100, height: 100, borderRadius: 50 },
+  storyBadge:      { position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", zIndex: 2, borderWidth: 2, borderColor: "#fff" },
+  storyBadgeTxt:   { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 10 },
+  storyBtnRow:     { flexDirection: "row", gap: 8, marginTop: 4 },
+  storyActionBtn:  { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  storyActionBtnTxt: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 13 },
   avatarWrapper: { position: "relative", marginBottom: 4 },
   changePhotoLabel: {
     fontFamily: "Inter_600SemiBold",
