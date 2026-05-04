@@ -36,6 +36,7 @@ export interface UserProfile {
   followers: string[];
   following: string[];
   isAdmin: boolean;
+  isBanned: boolean;
   createdAt: number;
   expoPushToken?: string;
 }
@@ -126,6 +127,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const cred = await signInWithEmailAndPassword(auth, email, password);
+    const snap = await getDoc(doc(db, "users", cred.user.uid));
+    if (snap.exists() && (snap.data() as UserProfile).isBanned) {
+      await signOut(auth);
+      throw new Error("Your account has been suspended. Please contact support.");
+    }
     await fetchProfile(cred.user.uid);
   };
 
@@ -146,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       followers: [],
       following: [],
       isAdmin: false,
+      isBanned: false,
       createdAt: Date.now(),
     };
     await setDoc(doc(db, "users", cred.user.uid), {

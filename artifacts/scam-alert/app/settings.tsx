@@ -223,6 +223,23 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Admin Panel — only visible to admins */}
+        {profile?.isAdmin && (
+          <>
+            <Text style={[styles.section, { color: "#7C3AED" }]}>Administration</Text>
+            <View style={[styles.group, { backgroundColor: colors.card, borderColor: "#7C3AED40" }]}>
+              <TouchableOpacity style={styles.row} onPress={() => router.push("/admin" as never)}>
+                <Text style={{ fontSize: 18 }}>🛡️</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.rowTitle, { color: "#7C3AED" }]}>Admin Panel</Text>
+                  <Text style={[styles.rowSub, { color: colors.textMuted }]}>Manage reports, block or delete users</Text>
+                </View>
+                <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
         {/* Danger Zone */}
         <Text style={[styles.section, { color: colors.textMuted }]}>Account Actions</Text>
         <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
