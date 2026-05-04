@@ -259,6 +259,13 @@ export default function HomeScreen() {
               <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
               <Text style={[styles.iconBtnLabel, { color: colors.primary }]}>Checker</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/recording-studio" as never)}
+              style={[styles.iconBtn, { backgroundColor: "#00FF8818", borderWidth: 1, borderColor: "#00FF8830" }]}
+            >
+              <Text style={{ fontSize: 13 }}>🎵</Text>
+              <Text style={[styles.iconBtnLabel, { color: "#00FF88" }]}>Studio</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
