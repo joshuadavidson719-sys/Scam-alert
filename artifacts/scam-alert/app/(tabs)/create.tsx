@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
+
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import {
   collection,
@@ -29,6 +30,8 @@ import { CategoryPill } from "@/components/CategoryPill";
 import { router, useLocalSearchParams } from "expo-router";
 import { awardPoints, POINTS } from "@/hooks/usePoints";
 import { useAchievements } from "@/hooks/useAchievements";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 export default function CreateScreen() {
   const colors = useColors();
@@ -243,23 +246,23 @@ export default function CreateScreen() {
         activeOpacity={0.8}
       >
         <View style={[styles.pollIcon, { backgroundColor: "#3B82F620" }]}>
-          <Feather name="bar-chart-2" size={18} color="#3B82F6" />
+          <Image source={APP_ICON} style={styles.pollIconImg} resizeMode="cover" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.pollShortcutTitle, { color: colors.text }]}>Create Community Poll</Text>
           <Text style={[styles.pollShortcutSub, { color: colors.textMuted }]}>Ask the community anything</Text>
         </View>
-        <Feather name="chevron-right" size={16} color={colors.textMuted} />
+        <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
       </TouchableOpacity>
 
       {isPrefilled && (
         <View style={[styles.prefillBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}>
-          <Feather name="cpu" size={13} color={colors.primary} />
+          <Image source={APP_ICON} style={styles.bannerIcon} resizeMode="cover" />
           <Text style={[styles.prefillBannerText, { color: colors.primary }]}>
             Pre-filled from AI Scam Checker — edit before posting
           </Text>
           <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => setIsPrefilled(false)}>
-            <Feather name="x" size={14} color={colors.primary} />
+            <Image source={APP_ICON} style={styles.bannerIcon} resizeMode="cover" />
           </TouchableOpacity>
         </View>
       )}
@@ -356,12 +359,12 @@ export default function CreateScreen() {
           )}
           {!imageUploading && uploadedImageUrl && (
             <View style={styles.uploadedBadge}>
-              <Feather name="check-circle" size={14} color="#10B981" />
+              <Image source={APP_ICON} style={styles.badgeIcon} resizeMode="cover" />
               <Text style={styles.uploadedText}>Uploaded</Text>
             </View>
           )}
           <TouchableOpacity style={styles.removeImageBtn} onPress={showImagePicker}>
-            <Feather name="edit-2" size={14} color="#fff" />
+            <Image source={APP_ICON} style={styles.badgeIcon} resizeMode="cover" />
           </TouchableOpacity>
         </View>
       ) : (
@@ -369,7 +372,7 @@ export default function CreateScreen() {
           style={[styles.imagePickerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={showImagePicker}
         >
-          <Feather name="image" size={22} color={colors.textMuted} />
+          <Image source={APP_ICON} style={styles.addPhotoIcon} resizeMode="cover" />
           <View>
             <Text style={[styles.imagePickerTitle, { color: colors.text }]}>Add Photo</Text>
             <Text style={[styles.imagePickerSub, { color: colors.textMuted }]}>
@@ -380,7 +383,7 @@ export default function CreateScreen() {
       )}
 
       <View style={[styles.disclaimerBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "44" }]}>
-        <Feather name="info" size={14} color={colors.warning} />
+        <Image source={APP_ICON} style={styles.bannerIcon} resizeMode="cover" />
         <Text style={[styles.disclaimerText, { color: colors.textSecondary }]}>
           All content is user-submitted and for awareness purposes only. Ensure your post follows our Community Guidelines.
         </Text>
@@ -410,6 +413,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   pollIcon: { width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  pollIconImg: { width: 20, height: 20, borderRadius: 5 },
+  chevronIcon: { width: 16, height: 16, borderRadius: 4 },
+  bannerIcon:  { width: 14, height: 14, borderRadius: 3 },
+  badgeIcon:   { width: 14, height: 14, borderRadius: 3 },
+  addPhotoIcon:{ width: 24, height: 24, borderRadius: 6 },
   pollShortcutTitle: { fontFamily: "Inter_600SemiBold", fontSize: 14, marginBottom: 2 },
   pollShortcutSub: { fontFamily: "Inter_400Regular", fontSize: 12 },
   glowInput: { borderWidth: 1.5 },
