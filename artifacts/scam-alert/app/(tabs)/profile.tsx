@@ -18,7 +18,6 @@ import {
   Linking,
   Image,
 } from "react-native";
-const APP_ICON = require("@/assets/images/icon.png");
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import {
