@@ -4,11 +4,13 @@ import {
   Text,
   StyleSheet,
   View,
+  Image,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import type { CategoryId } from "@/context/AuthContext";
 import { CATEGORIES } from "@/context/AuthContext";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface Props {
   categoryId: CategoryId | "all";
@@ -30,10 +32,7 @@ export function CategoryPill({
   const colors = useColors();
   const cat = CATEGORIES.find((c) => c.id === categoryId);
   const displayLabel = label ?? cat?.label ?? "All";
-  const iconName =
-    categoryId === "all"
-      ? "grid"
-      : (cat?.icon as keyof typeof Feather.glyphMap) ?? "tag";
+  const iconSize = size === "sm" ? 12 : 14;
 
   return (
     <TouchableOpacity
@@ -48,10 +47,10 @@ export function CategoryPill({
         },
       ]}
     >
-      <Feather
-        name={iconName}
-        size={size === "sm" ? 12 : 14}
-        color={isSelected ? "#fff" : colors.textSecondary}
+      <Image
+        source={APP_ICON}
+        style={{ width: iconSize, height: iconSize, borderRadius: 3 }}
+        resizeMode="cover"
       />
       <Text
         style={[

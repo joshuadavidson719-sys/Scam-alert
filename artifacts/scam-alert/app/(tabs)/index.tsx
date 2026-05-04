@@ -9,6 +9,7 @@ import {
   RefreshControl,
   ScrollView,
   Platform,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -39,6 +40,7 @@ import { ScamRadar } from "@/components/ScamRadar";
 import { DailyBriefingModal } from "@/components/DailyBriefingModal";
 import { router } from "expo-router";
 
+const APP_ICON = require("@/assets/images/icon.png");
 const HEADER_HEIGHT = 60;
 
 export default function HomeScreen() {
@@ -111,21 +113,21 @@ export default function HomeScreen() {
               onPress={() => router.push("/stories" as never)}
               style={[styles.iconBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
             >
-              <Feather name="camera" size={16} color={colors.textSecondary} />
+              <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
               <Text style={[styles.iconBtnLabel, { color: colors.textSecondary }]}>Stories</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/chatbot" as never)}
               style={[styles.iconBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
             >
-              <Feather name="cpu" size={16} color={colors.textSecondary} />
+              <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
               <Text style={[styles.iconBtnLabel, { color: colors.textSecondary }]}>AI Chat</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/scam-checker" as never)}
               style={[styles.iconBtn, { backgroundColor: colors.primary + "20", borderWidth: 1, borderColor: colors.primary + "40" }]}
             >
-              <Feather name="shield" size={16} color={colors.primary} />
+              <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
               <Text style={[styles.iconBtnLabel, { color: colors.primary }]}>Checker</Text>
             </TouchableOpacity>
           </View>
@@ -161,7 +163,7 @@ export default function HomeScreen() {
         </View>
       ) : posts.length === 0 ? (
         <View style={styles.centered}>
-          <Feather name="inbox" size={48} color={colors.textMuted} />
+          <Image source={APP_ICON} style={styles.emptyIcon} resizeMode="cover" />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No posts yet</Text>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             Be the first to post a scam alert!
@@ -283,6 +285,8 @@ const styles = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 0.2,
   },
+  headerBtnIcon: { width: 16, height: 16, borderRadius: 4 },
+  emptyIcon: { width: 52, height: 52, borderRadius: 14 },
   categories: {
     paddingHorizontal: 16,
     paddingTop: 4,
