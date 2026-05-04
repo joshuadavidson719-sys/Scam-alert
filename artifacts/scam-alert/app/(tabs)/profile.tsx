@@ -300,9 +300,9 @@ export default function ProfileScreen() {
     return unsub;
   }, [user]);
 
-  // My reels — fetch when tab switches to reels
+  // My reels — always fetch on mount so count is accurate
   useEffect(() => {
-    if (activeTab !== "reels" || !user) return;
+    if (!user) return;
     setReelsLoading(true);
     getDocs(
       query(collection(db, "reels"), where("userId", "==", user.uid))
@@ -317,7 +317,7 @@ export default function ProfileScreen() {
       setReels(data);
       setReelsLoading(false);
     }).catch(() => setReelsLoading(false));
-  }, [activeTab, user]);
+  }, [user]);
 
   // Load saved reel IDs
   useEffect(() => {
