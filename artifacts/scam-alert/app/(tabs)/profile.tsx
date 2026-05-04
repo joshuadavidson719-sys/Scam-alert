@@ -16,7 +16,9 @@ import {
   ScrollView,
   Share,
   Linking,
+  Image,
 } from "react-native";
+const APP_ICON = require("@/assets/images/icon.png");
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import {
@@ -90,7 +92,7 @@ function ReelThumbnail({ videoUrl, style }: { videoUrl: string; style: object })
         <Image source={{ uri: thumbUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       ) : (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Feather name="film" size={22} color="rgba(255,255,255,0.2)" />
+          <Image source={APP_ICON} style={styles.reelThumbPlaceholder} resizeMode="cover" />
         </View>
       )}
     </View>
@@ -807,7 +809,8 @@ export default function ProfileScreen() {
                   <Text style={[styles.reelsCtaTxt, { color: colors.text }]}>
                     {reels.length === 0 ? "Post your first reel" : "Post another reel"}
                   </Text>
-                  <Feather name="plus-circle" size={18} color="#EC4899" />
+                  <Image source={APP_ICON} style={styles.reelCtaIcon} resizeMode="cover" />
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#EC4899" }}>Post Reel</Text>
                 </TouchableOpacity>
 
                 {reels.length === 0 ? (
@@ -836,7 +839,8 @@ export default function ProfileScreen() {
                           >
                             <ReelThumbnail videoUrl={reel.videoUrl} style={StyleSheet.absoluteFill} />
                             <View style={styles.reelPlayOverlay}>
-                              <Feather name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
+                              <Image source={APP_ICON} style={styles.reelPlayIcon} resizeMode="cover" />
+                              <Text style={styles.reelPlayLabel}>Play</Text>
                             </View>
                             {reel.caption ? (
                               <View style={styles.reelCaptionOverlay}>
@@ -844,8 +848,8 @@ export default function ProfileScreen() {
                               </View>
                             ) : null}
                             <View style={[styles.reelStats, { backgroundColor: "rgba(0,0,0,0.55)" }]}>
-                              <Feather name="eye" size={9} color="#fff" />
-                              <Text style={styles.reelStatTxt}>{reel.views.toLocaleString()}</Text>
+                              <Image source={APP_ICON} style={styles.reelStatIcon} resizeMode="cover" />
+                              <Text style={styles.reelStatTxt}>{reel.views.toLocaleString()} views</Text>
                             </View>
                           </TouchableOpacity>
 
@@ -857,10 +861,9 @@ export default function ProfileScreen() {
                               onPress={() => handleReelLike(reel)}
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Feather name="heart" size={15} color={liked ? "#FF3B3B" : colors.textMuted} />
-                              <Text style={[styles.reelActionCount, { color: liked ? "#FF3B3B" : colors.textMuted }]}>
-                                {likes.length}
-                              </Text>
+                              <Image source={APP_ICON} style={styles.reelActionIcon} resizeMode="cover" />
+                              <Text style={[styles.reelActionCount, { color: liked ? "#FF3B3B" : colors.textMuted }]}>Like</Text>
+                              <Text style={[styles.reelActionCount, { color: liked ? "#FF3B3B" : colors.textMuted }]}>{likes.length}</Text>
                             </TouchableOpacity>
 
                             {/* Dislike */}
@@ -869,10 +872,9 @@ export default function ProfileScreen() {
                               onPress={() => handleReelDislike(reel)}
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Feather name="thumbs-down" size={15} color={disliked ? "#F59E0B" : colors.textMuted} />
-                              <Text style={[styles.reelActionCount, { color: disliked ? "#F59E0B" : colors.textMuted }]}>
-                                {dislikes.length}
-                              </Text>
+                              <Image source={APP_ICON} style={styles.reelActionIcon} resizeMode="cover" />
+                              <Text style={[styles.reelActionCount, { color: disliked ? "#F59E0B" : colors.textMuted }]}>Dislike</Text>
+                              <Text style={[styles.reelActionCount, { color: disliked ? "#F59E0B" : colors.textMuted }]}>{dislikes.length}</Text>
                             </TouchableOpacity>
 
                             {/* Remix */}
@@ -881,7 +883,7 @@ export default function ProfileScreen() {
                               onPress={() => handleReelRemix(reel)}
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Feather name="repeat" size={15} color="#EC4899" />
+                              <Image source={APP_ICON} style={styles.reelActionIcon} resizeMode="cover" />
                               <Text style={[styles.reelActionCount, { color: "#EC4899" }]}>Remix</Text>
                             </TouchableOpacity>
 
@@ -891,10 +893,8 @@ export default function ProfileScreen() {
                               onPress={() => handleReelSave(reel)}
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Feather name="bookmark" size={15} color={saved ? colors.primary : colors.textMuted} />
-                              <Text style={[styles.reelActionCount, { color: saved ? colors.primary : colors.textMuted }]}>
-                                {saved ? "Saved" : "Save"}
-                              </Text>
+                              <Image source={APP_ICON} style={styles.reelActionIcon} resizeMode="cover" />
+                              <Text style={[styles.reelActionCount, { color: saved ? colors.primary : colors.textMuted }]}>{saved ? "Saved" : "Save"}</Text>
                             </TouchableOpacity>
 
                             {/* Report */}
@@ -914,7 +914,7 @@ export default function ProfileScreen() {
                               }
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Feather name="flag" size={15} color="#EF4444" />
+                              <Image source={APP_ICON} style={styles.reelActionIcon} resizeMode="cover" />
                               <Text style={[styles.reelActionCount, { color: "#EF4444" }]}>Report</Text>
                             </TouchableOpacity>
                           </View>
@@ -1251,4 +1251,11 @@ const styles = StyleSheet.create({
   reelActions:      { flexDirection: "row", flexWrap: "wrap", borderTopWidth: 1, paddingVertical: 6, paddingHorizontal: 4, gap: 2 },
   reelActionBtn:    { flex: 1, alignItems: "center", justifyContent: "center", gap: 2, paddingVertical: 3 },
   reelActionCount:  { fontFamily: "Inter_500Medium", fontSize: 9 },
+
+  reelThumbPlaceholder: { width: 28, height: 28, borderRadius: 6, opacity: 0.3 },
+  reelCtaIcon:          { width: 18, height: 18, borderRadius: 4 },
+  reelPlayIcon:         { width: 34, height: 34, borderRadius: 8 },
+  reelPlayLabel:        { fontFamily: "Inter_700Bold", fontSize: 12, color: "#fff", marginTop: 4, textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  reelStatIcon:         { width: 9, height: 9, borderRadius: 2 },
+  reelActionIcon:       { width: 15, height: 15, borderRadius: 3 },
 });
