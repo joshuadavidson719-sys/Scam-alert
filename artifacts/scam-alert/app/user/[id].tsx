@@ -8,10 +8,11 @@ import {
   ActivityIndicator,
   FlatList,
   Alert,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+
 import {
   doc,
   getDoc,
@@ -34,7 +35,10 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
+import { UserActivityCalendar } from "@/components/UserActivityCalendar";
 import { generateId } from "@/lib/utils";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -152,8 +156,9 @@ export default function UserProfileScreen() {
                 { paddingTop: insets.top + 8, borderBottomColor: colors.border },
               ]}
             >
-              <TouchableOpacity onPress={() => router.back()}>
-                <Feather name="arrow-left" size={24} color={colors.text} />
+              <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} resizeMode="cover" />
+                <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 13, color: colors.text }}>Back</Text>
               </TouchableOpacity>
               <Text style={[styles.navTitle, { color: colors.text }]} numberOfLines={1}>
                 {targetUser.username}
@@ -217,12 +222,18 @@ export default function UserProfileScreen() {
                     style={[styles.msgBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                     onPress={handleMessage}
                   >
-                    <Feather name="message-circle" size={16} color={colors.text} />
+                    <Image source={APP_ICON} style={{ width: 16, height: 16, borderRadius: 4 }} resizeMode="cover" />
                     <Text style={[styles.msgBtnText, { color: colors.text }]}>Message</Text>
                   </TouchableOpacity>
                 </View>
               )}
             </View>
+
+            {/* Activity Calendar */}
+            <UserActivityCalendar
+              userId={id as string}
+              joinedAt={targetUser.createdAt ?? null}
+            />
 
             <Text style={[styles.postsHeader, { color: colors.text, borderBottomColor: colors.border }]}>
               Posts
@@ -240,7 +251,7 @@ export default function UserProfileScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.emptyPosts}>
-            <Feather name="file-text" size={36} color={colors.textMuted} />
+            <Image source={APP_ICON} style={{ width: 48, height: 48, borderRadius: 14, opacity: 0.4 }} resizeMode="cover" />
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No posts yet</Text>
           </View>
         }

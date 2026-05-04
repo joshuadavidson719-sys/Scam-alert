@@ -49,6 +49,7 @@ import { useStreak } from "@/hooks/useStreak";
 import { useAchievements, getRarityColor, ALL_ACHIEVEMENTS } from "@/hooks/useAchievements";
 import { AchievementToast } from "@/components/AchievementToast";
 import { CustomThemePicker } from "@/components/CustomThemePicker";
+import { UserActivityCalendar } from "@/components/UserActivityCalendar";
 import * as VideoThumbnails from "expo-video-thumbnails";
 
 const APP_ICON = require("@/assets/images/icon.png");
@@ -637,6 +638,14 @@ export default function ProfileScreen() {
                 </View>
               )}
             </View>
+
+            {/* Activity Calendar */}
+            {user && (
+              <UserActivityCalendar
+                userId={user.uid}
+                joinedAt={profile.createdAt ?? null}
+              />
+            )}
 
             {/* Quick Actions */}
             <View style={styles.quickLinks}>
