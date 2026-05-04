@@ -110,7 +110,8 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
-    ...Feather.font,
+    // Feather icon font — native only (web loads it automatically via CSS)
+    ...(Platform.OS !== "web" ? Feather.font : {}),
   });
   // On web, the browser handles fonts natively — don't block rendering
   const fontsLoaded = Platform.OS === "web" ? true : nativeFontsLoaded;
