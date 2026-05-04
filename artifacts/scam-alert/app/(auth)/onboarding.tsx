@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useAuth, NICHES } from "@/context/AuthContext";
 
@@ -69,7 +68,7 @@ export default function OnboardingScreen() {
           >
             {selectedNiche === niche && (
               <View style={styles.checkIcon}>
-                <Feather name="check" size={14} color="#fff" />
+                <Text style={{ fontSize: 14, color: "#fff", fontWeight: "bold" }}>✓</Text>
               </View>
             )}
             <Text

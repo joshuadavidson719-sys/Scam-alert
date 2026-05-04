@@ -8,13 +8,15 @@ import {
   Linking,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface LinkResult {
   isSuspicious: boolean;
@@ -92,13 +94,13 @@ export default function QRScannerScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Feather name="arrow-left" size={24} color={colors.text} />
+            <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
           </TouchableOpacity>
           <Text style={[styles.navTitle, { color: colors.text }]}>QR Scanner</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.permissionBox}>
-          <Feather name="camera" size={48} color={colors.textMuted} />
+          <Text style={{ fontSize: 48 }}>📷</Text>
           <Text style={[styles.permTitle, { color: colors.text }]}>Camera Access Needed</Text>
           <Text style={[styles.permText, { color: colors.textSecondary }]}>
             Allow camera access to scan QR codes and check them for safety.
@@ -120,7 +122,7 @@ export default function QRScannerScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>QR Scanner</Text>
         <View style={{ width: 24 }} />
@@ -146,7 +148,7 @@ export default function QRScannerScreen() {
       ) : (
         <ScrollView contentContainerStyle={[styles.resultContent, { paddingBottom: insets.bottom + 40 }]}>
           <View style={[styles.scannedBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Feather name="maximize" size={20} color={colors.textMuted} />
+            <Text style={{ fontSize: 20, color: colors.textMuted }}>⤢</Text>
             <Text style={[styles.scannedLabel, { color: colors.textMuted }]}>Scanned Content</Text>
             <Text style={[styles.scannedUrl, { color: colors.text }]} numberOfLines={3}>
               {scannedUrl}
@@ -170,7 +172,7 @@ export default function QRScannerScreen() {
                 <View style={styles.flagList}>
                   {result.redFlags.map((f, i) => (
                     <View key={i} style={styles.flagRow}>
-                      <Feather name="alert-circle" size={12} color="#EF4444" />
+                      <Text style={{ fontSize: 12, color: "#EF4444" }}>⚠️</Text>
                       <Text style={[styles.flagText, { color: colors.textSecondary }]}>{f}</Text>
                     </View>
                   ))}
@@ -185,7 +187,7 @@ export default function QRScannerScreen() {
               style={[styles.actionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={handleReset}
             >
-              <Feather name="refresh-cw" size={16} color={colors.text} />
+              <Text style={{ fontSize: 16, color: colors.text }}>🔄</Text>
               <Text style={[styles.actionBtnText, { color: colors.text }]}>Scan Again</Text>
             </TouchableOpacity>
 
@@ -200,11 +202,7 @@ export default function QRScannerScreen() {
                 ]}
                 onPress={handleOpen}
               >
-                <Feather
-                  name="external-link"
-                  size={16}
-                  color={result?.isSuspicious ? "#EF4444" : colors.primary}
-                />
+                <Text style={{ fontSize: 16, color: result?.isSuspicious ? "#EF4444" : colors.primary }}>↗️</Text>
                 <Text
                   style={[styles.actionBtnText, { color: result?.isSuspicious ? "#EF4444" : colors.primary }]}
                 >

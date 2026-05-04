@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 
@@ -77,7 +76,7 @@ export default function LoginScreen() {
 
         {!firebaseConfigured && (
           <View style={[styles.warningBanner, { backgroundColor: colors.warning + "22", borderColor: colors.warning }]}>
-            <Feather name="alert-triangle" size={14} color={colors.warning} />
+            <Text style={{ fontSize: 14, color: colors.warning }}>⚠️</Text>
             <Text style={[styles.warningText, { color: colors.warning }]}>
               Firebase not configured. Please add your Firebase credentials in app settings.
             </Text>
@@ -89,13 +88,13 @@ export default function LoginScreen() {
 
           {error ? (
             <View style={[styles.errorBox, { backgroundColor: colors.destructive + "15", borderColor: colors.destructive + "33" }]}>
-              <Feather name="alert-circle" size={14} color={colors.destructive} />
+              <Text style={{ fontSize: 14, color: colors.destructive }}>⚠️</Text>
               <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
             </View>
           ) : null}
 
           <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            <Feather name="mail" size={16} color={colors.textMuted} />
+            <Text style={{ fontSize: 16, color: colors.textMuted }}>📧</Text>
             <TextInput
               style={[styles.input, { color: colors.text }]}
               placeholder="Email address"
@@ -109,7 +108,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            <Feather name="lock" size={16} color={colors.textMuted} />
+            <Text style={{ fontSize: 16, color: colors.textMuted }}>🔒</Text>
             <TextInput
               style={[styles.input, { color: colors.text }]}
               placeholder="Password"
@@ -120,11 +119,7 @@ export default function LoginScreen() {
               autoComplete="password"
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Feather
-                name={showPassword ? "eye-off" : "eye"}
-                size={16}
-                color={colors.textMuted}
-              />
+              <Text style={{ fontSize: 16, color: colors.textMuted }}>{showPassword ? "🙈" : "👁️"}</Text>
             </TouchableOpacity>
           </View>
 

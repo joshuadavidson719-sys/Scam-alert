@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Alert,
+  View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Alert, Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const { width: SW } = Dimensions.get("window");
 const GRID = 8;
@@ -164,7 +165,7 @@ export default function ScamBlockBlast() {
     <View style={[S.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={S.nav}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[S.navTitle, { color: colors.text }]}>Scam Block Blast</Text>
         <View style={{ width: 22 }} />
@@ -183,7 +184,7 @@ export default function ScamBlockBlast() {
             </View>
           )}
           <TouchableOpacity style={[S.playBtn, { backgroundColor: "#FF3B3B" }]} onPress={startGame}>
-            <Feather name="play" size={18} color="#fff" />
+            <Text style={{ fontSize: 18, color: "#fff" }}>▶</Text>
             <Text style={S.playBtnTxt}>Play Now</Text>
           </TouchableOpacity>
         </View>
@@ -212,11 +213,11 @@ export default function ScamBlockBlast() {
       </View>
       <View style={{ flexDirection: "row", gap: 12 }}>
         <TouchableOpacity style={[S.goBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.back()}>
-          <Feather name="home" size={16} color={colors.text} />
+          <Text style={{ fontSize: 16, color: colors.text }}>🏠</Text>
           <Text style={[S.goBtnTxt, { color: colors.text }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[S.goBtn, { backgroundColor: "#FF3B3B", borderColor: "#FF3B3B" }]} onPress={startGame}>
-          <Feather name="refresh-cw" size={16} color="#fff" />
+          <Text style={{ fontSize: 16, color: "#fff" }}>🔄</Text>
           <Text style={[S.goBtnTxt, { color: "#fff" }]}>Play Again</Text>
         </TouchableOpacity>
       </View>
@@ -227,7 +228,7 @@ export default function ScamBlockBlast() {
     <View style={[S.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={S.nav}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[S.navTitle, { color: colors.text }]}>Scam Block Blast</Text>
         <View style={[S.scoreChip, { backgroundColor: "#FF3B3B18", borderColor: "#FF3B3B40" }]}>

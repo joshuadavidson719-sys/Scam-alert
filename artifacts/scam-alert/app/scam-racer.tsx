@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
-  Animated, ScrollView, ActivityIndicator,
+  Animated, ScrollView, ActivityIndicator, Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
@@ -15,6 +14,8 @@ import {
   getDocs, serverTimestamp,
 } from "firebase/firestore";
 import { UserAvatar } from "@/components/UserAvatar";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const { width: SW, height: SH } = Dimensions.get("window");
 
@@ -510,7 +511,7 @@ export default function ScamRacer() {
       <View style={[S.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <View style={S.nav}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Feather name="arrow-left" size={22} color={colors.text} />
+            <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
           </TouchableOpacity>
           <Text style={[S.navTitle, { color: colors.text }]}>Scam Racer</Text>
           <View style={{ width: 22 }} />
@@ -661,7 +662,7 @@ export default function ScamRacer() {
           onPress={() => { if (loopRef.current) clearInterval(loopRef.current); setScreen("menu"); }}
           style={S.hudBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Feather name="x" size={18} color="#fff" />
+          <Text style={{ fontSize: 18, color: "#fff", fontWeight: "bold" }}>✕</Text>
         </TouchableOpacity>
 
         <View style={S.hudCenter}>
@@ -743,7 +744,7 @@ export default function ScamRacer() {
           onPress={() => { const g = gs.current; g.lane = Math.max(0, g.lane - 1); }}
           activeOpacity={0.7}
         >
-          <Feather name="chevron-left" size={36} color="#fff" />
+          <Text style={{ fontSize: 36, color: "#fff" }}>◀</Text>
           <Text style={S.ctrlLabel}>LEFT</Text>
         </TouchableOpacity>
 
@@ -765,7 +766,7 @@ export default function ScamRacer() {
           onPress={() => { const g = gs.current; g.lane = Math.min(LANES - 1, g.lane + 1); }}
           activeOpacity={0.7}
         >
-          <Feather name="chevron-right" size={36} color="#fff" />
+          <Text style={{ fontSize: 36, color: "#fff" }}>▶</Text>
           <Text style={S.ctrlLabel}>RIGHT</Text>
         </TouchableOpacity>
       </View>

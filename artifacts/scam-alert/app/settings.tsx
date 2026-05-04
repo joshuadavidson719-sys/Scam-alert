@@ -8,18 +8,20 @@ import {
   Switch,
   Alert,
   Platform,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { CustomThemePicker } from "@/components/CustomThemePicker";
-import { deleteUser, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { deleteUser } from "firebase/auth";
 import { doc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -81,8 +83,9 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color={colors.text} />
+        <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Text style={[{ fontFamily: "Inter_600SemiBold", fontSize: 13 }, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Settings</Text>
         <View style={{ width: 24 }} />
@@ -96,18 +99,18 @@ export default function SettingsScreen() {
             style={styles.row}
             onPress={() => router.push("/edit-profile" as never)}
           >
-            <Feather name="user" size={18} color={colors.primary} />
+            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Edit Profile</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>
                 {profile?.username ?? "—"}
               </Text>
             </View>
-            <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={styles.row}>
-            <Feather name="mail" size={18} color={colors.primary} />
+            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Email</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>
@@ -121,12 +124,12 @@ export default function SettingsScreen() {
         <Text style={[styles.section, { color: colors.textMuted }]}>Appearance</Text>
         <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={styles.row} onPress={() => { Haptics.selectionAsync(); setShowThemePicker(true); }}>
-            <Feather name="droplet" size={18} color={colors.primary} />
+            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Theme</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>{themeLabel}</Text>
             </View>
-            <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
           </TouchableOpacity>
         </View>
 
@@ -141,7 +144,7 @@ export default function SettingsScreen() {
           ].map((item, i, arr) => (
             <React.Fragment key={item.label}>
               <View style={styles.row}>
-                <Feather name="bell" size={18} color={colors.primary} />
+                <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowTitle, { color: colors.text }]}>{item.label}</Text>
                   <Text style={[styles.rowSub, { color: colors.textMuted }]}>{item.sub}</Text>
@@ -162,28 +165,28 @@ export default function SettingsScreen() {
         <Text style={[styles.section, { color: colors.textMuted }]}>Safety Tools</Text>
         <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {[
-            { label: "AI Scam Checker", sub: "Analyze suspicious messages", icon: "cpu", route: "/scam-checker" },
-            { label: "Link Checker", sub: "Check if a URL is safe", icon: "link", route: "/link-checker" },
-            { label: "Phone Checker", sub: "Check suspicious numbers", icon: "phone", route: "/phone-checker" },
-            { label: "QR Scanner", sub: "Scan QR codes safely", icon: "camera", route: "/qr-scanner" },
-            { label: "Dark Web Checker", sub: "See if your email was breached", icon: "eye-off", route: "/dark-web-checker" },
-            { label: "ScamBot AI", sub: "24/7 scam advice chatbot", icon: "message-circle", route: "/chatbot" },
-            { label: "Scam Map", sub: "Global scam heat map", icon: "map", route: "/scam-map" },
-            { label: "Scam Quiz", sub: "Test your scam awareness", icon: "help-circle", route: "/scam-quiz" },
-            { label: "Emergency Contacts", sub: "Report to authorities", icon: "alert-triangle", route: "/emergency-contacts" },
-            { label: "Leaderboard", sub: "Top community contributors", icon: "award", route: "/leaderboard" },
+            { label: "AI Scam Checker", sub: "Analyze suspicious messages", route: "/scam-checker" },
+            { label: "Link Checker", sub: "Check if a URL is safe", route: "/link-checker" },
+            { label: "Phone Checker", sub: "Check suspicious numbers", route: "/phone-checker" },
+            { label: "QR Scanner", sub: "Scan QR codes safely", route: "/qr-scanner" },
+            { label: "Dark Web Checker", sub: "See if your email was breached", route: "/dark-web-checker" },
+            { label: "ScamBot AI", sub: "24/7 scam advice chatbot", route: "/chatbot" },
+            { label: "Scam Map", sub: "Global scam heat map", route: "/scam-map" },
+            { label: "Scam Quiz", sub: "Test your scam awareness", route: "/scam-quiz" },
+            { label: "Emergency Contacts", sub: "Report to authorities", route: "/emergency-contacts" },
+            { label: "Leaderboard", sub: "Top community contributors", route: "/leaderboard" },
           ].map((item, i, arr) => (
             <React.Fragment key={item.label}>
               <TouchableOpacity
                 style={styles.row}
                 onPress={() => router.push(item.route as never)}
               >
-                <Feather name={item.icon as "link"} size={18} color={colors.primary} />
+                <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowTitle, { color: colors.text }]}>{item.label}</Text>
                   <Text style={[styles.rowSub, { color: colors.textMuted }]}>{item.sub}</Text>
                 </View>
-                <Feather name="chevron-right" size={18} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
               </TouchableOpacity>
               {i < arr.length - 1 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
             </React.Fragment>
@@ -194,7 +197,7 @@ export default function SettingsScreen() {
         <Text style={[styles.section, { color: colors.textMuted }]}>About</Text>
         <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.row}>
-            <Feather name="info" size={18} color={colors.primary} />
+            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Version</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>1.0.0</Text>
@@ -202,21 +205,21 @@ export default function SettingsScreen() {
           </View>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <TouchableOpacity style={styles.row} onPress={() => router.push("/community-guidelines" as never)}>
-            <Feather name="users" size={18} color={colors.primary} />
+            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Community Guidelines</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>Our 8 community rules</Text>
             </View>
-            <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <TouchableOpacity style={styles.row} onPress={() => router.push("/tos" as never)}>
-            <Feather name="shield" size={18} color={colors.primary} />
+            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Terms, Privacy & DMCA</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>Legal · Copyright · Data policy</Text>
             </View>
-            <Feather name="chevron-right" size={18} color={colors.textMuted} />
+            <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
           </TouchableOpacity>
         </View>
 
@@ -224,12 +227,12 @@ export default function SettingsScreen() {
         <Text style={[styles.section, { color: colors.textMuted }]}>Account Actions</Text>
         <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={styles.row} onPress={handleLogout}>
-            <Feather name="log-out" size={18} color="#F59E0B" />
+            <Text style={{ fontSize: 18 }}>🚪</Text>
             <Text style={[styles.rowTitle, { color: "#F59E0B" }]}>Sign Out</Text>
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <TouchableOpacity style={styles.row} onPress={handleDeleteAccount}>
-            <Feather name="trash-2" size={18} color="#EF4444" />
+            <Text style={{ fontSize: 18 }}>🗑️</Text>
             <Text style={[styles.rowTitle, { color: "#EF4444" }]}>Delete Account</Text>
           </TouchableOpacity>
         </View>
@@ -249,6 +252,9 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
+  navIcon:  { width: 22, height: 22, borderRadius: 6 },
+  rowIcon:  { width: 18, height: 18, borderRadius: 5 },
+  chevron:  { width: 16, height: 16, borderRadius: 4, opacity: 0.4 },
   navTitle: { fontFamily: "Inter_600SemiBold", fontSize: 17 },
   content: { padding: 16, gap: 6 },
   section: {

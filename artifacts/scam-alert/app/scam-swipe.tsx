@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Dimensions, Animated, PanResponder,
+  Dimensions, Animated, PanResponder, Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
@@ -13,6 +12,8 @@ import {
   collection, addDoc, query, where, orderBy,
   limit, getDocs, serverTimestamp,
 } from "firebase/firestore";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const { width: SW, height: SH } = Dimensions.get("window");
 const CARD_W = SW - 48;
@@ -208,7 +209,7 @@ export default function ScamSwipe() {
       <View style={[S.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <View style={S.nav}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Feather name="arrow-left" size={22} color={colors.text} />
+            <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
           </TouchableOpacity>
           <Text style={[S.navTitle, { color: colors.text }]}>Scam Swipe 🃏</Text>
           <View style={{ width: 22 }} />
@@ -316,7 +317,7 @@ export default function ScamSwipe() {
       {/* HUD */}
       <View style={S.hud}>
         <TouchableOpacity onPress={() => setScreen("menu")} style={S.hudBack}>
-          <Feather name="x" size={16} color="#fff" />
+          <Text style={{ fontSize: 18, color: "#fff", fontWeight: "bold" }}>✕</Text>
         </TouchableOpacity>
         <View style={S.hudCenter}>
           <Text style={S.hudScore}>{score}</Text>

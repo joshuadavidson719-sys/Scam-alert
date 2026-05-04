@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView,
+  View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const { width: SW, height: SH } = Dimensions.get("window");
 
@@ -194,7 +195,7 @@ export default function ScamHillDash() {
     <View style={[H.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={H.nav}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[H.navTitle, { color: colors.text }]}>Scam Hill Dash</Text>
         <View style={{ width: 22 }} />
@@ -212,7 +213,7 @@ export default function ScamHillDash() {
           </View>
         )}
         <TouchableOpacity style={[H.playBtn, { backgroundColor: "#10B981" }]} onPress={startGame}>
-          <Feather name="play" size={18} color="#fff" />
+          <Text style={{ fontSize: 18, color: "#fff" }}>▶</Text>
           <Text style={H.playBtnTxt}>Drive!</Text>
         </TouchableOpacity>
         <View style={[H.howCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -248,11 +249,11 @@ export default function ScamHillDash() {
       </View>
       <View style={{ flexDirection: "row", gap: 12 }}>
         <TouchableOpacity style={[H.goBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.back()}>
-          <Feather name="home" size={16} color={colors.text} />
+          <Text style={{ fontSize: 16, color: colors.text }}>🏠</Text>
           <Text style={[H.goBtnTxt, { color: colors.text }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[H.goBtn, { backgroundColor: "#10B981", borderColor: "#10B981" }]} onPress={startGame}>
-          <Feather name="refresh-cw" size={16} color="#fff" />
+          <Text style={{ fontSize: 16, color: "#fff" }}>🔄</Text>
           <Text style={[H.goBtnTxt, { color: "#fff" }]}>Drive Again</Text>
         </TouchableOpacity>
       </View>
@@ -284,7 +285,7 @@ export default function ScamHillDash() {
         </View>
         {gs.shielded && <View style={H.shieldBadge}><Text style={{ fontSize: 14 }}>🛡️ Shield</Text></View>}
         <TouchableOpacity onPress={() => { clearInterval(loopRef.current!); setScreen("gameover"); }} hitSlop={{ top:8,bottom:8,left:8,right:8 }}>
-          <Feather name="x" size={18} color="rgba(255,255,255,0.6)" />
+          <Text style={{ fontSize: 18, color: "rgba(255,255,255,0.6)", fontWeight: "bold" }}>✕</Text>
         </TouchableOpacity>
       </View>
 

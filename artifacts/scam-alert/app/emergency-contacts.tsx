@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface Contact {
   name: string;
@@ -144,8 +146,9 @@ export default function EmergencyContactsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+        <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Text style={[{ fontFamily: "Inter_600SemiBold", fontSize: 13 }, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Emergency Contacts</Text>
         <View style={{ width: 22 }} />
@@ -153,7 +156,7 @@ export default function EmergencyContactsScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40 }}>
         <View style={[styles.banner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}>
-          <Feather name="alert-triangle" size={20} color={colors.primary} />
+          <Text style={{ fontSize: 20 }}>⚠️</Text>
           <Text style={[styles.bannerText, { color: colors.text }]}>
             If you've been scammed, act fast — contact your bank immediately, then report to authorities below.
           </Text>
@@ -171,7 +174,7 @@ export default function EmergencyContactsScreen() {
                   activeOpacity={0.7}
                 >
                   <View style={[styles.iconBox, { backgroundColor: c.color + "18" }]}>
-                    <Feather name={c.icon as any} size={20} color={c.color} />
+                    <Image source={APP_ICON} style={styles.contactIcon} resizeMode="cover" />
                   </View>
                   <View style={styles.contactInfo}>
                     <Text style={[styles.contactName, { color: colors.text }]}>{c.name}</Text>
@@ -179,19 +182,19 @@ export default function EmergencyContactsScreen() {
                     <View style={styles.contactLinks}>
                       {c.phone && (
                         <View style={styles.linkChip}>
-                          <Feather name="phone" size={11} color={colors.textMuted} />
+                          <Text style={{ fontSize: 11 }}>📞</Text>
                           <Text style={[styles.linkChipText, { color: colors.textMuted }]}>{c.phone}</Text>
                         </View>
                       )}
                       {c.url && (
                         <View style={styles.linkChip}>
-                          <Feather name="external-link" size={11} color={colors.textMuted} />
+                          <Text style={{ fontSize: 11 }}>🌐</Text>
                           <Text style={[styles.linkChipText, { color: colors.textMuted }]}>Website</Text>
                         </View>
                       )}
                     </View>
                   </View>
-                  <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                  <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -206,16 +209,19 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1 },
   headerTitle: { fontFamily: "Inter_700Bold", fontSize: 20 },
+  navIcon: { width: 22, height: 22, borderRadius: 6 },
   banner: { flexDirection: "row", gap: 12, alignItems: "flex-start", borderRadius: 14, borderWidth: 1, padding: 16 },
   bannerText: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 14, lineHeight: 21 },
   categoryLabel: { fontFamily: "Inter_600SemiBold", fontSize: 13, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 },
   contactList: { gap: 10 },
   contactCard: { flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 16, borderWidth: 1, padding: 14 },
   iconBox: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  contactIcon: { width: 24, height: 24, borderRadius: 6 },
   contactInfo: { flex: 1, gap: 4 },
   contactName: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   contactDesc: { fontFamily: "Inter_400Regular", fontSize: 12, lineHeight: 18 },
   contactLinks: { flexDirection: "row", gap: 8, marginTop: 4 },
   linkChip: { flexDirection: "row", alignItems: "center", gap: 4 },
   linkChipText: { fontFamily: "Inter_400Regular", fontSize: 11 },
+  chevron: { width: 14, height: 14, borderRadius: 3, opacity: 0.4 },
 });

@@ -12,7 +12,6 @@ import {
   ActionSheetIOS,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
@@ -127,7 +126,7 @@ export default function EditProfileScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="x" size={24} color={colors.text} />
+          <Text style={{ fontSize: 20, color: colors.text }}>✕</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave} disabled={saving}>
@@ -151,7 +150,7 @@ export default function EditProfileScreen() {
               {uploading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Feather name="camera" size={16} color="#fff" />
+                <Text style={{ fontSize: 16, color: "#fff" }}>📷</Text>
               )}
             </View>
           </View>

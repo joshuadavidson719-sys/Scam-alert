@@ -8,12 +8,14 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface LinkResult {
   isSuspicious: boolean;
@@ -24,10 +26,10 @@ interface LinkResult {
 }
 
 const RISK_CONFIG = {
-  high: { color: "#EF4444", bg: "#EF444415", label: "High Risk", icon: "alert-octagon" },
-  medium: { color: "#F59E0B", bg: "#F59E0B15", label: "Medium Risk", icon: "alert-triangle" },
-  low: { color: "#3B82F6", bg: "#3B82F615", label: "Low Risk", icon: "info" },
-  safe: { color: "#10B981", bg: "#10B98115", label: "Appears Safe", icon: "check-circle" },
+  high:   { color: "#EF4444", bg: "#EF444415", label: "High Risk",    emoji: "🚨" },
+  medium: { color: "#F59E0B", bg: "#F59E0B15", label: "Medium Risk",  emoji: "⚠️" },
+  low:    { color: "#3B82F6", bg: "#3B82F615", label: "Low Risk",     emoji: "ℹ️" },
+  safe:   { color: "#10B981", bg: "#10B98115", label: "Appears Safe", emoji: "✅" },
 } as const;
 
 export default function LinkCheckerScreen() {
@@ -71,8 +73,9 @@ export default function LinkCheckerScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color={colors.text} />
+        <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Text style={[{ fontFamily: "Inter_600SemiBold", fontSize: 13 }, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Link Checker</Text>
         <View style={{ width: 24 }} />
@@ -83,7 +86,7 @@ export default function LinkCheckerScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={[styles.heroBox, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
-          <Feather name="link" size={32} color={colors.primary} />
+          <Text style={{ fontSize: 32 }}>🔗</Text>
           <Text style={[styles.heroTitle, { color: colors.text }]}>URL Safety Check</Text>
           <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
             Paste any suspicious link to check if it's a phishing or scam site before clicking.
@@ -92,7 +95,7 @@ export default function LinkCheckerScreen() {
 
         <Text style={[styles.label, { color: colors.textSecondary }]}>Enter URL to check</Text>
         <View style={[styles.inputRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Feather name="link-2" size={16} color={colors.textMuted} />
+          <Text style={{ fontSize: 16 }}>🌐</Text>
           <TextInput
             style={[styles.input, { color: colors.text }]}
             placeholder="https://suspicious-site.com"
@@ -107,7 +110,7 @@ export default function LinkCheckerScreen() {
           />
           {url.length > 0 && (
             <TouchableOpacity onPress={() => setUrl("")}>
-              <Feather name="x" size={16} color={colors.textMuted} />
+              <Text style={{ fontSize: 16, color: colors.textMuted }}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -124,15 +127,15 @@ export default function LinkCheckerScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Feather name="shield" size={18} color="#fff" />
+              <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
               <Text style={styles.checkBtnText}>Analyze Link</Text>
             </>
           )}
         </TouchableOpacity>
 
         {error && (
-          <View style={[styles.errorBox, { backgroundColor: "#EF444415", borderColor: "#EF4444" + "40" }]}>
-            <Feather name="alert-circle" size={16} color="#EF4444" />
+          <View style={[styles.errorBox, { backgroundColor: "#EF444415", borderColor: "#EF444440" }]}>
+            <Text style={{ fontSize: 16 }}>⚠️</Text>
             <Text style={[styles.errorText, { color: "#EF4444" }]}>{error}</Text>
           </View>
         )}
@@ -140,7 +143,7 @@ export default function LinkCheckerScreen() {
         {result && config && (
           <View style={styles.resultSection}>
             <View style={[styles.verdictCard, { backgroundColor: config.bg, borderColor: config.color + "40" }]}>
-              <Feather name={config.icon as "check-circle"} size={28} color={config.color} />
+              <Text style={{ fontSize: 28 }}>{config.emoji}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.verdictLabel, { color: config.color }]}>{config.label}</Text>
                 <Text style={[styles.verdictExplain, { color: colors.text }]}>{result.explanation}</Text>
@@ -152,7 +155,7 @@ export default function LinkCheckerScreen() {
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Red Flags</Text>
                 {result.redFlags.map((flag, i) => (
                   <View key={i} style={styles.flagRow}>
-                    <Feather name="alert-circle" size={13} color="#EF4444" />
+                    <Text style={{ fontSize: 13 }}>🚨</Text>
                     <Text style={[styles.flagText, { color: colors.textSecondary }]}>{flag}</Text>
                   </View>
                 ))}
@@ -174,7 +177,7 @@ export default function LinkCheckerScreen() {
             "When in doubt, go directly to the official website instead",
           ].map((tip, i) => (
             <View key={i} style={styles.tipRow}>
-              <Feather name="check-circle" size={13} color={colors.primary} />
+              <Text style={{ fontSize: 13 }}>✅</Text>
               <Text style={[styles.tipText, { color: colors.textSecondary }]}>{tip}</Text>
             </View>
           ))}
@@ -194,6 +197,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
+  navIcon: { width: 22, height: 22, borderRadius: 6 },
   navTitle: { fontFamily: "Inter_600SemiBold", fontSize: 17 },
   content: { padding: 16, gap: 16 },
   heroBox: {
@@ -233,6 +237,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
   },
+  btnIcon: { width: 18, height: 18, borderRadius: 5 },
   checkBtnText: {
     color: "#fff",
     fontFamily: "Inter_600SemiBold",

@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
-  Animated, ScrollView,
+  Animated, ScrollView, Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const { width: SW } = Dimensions.get("window");
 const COLS = 4;
@@ -187,7 +188,7 @@ export default function FraudFlip() {
     <View style={[G.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={G.nav}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[G.navTitle, { color: colors.text }]}>Fraud Flip</Text>
         <View style={{ width: 22 }} />
@@ -205,7 +206,7 @@ export default function FraudFlip() {
           </View>
         )}
         <TouchableOpacity style={[G.playBtn, { backgroundColor: "#7C3AED" }]} onPress={startGame}>
-          <Feather name="play" size={18} color="#fff" />
+          <Text style={{ fontSize: 18, color: "#fff" }}>▶</Text>
           <Text style={G.playBtnTxt}>Play Now</Text>
         </TouchableOpacity>
         <View style={[G.howCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -246,11 +247,11 @@ export default function FraudFlip() {
       </View>
       <View style={{ flexDirection: "row", gap: 12 }}>
         <TouchableOpacity style={[G.goBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.back()}>
-          <Feather name="home" size={16} color={colors.text} />
+          <Text style={{ fontSize: 16, color: colors.text }}>🏠</Text>
           <Text style={[G.goBtnTxt, { color: colors.text }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[G.goBtn, { backgroundColor: "#7C3AED", borderColor: "#7C3AED" }]} onPress={startGame}>
-          <Feather name="refresh-cw" size={16} color="#fff" />
+          <Text style={{ fontSize: 16, color: "#fff" }}>🔄</Text>
           <Text style={[G.goBtnTxt, { color: "#fff" }]}>Play Again</Text>
         </TouchableOpacity>
       </View>
@@ -261,7 +262,7 @@ export default function FraudFlip() {
     <View style={[G.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={G.nav}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[G.navTitle, { color: colors.text }]}>Fraud Flip</Text>
         <View style={[G.badge, { backgroundColor: "#7C3AED18", borderColor: "#7C3AED40" }]}>

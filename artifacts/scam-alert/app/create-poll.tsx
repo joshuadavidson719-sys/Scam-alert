@@ -10,15 +10,17 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 export default function CreatePollScreen() {
   const colors = useColors();
@@ -104,7 +106,7 @@ export default function CreatePollScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="x" size={24} color={colors.text} />
+          <Text style={{ fontSize: 22, color: colors.text }}>✕</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Create Poll</Text>
         <TouchableOpacity
@@ -157,7 +159,7 @@ export default function CreatePollScreen() {
               />
               {options.length > 2 && (
                 <TouchableOpacity onPress={() => removeOption(i)} style={styles.removeBtn}>
-                  <Feather name="minus-circle" size={20} color={colors.destructive} />
+                  <Text style={{ fontSize: 20, color: colors.destructive }}>➖</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -167,7 +169,7 @@ export default function CreatePollScreen() {
               onPress={addOption}
               style={[styles.addOptionBtn, { borderColor: colors.border }]}
             >
-              <Feather name="plus" size={16} color={colors.primary} />
+              <Image source={APP_ICON} style={styles.addIcon} resizeMode="cover" />
               <Text style={[styles.addOptionText, { color: colors.primary }]}>Add Option</Text>
             </TouchableOpacity>
           )}
@@ -197,7 +199,7 @@ export default function CreatePollScreen() {
 
         {/* Info card */}
         <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Feather name="info" size={14} color={colors.textMuted} />
+          <Text style={{ fontSize: 14 }}>ℹ️</Text>
           <Text style={[styles.infoText, { color: colors.textMuted }]}>
             Polls appear in the Community Polls section on the home feed and expire after the chosen duration.
           </Text>
@@ -274,6 +276,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 4,
   },
+  addIcon: { width: 16, height: 16, borderRadius: 4 },
   addOptionText: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
   durationRow: { flexDirection: "row", gap: 10 },
   durationBtn: {

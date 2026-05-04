@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import * as Haptics from "expo-haptics";
 
@@ -18,7 +17,7 @@ interface Rule {
   number: number;
   title: string;
   description: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: string;
   color: string;
   details: string[];
 }
@@ -29,7 +28,7 @@ const RULES: Rule[] = [
     number: 1,
     title: "Share Truthful Information",
     description: "Only post scam alerts, news, or stories you believe to be accurate.",
-    icon: "check-circle",
+    icon: "✅",
     color: "#10B981",
     details: [
       "Include sources or evidence when possible.",
@@ -43,7 +42,7 @@ const RULES: Rule[] = [
     number: 2,
     title: "Be Respectful",
     description: "Treat every member with dignity, regardless of their views.",
-    icon: "heart",
+    icon: "❤️",
     color: "#EC4899",
     details: [
       "No personal attacks, insults, or harassment.",
@@ -57,7 +56,7 @@ const RULES: Rule[] = [
     number: 3,
     title: "Protect Privacy",
     description: "Never share someone's personal information without consent.",
-    icon: "lock",
+    icon: "🔒",
     color: "#8B5CF6",
     details: [
       "Do not post real names, phone numbers, or addresses.",
@@ -71,7 +70,7 @@ const RULES: Rule[] = [
     number: 4,
     title: "Report Don't Retaliate",
     description: "Use the in-app report system rather than engaging with scammers.",
-    icon: "alert-octagon",
+    icon: "🚨",
     color: "#FF3B3B",
     details: [
       "Use the Report button on any post you find suspicious.",
@@ -85,7 +84,7 @@ const RULES: Rule[] = [
     number: 5,
     title: "No Spam or Self-Promotion",
     description: "Keep content relevant to scam awareness and community well-being.",
-    icon: "slash",
+    icon: "🚫",
     color: "#F59E0B",
     details: [
       "No unsolicited advertisements or affiliate links.",
@@ -99,7 +98,7 @@ const RULES: Rule[] = [
     number: 6,
     title: "Use Appropriate Language",
     description: "Keep the community safe for all age groups and backgrounds.",
-    icon: "message-circle",
+    icon: "💬",
     color: "#3B82F6",
     details: [
       "No profanity, hate speech, or discriminatory language.",
@@ -113,7 +112,7 @@ const RULES: Rule[] = [
     number: 7,
     title: "Support Claims With Evidence",
     description: "Back up serious accusations with screenshots or references.",
-    icon: "file-text",
+    icon: "📄",
     color: "#06B6D4",
     details: [
       "Screenshots of scam messages strengthen your post.",
@@ -127,7 +126,7 @@ const RULES: Rule[] = [
     number: 8,
     title: "Stay Within the Law",
     description: "Do not post content that could expose you or others to legal risk.",
-    icon: "shield",
+    icon: "🛡️",
     color: "#F97316",
     details: [
       "Do not doxx, stalk, or coordinate attacks on individuals.",
@@ -158,17 +157,13 @@ function RuleCard({ rule }: { rule: Rule }) {
       {/* Number badge + icon */}
       <View style={styles.ruleHeader}>
         <View style={[styles.iconCircle, { backgroundColor: rule.color + "20" }]}>
-          <Feather name={rule.icon} size={20} color={rule.color} />
+          <Text style={{ fontSize: 20 }}>{rule.icon}</Text>
         </View>
         <View style={styles.ruleMeta}>
           <Text style={[styles.ruleNumber, { color: rule.color }]}>Rule {rule.number}</Text>
           <Text style={[styles.ruleTitle, { color: colors.text }]}>{rule.title}</Text>
         </View>
-        <Feather
-          name={expanded ? "chevron-up" : "chevron-down"}
-          size={18}
-          color={colors.textMuted}
-        />
+        <Text style={{ fontSize: 18, color: colors.textMuted }}>{expanded ? "▲" : "▼"}</Text>
       </View>
 
       <Text style={[styles.ruleDesc, { color: colors.textSecondary }]}>{rule.description}</Text>
@@ -205,7 +200,7 @@ export default function CommunityGuidelinesScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Feather name="arrow-left" size={24} color={colors.text} />
+          <Text style={{ fontSize: 24, color: colors.text }}>←</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Community Guidelines</Text>
         <View style={{ width: 24 }} />
@@ -218,7 +213,7 @@ export default function CommunityGuidelinesScreen() {
         {/* Hero banner */}
         <View style={[styles.hero, { backgroundColor: "#FF3B3B15", borderColor: "#FF3B3B40" }]}>
           <View style={[styles.heroIcon, { backgroundColor: "#FF3B3B" }]}>
-            <Feather name="users" size={28} color="#fff" />
+            <Text style={{ fontSize: 28, color: "#fff" }}>👥</Text>
           </View>
           <Text style={[styles.heroTitle, { color: colors.text }]}>
             Our Community Standards
@@ -253,7 +248,7 @@ export default function CommunityGuidelinesScreen() {
         {/* Consequences card */}
         <View style={[styles.consequencesCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.consequencesHeader}>
-            <Feather name="alert-triangle" size={18} color="#F59E0B" />
+            <Text style={{ fontSize: 18, color: "#F59E0B" }}>⚠️</Text>
             <Text style={[styles.consequencesTitle, { color: colors.text }]}>Enforcement</Text>
           </View>
           <Text style={[styles.consequencesText, { color: colors.textSecondary }]}>

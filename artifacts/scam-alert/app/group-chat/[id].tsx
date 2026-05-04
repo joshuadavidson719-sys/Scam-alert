@@ -9,9 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, router } from "expo-router";
 import {
@@ -29,6 +29,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { UserAvatar } from "@/components/UserAvatar";
 import { formatTimeAgo } from "@/lib/utils";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface GroupMessage {
   id: string;
@@ -128,11 +130,11 @@ export default function GroupChatScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={[styles.groupIcon, { backgroundColor: colors.primary + "20" }]}>
-            <Feather name="users" size={18} color={colors.primary} />
+            <Text style={{ fontSize: 18, color: colors.primary }}>👥</Text>
           </View>
           <View>
             <Text style={[styles.groupName, { color: colors.text }]} numberOfLines={1}>{chat?.name ?? "Group"}</Text>
@@ -140,7 +142,7 @@ export default function GroupChatScreen() {
           </View>
         </View>
         <TouchableOpacity onPress={() => router.push(`/group-info/${id}` as never)}>
-          <Feather name="info" size={20} color={colors.textSecondary} />
+          <Text style={{ fontSize: 20, color: colors.textSecondary }}>ℹ️</Text>
         </TouchableOpacity>
       </View>
 
@@ -194,7 +196,7 @@ export default function GroupChatScreen() {
           onPress={sendMessage}
           disabled={!text.trim() || sending}
         >
-          <Feather name="send" size={18} color="#fff" />
+          <Text style={{ fontSize: 18, color: "#fff" }}>📤</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

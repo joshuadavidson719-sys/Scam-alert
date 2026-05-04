@@ -5,42 +5,44 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const PROHIBITED = [
   {
     rule: "No Hate Speech",
     description:
       "Content that promotes hatred or discrimination based on race, ethnicity, religion, gender, sexual orientation, disability, or national origin is strictly prohibited.",
-    icon: "slash",
+    emoji: "🚫",
   },
   {
     rule: "No Harassment or Bullying",
     description:
       "We do not tolerate targeted harassment, intimidation, or bullying of individuals or groups. Treat all community members with respect.",
-    icon: "user-x",
+    emoji: "🛑",
   },
   {
     rule: "No Sexual Content",
     description:
       "Explicit sexual content, nudity, or sexual exploitation of any kind is not permitted on Scam Alert.",
-    icon: "eye-off",
+    emoji: "⛔",
   },
   {
     rule: "No Violence or Threats",
     description:
       "Content that depicts, glorifies, or threatens real-world violence against individuals or groups is prohibited.",
-    icon: "alert-octagon",
+    emoji: "⚠️",
   },
   {
     rule: "No Illegal Activity",
     description:
       "Do not post content that promotes, facilitates, or glorifies illegal activities including fraud, theft, drug trafficking, or any other criminal acts.",
-    icon: "x-circle",
+    emoji: "❌",
   },
 ];
 
@@ -67,7 +69,7 @@ export default function GuidelinesScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="x" size={24} color={colors.text} />
+          <Image source={APP_ICON} style={styles.closeIcon} resizeMode="cover" />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Community Guidelines</Text>
         <View style={{ width: 24 }} />
@@ -86,7 +88,7 @@ export default function GuidelinesScreen() {
         </View>
 
         <View style={[styles.disclaimerBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "33" }]}>
-          <Feather name="info" size={16} color={colors.warning} />
+          <Text style={{ fontSize: 16 }}>ℹ️</Text>
           <Text style={[styles.disclaimerText, { color: colors.textSecondary }]}>
             All content is user-submitted and for awareness purposes only.
           </Text>
@@ -105,11 +107,7 @@ export default function GuidelinesScreen() {
             ]}
           >
             <View style={[styles.ruleIcon, { backgroundColor: colors.destructive + "20" }]}>
-              <Feather
-                name={item.icon as keyof typeof Feather.glyphMap}
-                size={18}
-                color={colors.destructive}
-              />
+              <Text style={{ fontSize: 18 }}>{item.emoji}</Text>
             </View>
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={[styles.ruleName, { color: colors.text }]}>{item.rule}</Text>
@@ -161,6 +159,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
+  closeIcon: { width: 24, height: 24, borderRadius: 6 },
   title: {
     fontFamily: "Inter_700Bold",
     fontSize: 18,

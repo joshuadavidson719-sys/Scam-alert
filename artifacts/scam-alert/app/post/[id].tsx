@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import * as Haptics from "expo-haptics";
 import { db } from "@/lib/firebase";
@@ -24,6 +23,8 @@ import { CategoryPill } from "@/components/CategoryPill";
 import { ScamVoteBar } from "@/components/ScamVoteBar";
 import { formatTimeAgo } from "@/lib/utils";
 import type { PostData } from "@/components/PostCard";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -90,8 +91,9 @@ export default function PostDetail() {
           { paddingTop: insets.top + 8, borderBottomColor: colors.border },
         ]}
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color={colors.text} />
+        <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Text style={[{ fontFamily: "Inter_600SemiBold", fontSize: 13 }, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Post</Text>
         <TouchableOpacity
@@ -99,7 +101,7 @@ export default function PostDetail() {
             Share.share({ message: `🚨 ${post.title}\n\n${post.description}\n\nShared from Scam Alert` })
           }
         >
-          <Feather name="share-2" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
         </TouchableOpacity>
       </View>
 
@@ -142,23 +144,14 @@ export default function PostDetail() {
 
         <View style={styles.actions}>
           <TouchableOpacity style={styles.action} onPress={handleLike}>
-            <Feather
-              name="heart"
-              size={20}
-              color={liked ? colors.primary : colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.actionText,
-                { color: liked ? colors.primary : colors.textSecondary },
-              ]}
-            >
+            <Text style={{ fontSize: 20 }}>{liked ? "❤️" : "🤍"}</Text>
+            <Text style={[styles.actionText, { color: liked ? colors.primary : colors.textSecondary }]}>
               {likeCount} {likeCount === 1 ? "Like" : "Likes"}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.action} onPress={() => setShowComments(true)}>
-            <Feather name="message-circle" size={20} color={colors.textSecondary} />
+            <Text style={{ fontSize: 20 }}>💬</Text>
             <Text style={[styles.actionText, { color: colors.textSecondary }]}>
               {post.commentCount} {post.commentCount === 1 ? "Comment" : "Comments"}
             </Text>
@@ -171,13 +164,13 @@ export default function PostDetail() {
               setShowReport(true);
             }}
           >
-            <Feather name="flag" size={20} color={colors.textMuted} />
+            <Text style={{ fontSize: 20 }}>🚩</Text>
             <Text style={[styles.actionText, { color: colors.textMuted }]}>Report</Text>
           </TouchableOpacity>
         </View>
 
         <View style={[styles.disclaimerBox, { backgroundColor: colors.warning + "10", borderColor: colors.border }]}>
-          <Feather name="info" size={14} color={colors.textMuted} />
+          <Text style={{ fontSize: 14 }}>ℹ️</Text>
           <Text style={[styles.disclaimerText, { color: colors.textMuted }]}>
             All content is user-submitted and for awareness purposes only.
           </Text>
@@ -215,6 +208,7 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     fontSize: 17,
   },
+  navIcon: { width: 22, height: 22, borderRadius: 6 },
   content: {
     padding: 16,
     gap: 12,

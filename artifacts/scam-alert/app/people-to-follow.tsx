@@ -9,9 +9,9 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import * as Haptics from "expo-haptics";
@@ -20,6 +20,8 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth, NICHES } from "@/context/AuthContext";
 import { useFollowSuggestions, type SuggestedUser } from "@/hooks/useFollowSuggestions";
 import { UserAvatar } from "@/components/UserAvatar";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const NICHE_COLORS: Record<string, string> = {
   Cybersecurity: "#FF3B3B",
@@ -119,7 +121,7 @@ function UserRow({
           <ActivityIndicator size="small" color="#fff" />
         ) : isFollowing ? (
           <View style={styles.followBtnInner}>
-            <Feather name="check" size={12} color={colors.textMuted} />
+            <Text style={{ fontSize: 12 }}>✓</Text>
             <Text style={[styles.followBtnText, { color: colors.textMuted }]}>Following</Text>
           </View>
         ) : (
@@ -170,7 +172,7 @@ export default function PeopleToFollowScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>People to Follow</Text>
         <TouchableOpacity
@@ -178,14 +180,14 @@ export default function PeopleToFollowScreen() {
           style={[styles.refreshBtn, { backgroundColor: colors.muted }]}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Feather name="refresh-cw" size={14} color={colors.textMuted} />
+          <Image source={APP_ICON} style={styles.refreshIcon} resizeMode="cover" />
         </TouchableOpacity>
       </View>
 
       {/* Search bar */}
       <View style={[styles.searchWrap, { borderBottomColor: colors.border }]}>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Feather name="search" size={15} color={colors.textMuted} />
+          <Image source={APP_ICON} style={styles.searchIcon} resizeMode="cover" />
           <TextInput
             ref={inputRef}
             style={[styles.searchInput, { color: colors.text }]}
@@ -199,7 +201,7 @@ export default function PeopleToFollowScreen() {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Feather name="x" size={14} color={colors.textMuted} />
+              <Text style={{ fontSize: 14, color: colors.textMuted }}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -261,7 +263,7 @@ export default function PeopleToFollowScreen() {
         </View>
       ) : filtered.length === 0 ? (
         <View style={styles.centered}>
-          <Feather name="users" size={44} color={colors.textMuted} />
+          <Text style={{ fontSize: 44 }}>👥</Text>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No one found</Text>
           <Text style={[styles.emptyText, { color: colors.textMuted }]}>
             {search ? "Try a different search term" : "Check back as more users join"}
@@ -284,7 +286,7 @@ export default function PeopleToFollowScreen() {
           ListHeaderComponent={
             yourNiche && activeNiche === "all" && !search ? (
               <View style={[styles.recommendedBanner, { backgroundColor: colors.primary + "12", borderBottomColor: colors.primary + "30" }]}>
-                <Feather name="star" size={13} color={colors.primary} />
+                <Text style={{ fontSize: 13 }}>⭐</Text>
                 <Text style={[styles.recommendedText, { color: colors.primary }]}>
                   Showing your niche ({yourNiche}) first
                 </Text>
@@ -318,6 +320,7 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     fontSize: 18,
   },
+  navIcon:     { width: 22, height: 22, borderRadius: 6 },
   refreshBtn: {
     width: 32,
     height: 32,
@@ -325,6 +328,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  refreshIcon: { width: 14, height: 14, borderRadius: 3 },
   searchWrap: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -339,6 +343,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: Platform.OS === "ios" ? 10 : 8,
   },
+  searchIcon: { width: 15, height: 15, borderRadius: 4 },
   searchInput: {
     flex: 1,
     fontFamily: "Inter_400Regular",

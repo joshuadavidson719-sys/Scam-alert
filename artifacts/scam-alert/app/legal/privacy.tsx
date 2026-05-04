@@ -5,11 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const SECTIONS = [
   {
@@ -72,7 +74,7 @@ export default function PrivacyPolicyScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="x" size={24} color={colors.text} />
+          <Image source={APP_ICON} style={styles.closeIcon} resizeMode="cover" />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Privacy Policy</Text>
         <View style={{ width: 24 }} />
@@ -105,7 +107,7 @@ export default function PrivacyPolicyScreen() {
             { backgroundColor: colors.warning + "15", borderColor: colors.warning + "44" },
           ]}
         >
-          <Feather name="info" size={16} color={colors.warning} />
+          <Text style={{ fontSize: 16 }}>ℹ️</Text>
           <Text style={[styles.disclaimerText, { color: colors.textSecondary }]}>
             All content on Scam Alert is user-submitted and for awareness purposes only. Scam Alert is not liable for the accuracy of user-submitted content.
           </Text>
@@ -125,6 +127,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
+  closeIcon: { width: 24, height: 24, borderRadius: 6 },
   title: {
     fontFamily: "Inter_700Bold",
     fontSize: 18,

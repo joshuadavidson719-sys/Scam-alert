@@ -11,7 +11,6 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useLocalSearchParams, router } from "expo-router";
@@ -99,7 +98,7 @@ export default function EditPostScreen() {
     >
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="x" size={24} color={colors.text} />
+          <Text style={{ fontSize: 20, color: colors.text }}>✕</Text>
         </TouchableOpacity>
         <Text style={[styles.pageTitle, { color: colors.text }]}>Edit Post</Text>
         <TouchableOpacity

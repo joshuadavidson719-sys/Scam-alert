@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Animated,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
@@ -18,6 +18,8 @@ import { db } from "@/lib/firebase";
 import { Confetti } from "@/components/Confetti";
 import { AchievementToast } from "@/components/AchievementToast";
 import { useAchievements } from "@/hooks/useAchievements";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface Question {
   q: string;
@@ -147,7 +149,7 @@ export default function ScamQuizScreen() {
         <AchievementToast achievement={newlyUnlocked} onHide={clearNewlyUnlocked} />
         <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Feather name="arrow-left" size={22} color={colors.text} />
+            <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Quiz Results</Text>
           <View style={{ width: 22 }} />
@@ -165,18 +167,14 @@ export default function ScamQuizScreen() {
             <Text style={[styles.reviewTitle, { color: colors.text }]}>Review Answers</Text>
             {QUESTIONS.map((q, i) => (
               <View key={i} style={[styles.reviewRow, { borderBottomColor: colors.border }]}>
-                <Feather
-                  name={answers[i] === q.correct ? "check-circle" : "x-circle"}
-                  size={18}
-                  color={answers[i] === q.correct ? "#10B981" : colors.primary}
-                />
+                <Text style={{ fontSize: 18 }}>{answers[i] === q.correct ? "✅" : "❌"}</Text>
                 <Text style={[styles.reviewQ, { color: colors.text }]} numberOfLines={2}>{q.q}</Text>
               </View>
             ))}
           </View>
 
           <TouchableOpacity style={[styles.restartBtn, { backgroundColor: colors.primary }]} onPress={restart}>
-            <Feather name="refresh-cw" size={18} color="#fff" />
+            <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
             <Text style={styles.restartBtnText}>Try Again</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.backBtn, { borderColor: colors.border }]} onPress={() => router.back()}>
@@ -191,7 +189,7 @@ export default function ScamQuizScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Scam Awareness Quiz</Text>
         <Text style={[styles.progress, { color: colors.textMuted }]}>{current + 1}/{totalQ}</Text>
@@ -229,15 +227,15 @@ export default function ScamQuizScreen() {
                 <Text style={[styles.optionLetterText, { color: textColor }]}>{String.fromCharCode(65 + i)}</Text>
               </View>
               <Text style={[styles.optionText, { color: textColor }]}>{opt}</Text>
-              {selected !== null && i === q.correct && <Feather name="check" size={18} color="#10B981" />}
-              {selected !== null && i === selected && selected !== q.correct && <Feather name="x" size={18} color={colors.primary} />}
+              {selected !== null && i === q.correct && <Text style={{ fontSize: 18 }}>✅</Text>}
+              {selected !== null && i === selected && selected !== q.correct && <Text style={{ fontSize: 18 }}>❌</Text>}
             </TouchableOpacity>
           );
         })}
 
         {selected !== null && (
           <View style={[styles.explanation, { backgroundColor: isCorrect ? "#10B98115" : colors.primary + "12", borderColor: isCorrect ? "#10B981" : colors.primary }]}>
-            <Feather name={isCorrect ? "check-circle" : "alert-circle"} size={18} color={isCorrect ? "#10B981" : colors.primary} />
+            <Text style={{ fontSize: 18 }}>{isCorrect ? "✅" : "⚠️"}</Text>
             <Text style={[styles.explanationText, { color: colors.text }]}>{q.explanation}</Text>
           </View>
         )}
@@ -245,7 +243,7 @@ export default function ScamQuizScreen() {
         {selected !== null && (
           <TouchableOpacity style={[styles.nextBtn, { backgroundColor: colors.primary }]} onPress={next}>
             <Text style={styles.nextBtnText}>{current < totalQ - 1 ? "Next Question" : "See Results"}</Text>
-            <Feather name="arrow-right" size={18} color="#fff" />
+            <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -258,6 +256,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1 },
   headerTitle: { fontFamily: "Inter_700Bold", fontSize: 18 },
   progress: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  navIcon: { width: 22, height: 22, borderRadius: 6 },
+  btnIcon:  { width: 18, height: 18, borderRadius: 5 },
   progressTrack: { height: 4 },
   progressFill: { height: "100%" },
   questionCard: { borderRadius: 16, borderWidth: 1, padding: 20, gap: 12 },

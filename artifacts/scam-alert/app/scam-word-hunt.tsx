@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView,
+  View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit } from "firebase/firestore";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const { width: SW } = Dimensions.get("window");
 const SIZE = 10;
@@ -190,7 +191,7 @@ export default function ScamWordHunt() {
     <View style={[W.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={W.nav}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[W.navTitle, { color: colors.text }]}>Scam Word Hunt</Text>
         <View style={{ width: 22 }} />
@@ -208,7 +209,7 @@ export default function ScamWordHunt() {
           </View>
         )}
         <TouchableOpacity style={[W.playBtn, { backgroundColor: "#0369A1" }]} onPress={startGame}>
-          <Feather name="search" size={18} color="#fff" />
+          <Text style={{ fontSize: 18, color: "#fff" }}>🔍</Text>
           <Text style={W.playBtnTxt}>Start Hunt</Text>
         </TouchableOpacity>
         <View style={[W.howCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -243,11 +244,11 @@ export default function ScamWordHunt() {
       </View>
       <View style={{ flexDirection: "row", gap: 12 }}>
         <TouchableOpacity style={[W.goBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.back()}>
-          <Feather name="home" size={16} color={colors.text} />
+          <Text style={{ fontSize: 16, color: colors.text }}>🏠</Text>
           <Text style={[W.goBtnTxt, { color: colors.text }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[W.goBtn, { backgroundColor: "#0369A1", borderColor: "#0369A1" }]} onPress={startGame}>
-          <Feather name="refresh-cw" size={16} color="#fff" />
+          <Text style={{ fontSize: 16, color: "#fff" }}>🔄</Text>
           <Text style={[W.goBtnTxt, { color: "#fff" }]}>Play Again</Text>
         </TouchableOpacity>
       </View>
@@ -258,7 +259,7 @@ export default function ScamWordHunt() {
     <View style={[W.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={W.nav}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[W.navTitle, { color: colors.text }]}>Scam Word Hunt</Text>
         <Text style={[W.timer, { color: timerColor }]}>{Math.floor(timeLeft/60)}:{String(timeLeft%60).padStart(2,"0")}</Text>

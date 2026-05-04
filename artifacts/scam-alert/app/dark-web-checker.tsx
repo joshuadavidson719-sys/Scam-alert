@@ -8,12 +8,14 @@ import {
   ScrollView,
   ActivityIndicator,
   Linking,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const DOMAIN = process.env.EXPO_PUBLIC_DOMAIN ?? "";
 const BASE = DOMAIN ? `https://${DOMAIN}` : "";
@@ -69,7 +71,7 @@ export default function DarkWebCheckerScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Dark Web Checker</Text>
         <View style={{ width: 22 }} />
@@ -78,7 +80,7 @@ export default function DarkWebCheckerScreen() {
       <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }} keyboardShouldPersistTaps="handled">
         {/* Intro */}
         <View style={[styles.introBanner, { backgroundColor: "#7C3AED18", borderColor: "#7C3AED30" }]}>
-          <Feather name="eye-off" size={22} color="#7C3AED" />
+          <Text style={{ fontSize: 22, color: "#7C3AED" }}>🕵️</Text>
           <View style={{ flex: 1 }}>
             <Text style={[styles.introTitle, { color: colors.text }]}>Data Breach Scanner</Text>
             <Text style={[styles.introText, { color: colors.textSecondary }]}>
@@ -89,7 +91,7 @@ export default function DarkWebCheckerScreen() {
 
         {/* Input */}
         <View style={[styles.inputBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Feather name="mail" size={18} color={colors.textMuted} />
+          <Text style={{ fontSize: 18, color: colors.textMuted }}>📧</Text>
           <TextInput
             style={[styles.input, { color: colors.text }]}
             placeholder="Enter your email address"
@@ -102,7 +104,7 @@ export default function DarkWebCheckerScreen() {
           />
           {email.length > 0 && (
             <TouchableOpacity onPress={() => { setEmail(""); setResult(null); }}>
-              <Feather name="x" size={16} color={colors.textMuted} />
+              <Text style={{ fontSize: 16, color: colors.textMuted }}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -120,7 +122,7 @@ export default function DarkWebCheckerScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Feather name="search" size={18} color="#fff" />
+              <Text style={{ fontSize: 18, color: "#fff" }}>🔍</Text>
               <Text style={styles.checkBtnText}>Scan for Breaches</Text>
             </>
           )}
@@ -139,11 +141,9 @@ export default function DarkWebCheckerScreen() {
               backgroundColor: result.safe ? "#10B98115" : colors.primary + "15",
               borderColor: result.safe ? "#10B981" : colors.primary,
             }]}>
-              <Feather
-                name={result.safe ? "check-circle" : "alert-triangle"}
-                size={28}
-                color={result.safe ? "#10B981" : colors.primary}
-              />
+              <Text style={{ fontSize: 28, color: result.safe ? "#10B981" : colors.primary }}>
+                {result.safe ? "✅" : "⚠️"}
+              </Text>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.verdictTitle, { color: result.safe ? "#10B981" : colors.primary }]}>
                   {result.safe ? "No Breaches Found" : `${result.breachCount} Breach${result.breachCount > 1 ? "es" : ""} Detected`}
@@ -164,7 +164,7 @@ export default function DarkWebCheckerScreen() {
                   <View key={i} style={[styles.breachCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <View style={styles.breachHeader}>
                       <View style={[styles.breachIcon, { backgroundColor: colors.primary + "20" }]}>
-                        <Feather name="database" size={16} color={colors.primary} />
+                        <Text style={{ fontSize: 16, color: colors.primary }}>🗄️</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.breachName, { color: colors.text }]}>{b.name}</Text>
@@ -201,14 +201,14 @@ export default function DarkWebCheckerScreen() {
               style={[styles.hibpBtn, { borderColor: "#7C3AED" }]}
               onPress={() => Linking.openURL(`https://haveibeenpwned.com/account/${encodeURIComponent(email.trim())}`)}
             >
-              <Feather name="external-link" size={16} color="#7C3AED" />
+              <Text style={{ fontSize: 16, color: "#7C3AED" }}>↗️</Text>
               <Text style={[styles.hibpBtnText, { color: "#7C3AED" }]}>View full report on HaveIBeenPwned.com</Text>
             </TouchableOpacity>
           </>
         )}
 
         <View style={[styles.privacyNote, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Feather name="lock" size={14} color={colors.textMuted} />
+          <Text style={{ fontSize: 14, color: colors.textMuted }}>🔒</Text>
           <Text style={[styles.privacyText, { color: colors.textMuted }]}>
             Your email is only used for this lookup and is never stored or shared.
           </Text>

@@ -7,13 +7,15 @@ import {
   ScrollView,
   ActivityIndicator,
   Dimensions,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -98,7 +100,7 @@ export default function ScamMapScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Scam Heat Map</Text>
         <View style={{ width: 22 }} />
@@ -177,7 +179,7 @@ export default function ScamMapScreen() {
                     {p.category} · {new Date(p.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+                <Text style={{ fontSize: 14, color: colors.textMuted }}>›</Text>
               </TouchableOpacity>
             ))}
           </>
@@ -186,14 +188,14 @@ export default function ScamMapScreen() {
             {/* Global stats */}
             <View style={styles.statsGrid}>
               {[
-                { label: "Total Reports", value: "30,500+", icon: "alert-triangle", color: "#FF3B3B" },
-                { label: "Countries Affected", value: "94", icon: "globe", color: "#3B82F6" },
-                { label: "This Month", value: "4,231", icon: "trending-up", color: "#10B981" },
-                { label: "Avg Daily", value: "141", icon: "calendar", color: "#F59E0B" },
+                { label: "Total Reports", value: "30,500+", icon: "⚠️", color: "#FF3B3B" },
+                { label: "Countries Affected", value: "94", icon: "🌍", color: "#3B82F6" },
+                { label: "This Month", value: "4,231", icon: "📈", color: "#10B981" },
+                { label: "Avg Daily", value: "141", icon: "📅", color: "#F59E0B" },
               ].map((s) => (
                 <View key={s.label} style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={[styles.statIcon, { backgroundColor: s.color + "20" }]}>
-                    <Feather name={s.icon as any} size={20} color={s.color} />
+                    <Text style={{ fontSize: 20 }}>{s.icon}</Text>
                   </View>
                   <Text style={[styles.statValue, { color: colors.text }]}>{s.value}</Text>
                   <Text style={[styles.statLabel, { color: colors.textMuted }]}>{s.label}</Text>
@@ -216,7 +218,7 @@ export default function ScamMapScreen() {
             ))}
 
             <View style={[styles.trendCard, { backgroundColor: "#FF3B3B15", borderColor: "#FF3B3B30" }]}>
-              <Feather name="trending-up" size={20} color={colors.primary} />
+              <Text style={{ fontSize: 20 }}>📈</Text>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.trendTitle, { color: colors.text }]}>⚠️ Rising: Crypto & AI Scams</Text>
                 <Text style={[styles.trendText, { color: colors.textSecondary }]}>

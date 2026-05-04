@@ -6,9 +6,9 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { router } from "expo-router";
 import { db } from "@/lib/firebase";
@@ -16,6 +16,8 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import { getBadgeForPoints } from "@/hooks/usePoints";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface LeaderUser {
   uid: string;
@@ -71,7 +73,7 @@ export default function LeaderboardScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Leaderboard</Text>
         <View style={{ width: 24 }} />
@@ -83,7 +85,7 @@ export default function LeaderboardScreen() {
         </View>
       ) : leaders.length === 0 ? (
         <View style={styles.centered}>
-          <Feather name="award" size={48} color={colors.textMuted} />
+          <Text style={{ fontSize: 48 }}>🏆</Text>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No rankings yet</Text>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             Start posting to earn points and appear here!
@@ -97,7 +99,7 @@ export default function LeaderboardScreen() {
           ListHeaderComponent={
             myRank > 0 ? (
               <View style={[styles.myRankBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}>
-                <Feather name="trending-up" size={16} color={colors.primary} />
+                <Text style={{ fontSize: 16 }}>📈</Text>
                 <Text style={[styles.myRankText, { color: colors.primary }]}>
                   Your rank: #{myRank} · {leaders[myRank - 1]?.points ?? 0} pts
                 </Text>

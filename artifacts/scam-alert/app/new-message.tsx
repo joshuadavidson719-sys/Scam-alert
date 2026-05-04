@@ -10,8 +10,6 @@ import {
   Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
-
 import { collection, getDocs, query, limit, doc, setDoc } from "firebase/firestore";
 import { router } from "expo-router";
 import { db } from "@/lib/firebase";

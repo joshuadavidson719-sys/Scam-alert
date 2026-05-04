@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Dimensions,
+  ScrollView, Dimensions, Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
@@ -12,6 +11,8 @@ import { db } from "@/lib/firebase";
 import {
   collection, query, where, orderBy, limit, getDocs,
 } from "firebase/firestore";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 const { width: SW } = Dimensions.get("window");
 
@@ -146,7 +147,7 @@ export default function GamesHub() {
       {/* Header */}
       <View style={S.nav}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[S.navTitle, { color: colors.text }]}>Scam Games 🎮</Text>
         <View style={{ width: 22 }} />
@@ -183,7 +184,7 @@ export default function GamesHub() {
                 </View>
               </View>
               <View style={[S.playIcon, { backgroundColor: game.color }]}>
-                <Feather name="play" size={16} color="#fff" />
+                <Text style={{ fontSize: 16, color: "#fff" }}>▶</Text>
               </View>
             </View>
 

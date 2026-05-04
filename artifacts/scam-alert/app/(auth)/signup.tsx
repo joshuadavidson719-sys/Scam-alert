@@ -9,12 +9,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 export default function SignupScreen() {
   const colors = useColors();
@@ -71,7 +73,7 @@ export default function SignupScreen() {
           style={styles.backBtn}
           onPress={() => router.back()}
         >
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
 
         <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
@@ -81,14 +83,14 @@ export default function SignupScreen() {
 
         {error ? (
           <View style={[styles.errorBox, { backgroundColor: colors.destructive + "15", borderColor: colors.destructive + "33" }]}>
-            <Feather name="alert-circle" size={14} color={colors.destructive} />
+            <Text style={{ fontSize: 14, color: colors.destructive }}>⚠️</Text>
             <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
           </View>
         ) : null}
 
         <View style={styles.form}>
           <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            <Feather name="user" size={16} color={colors.textMuted} />
+            <Text style={{ fontSize: 16, color: colors.textMuted }}>👤</Text>
             <TextInput
               style={[styles.input, { color: colors.text }]}
               placeholder="Username"
@@ -101,7 +103,7 @@ export default function SignupScreen() {
           </View>
 
           <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            <Feather name="mail" size={16} color={colors.textMuted} />
+            <Text style={{ fontSize: 16, color: colors.textMuted }}>📧</Text>
             <TextInput
               style={[styles.input, { color: colors.text }]}
               placeholder="Email address"
@@ -114,7 +116,7 @@ export default function SignupScreen() {
           </View>
 
           <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            <Feather name="lock" size={16} color={colors.textMuted} />
+            <Text style={{ fontSize: 16, color: colors.textMuted }}>🔒</Text>
             <TextInput
               style={[styles.input, { color: colors.text }]}
               placeholder="Password (min. 6 characters)"
@@ -124,11 +126,7 @@ export default function SignupScreen() {
               secureTextEntry={!showPassword}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Feather
-                name={showPassword ? "eye-off" : "eye"}
-                size={16}
-                color={colors.textMuted}
-              />
+              <Text style={{ fontSize: 16, color: colors.textMuted }}>{showPassword ? "🙈" : "👁️"}</Text>
             </TouchableOpacity>
           </View>
 

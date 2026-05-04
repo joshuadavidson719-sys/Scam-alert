@@ -15,7 +15,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
@@ -739,7 +738,7 @@ export default function CreatorStudio() {
                   );
                 })}
                 <TouchableOpacity onPress={pickBgImage} style={[styles.bgCard, { borderStyle: "dashed", backgroundColor: colors.muted }]}>
-                  <Feather name="image" size={22} color={colors.textMuted} />
+                  <Text style={{ fontSize: 22 }}>🖼️</Text>
                   <Text style={[styles.bgCardName, { color: colors.textMuted }]}>Gallery</Text>
                 </TouchableOpacity>
               </View>
@@ -864,7 +863,7 @@ export default function CreatorStudio() {
                 <Text style={[styles.musicUploadTitle, { color: colors.text }]}>Upload Your Music</Text>
                 <Text style={[styles.musicUploadSub, { color: colors.textMuted }]}>Pick any audio file from your phone</Text>
               </View>
-              <Feather name="chevron-right" size={16} color={colors.textMuted} />
+              <Text style={{ fontSize: 16, color: colors.textMuted }}>›</Text>
             </TouchableOpacity>
 
             <Text style={[styles.panelTitle, { color: colors.textMuted, marginTop: 12 }]}>Instrumental Tracks</Text>
@@ -896,19 +895,19 @@ export default function CreatorStudio() {
                   {active && (
                     <TouchableOpacity onPress={togglePlayPause} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                       <View style={[styles.musicPlayBtn, { backgroundColor: colors.primary }]}>
-                        <Feather name={isPlaying ? "pause" : "play"} size={14} color="#fff" />
+                        <Text style={{ fontSize: 14, color: "#fff" }}>{isPlaying ? "⏸" : "▶"}</Text>
                       </View>
                     </TouchableOpacity>
                   )}
                   {active && (
                     <TouchableOpacity onPress={stopMusic} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                       <View style={[styles.musicStopBtn, { backgroundColor: colors.muted }]}>
-                        <Feather name="square" size={12} color={colors.text} />
+                        <Text style={{ fontSize: 12, color: colors.text }}>⏹</Text>
                       </View>
                     </TouchableOpacity>
                   )}
                   {!active && (
-                    <Feather name="play-circle" size={22} color={colors.textMuted} />
+                    <Text style={{ fontSize: 22, color: colors.textMuted }}>▶</Text>
                   )}
                 </TouchableOpacity>
               );
@@ -975,7 +974,7 @@ export default function CreatorStudio() {
       {/* Nav bar */}
       <View style={[styles.nav, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Feather name="x" size={24} color={colors.text} />
+          <Text style={{ fontSize: 24, color: colors.text }}>✕</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Creator Studio</Text>
         <View style={styles.navRight}>
@@ -983,7 +982,7 @@ export default function CreatorStudio() {
             onPress={undo}
             style={[styles.navLabelBtn, { backgroundColor: history.length > 1 ? colors.card : "transparent", opacity: history.length > 1 ? 1 : 0.35 }]}
           >
-            <Feather name="corner-up-left" size={15} color={colors.text} />
+            <Text style={{ fontSize: 15, color: colors.text }}>↩</Text>
             <Text style={[styles.navLabelBtnText, { color: colors.text }]}>Undo</Text>
           </TouchableOpacity>
 
@@ -991,7 +990,7 @@ export default function CreatorStudio() {
             onPress={() => setDraftsModal(true)}
             style={[styles.navLabelBtn, { backgroundColor: colors.card }]}
           >
-            <Feather name="folder" size={15} color={colors.text} />
+            <Text style={{ fontSize: 15, color: colors.text }}>📁</Text>
             <Text style={[styles.navLabelBtnText, { color: colors.text }]}>Drafts</Text>
           </TouchableOpacity>
 
@@ -999,7 +998,7 @@ export default function CreatorStudio() {
             onPress={saveDraft}
             style={[styles.navLabelBtn, { backgroundColor: colors.card }]}
           >
-            <Feather name="save" size={15} color={colors.text} />
+            <Text style={{ fontSize: 15, color: colors.text }}>💾</Text>
             <Text style={[styles.navLabelBtnText, { color: colors.text }]}>Save</Text>
           </TouchableOpacity>
 
@@ -1007,7 +1006,7 @@ export default function CreatorStudio() {
             style={[styles.navLabelBtn, { backgroundColor: colors.primary }]}
             onPress={handleExport}
           >
-            <Feather name="share" size={15} color="#fff" />
+            <Text style={{ fontSize: 15, color: "#fff" }}>📤</Text>
             <Text style={[styles.navLabelBtnText, { color: "#fff" }]}>Export</Text>
           </TouchableOpacity>
         </View>
@@ -1043,11 +1042,11 @@ export default function CreatorStudio() {
             <View style={styles.ctrlGroup}>
               <Text style={[styles.ctrlGroupLabel, { color: colors.textMuted }]}>Size</Text>
               <TouchableOpacity style={[styles.ctrlBtn, { backgroundColor: colors.muted }]} onPress={() => scaleSelected(-1)}>
-                <Feather name="minus" size={14} color={colors.text} />
+                <Text style={{ fontSize: 14, color: colors.text }}>−</Text>
               </TouchableOpacity>
               <Text style={[styles.ctrlValue, { color: colors.text }]}>{Math.round(selectedEl.scale * 100)}%</Text>
               <TouchableOpacity style={[styles.ctrlBtn, { backgroundColor: colors.muted }]} onPress={() => scaleSelected(1)}>
-                <Feather name="plus" size={14} color={colors.text} />
+                <Text style={{ fontSize: 14, color: colors.text }}>+</Text>
               </TouchableOpacity>
             </View>
 
@@ -1056,11 +1055,11 @@ export default function CreatorStudio() {
             <View style={styles.ctrlGroup}>
               <Text style={[styles.ctrlGroupLabel, { color: colors.textMuted }]}>Rotate</Text>
               <TouchableOpacity style={[styles.ctrlBtn, { backgroundColor: colors.muted }]} onPress={() => rotateSelected(-ROT_STEP)}>
-                <Feather name="rotate-ccw" size={14} color={colors.text} />
+                <Text style={{ fontSize: 14, color: colors.text }}>↺</Text>
               </TouchableOpacity>
               <Text style={[styles.ctrlValue, { color: colors.text }]}>{selectedEl.rotation}°</Text>
               <TouchableOpacity style={[styles.ctrlBtn, { backgroundColor: colors.muted }]} onPress={() => rotateSelected(ROT_STEP)}>
-                <Feather name="rotate-cw" size={14} color={colors.text} />
+                <Text style={{ fontSize: 14, color: colors.text }}>↻</Text>
               </TouchableOpacity>
             </View>
 
@@ -1069,28 +1068,28 @@ export default function CreatorStudio() {
             {/* Actions */}
             {selectedEl.type === "text" && (
               <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: colors.primary + "20" }]} onPress={() => openTextModal(selectedEl.id)}>
-                <Feather name="edit-2" size={14} color={colors.primary} />
+                <Text style={{ fontSize: 14, color: colors.primary }}>✏️</Text>
                 <Text style={[styles.ctrlActionLabel, { color: colors.primary }]}>Edit</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: colors.muted }]} onPress={duplicateSelected}>
-              <Feather name="copy" size={14} color={colors.text} />
+              <Text style={{ fontSize: 14, color: colors.text }}>⧉</Text>
               <Text style={[styles.ctrlActionLabel, { color: colors.text }]}>Copy</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: colors.muted }]} onPress={bringForward}>
-              <Feather name="arrow-up" size={14} color={colors.text} />
+              <Text style={{ fontSize: 14, color: colors.text }}>↑</Text>
               <Text style={[styles.ctrlActionLabel, { color: colors.text }]}>↑</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: colors.muted }]} onPress={sendBackward}>
-              <Feather name="arrow-down" size={14} color={colors.text} />
+              <Text style={{ fontSize: 14, color: colors.text }}>↓</Text>
               <Text style={[styles.ctrlActionLabel, { color: colors.text }]}>↓</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: "#EF444420" }]} onPress={deleteSelected}>
-              <Feather name="trash-2" size={14} color="#EF4444" />
+              <Text style={{ fontSize: 14, color: "#EF4444" }}>🗑</Text>
               <Text style={[styles.ctrlActionLabel, { color: "#EF4444" }]}>Del</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.ctrlAction, { backgroundColor: colors.muted }]} onPress={() => setSelectedId(null)}>
-              <Feather name="x" size={14} color={colors.textMuted} />
+              <Text style={{ fontSize: 14, color: colors.textMuted }}>✕</Text>
               <Text style={[styles.ctrlActionLabel, { color: colors.textMuted }]}>Done</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -1107,10 +1106,10 @@ export default function CreatorStudio() {
             {allTracks.find((t) => t.id === activeTrackId)?.name ?? "Playing"}
           </Text>
           <TouchableOpacity onPress={togglePlayPause} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-            <Feather name={isPlaying ? "pause" : "play"} size={16} color="#fff" />
+            <Text style={{ fontSize: 16, color: "#fff" }}>{isPlaying ? "⏸" : "▶"}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={stopMusic} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-            <Feather name="x" size={16} color="rgba(255,255,255,0.7)" />
+            <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.7)" }}>✕</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -1118,12 +1117,12 @@ export default function CreatorStudio() {
       {/* Tool tabs */}
       <View style={[styles.toolTabs, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
         {([
-          { key: "background", icon: "image",   label: "BG" },
-          { key: "text",       icon: "type",    label: "Text" },
-          { key: "sticker",    icon: "smile",   label: "Sticker" },
-          { key: "image",      icon: "camera",  label: "Photo" },
-          { key: "shape",      icon: "square",  label: "Shape" },
-          { key: "music",      icon: "music",   label: "Music" },
+          { key: "background", icon: "🖼️",  label: "BG" },
+          { key: "text",       icon: "🔤",  label: "Text" },
+          { key: "sticker",    icon: "😊",  label: "Sticker" },
+          { key: "image",      icon: "📷",  label: "Photo" },
+          { key: "shape",      icon: "⬛",  label: "Shape" },
+          { key: "music",      icon: "🎵",  label: "Music" },
         ] as { key: ToolTab; icon: string; label: string }[]).map((t) => (
           <TouchableOpacity
             key={t.key}
@@ -1132,7 +1131,7 @@ export default function CreatorStudio() {
           >
             {t.key === "music" && activeTrackId
               ? <Text style={{ fontSize: 16 }}>🎵</Text>
-              : <Feather name={t.icon as any} size={18} color={activeTool === t.key ? colors.primary : colors.textMuted} />
+              : <Text style={{ fontSize: 18, color: activeTool === t.key ? colors.primary : colors.textMuted }}>{t.icon}</Text>
             }
             <Text style={[styles.toolTabLabel, { color: activeTool === t.key ? colors.primary : colors.textMuted }]}>
               {t.label}{t.key === "music" && activeTrackId && isPlaying ? " ●" : ""}
@@ -1153,7 +1152,7 @@ export default function CreatorStudio() {
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>{editingId ? "Edit Text" : "Add Text"}</Text>
               <TouchableOpacity onPress={() => setTextModal(false)}>
-                <Feather name="x" size={20} color={colors.textMuted} />
+                <Text style={{ fontSize: 20, color: colors.textMuted }}>✕</Text>
               </TouchableOpacity>
             </View>
 
@@ -1221,12 +1220,12 @@ export default function CreatorStudio() {
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Saved Drafts</Text>
               <TouchableOpacity onPress={() => setDraftsModal(false)}>
-                <Feather name="x" size={20} color={colors.textMuted} />
+                <Text style={{ fontSize: 20, color: colors.textMuted }}>✕</Text>
               </TouchableOpacity>
             </View>
             {drafts.length === 0 ? (
               <View style={{ alignItems: "center", paddingVertical: 32, gap: 8 }}>
-                <Feather name="folder" size={36} color={colors.textMuted} />
+                <Text style={{ fontSize: 36, color: colors.textMuted }}>📁</Text>
                 <Text style={[styles.panelHint, { color: colors.textMuted, textAlign: "center" }]}>
                   No drafts yet. Tap the save icon to save your current design.
                 </Text>
@@ -1242,7 +1241,7 @@ export default function CreatorStudio() {
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => deleteDraft(d.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Feather name="trash-2" size={16} color="#EF4444" />
+                      <Text style={{ fontSize: 16, color: "#EF4444" }}>🗑</Text>
                     </TouchableOpacity>
                   </View>
                 ))}

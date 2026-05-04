@@ -3,7 +3,6 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 
@@ -17,7 +16,7 @@ type Section = { title: string; icon: string; body: string[] };
 const SECTIONS: Section[] = [
   {
     title: "Acceptance of Terms",
-    icon: "check-circle",
+    icon: "✅",
     body: [
       `By accessing or using ${APP_NAME} (\"the App\"), you agree to be bound by these Terms of Service (\"Terms\"). If you do not agree to all of these Terms, do not use the App.`,
       "We may update these Terms at any time. Continued use of the App after changes constitutes your acceptance of the updated Terms.",
@@ -25,7 +24,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "User Content",
-    icon: "upload",
+    icon: "📤",
     body: [
       "You retain ownership of any content you post (videos, images, text). By posting, you grant Scam Alert a non-exclusive, worldwide, royalty-free licence to display, distribute, and promote your content within the App.",
       "You are solely responsible for ensuring you have the rights to any content you upload. Do not post content that infringes the copyright, trademark, or other intellectual property rights of any third party.",
@@ -34,7 +33,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Copyright & DMCA Policy",
-    icon: "shield",
+    icon: "🛡️",
     body: [
       `${APP_NAME} respects intellectual property rights and complies with the Digital Millennium Copyright Act (DMCA).`,
       "If you believe content on the App infringes your copyright, please send a DMCA takedown notice to:",
@@ -45,7 +44,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Music & Audio",
-    icon: "music",
+    icon: "🎵",
     body: [
       "All background music tracks provided within the App's music library are royalty-free and licensed for use in user-generated content (CC0 / royalty-free licence). You do not need to pay additional licence fees to use these tracks in reels posted within the App.",
       "If you add external audio to your content, you are responsible for ensuring you hold the appropriate licence for that audio.",
@@ -53,7 +52,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Privacy",
-    icon: "lock",
+    icon: "🔒",
     body: [
       "We collect only the information needed to operate the App: email address, username, profile data you choose to provide, and content you post.",
       "We do not sell your personal information to third parties.",
@@ -63,7 +62,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Community Guidelines",
-    icon: "users",
+    icon: "👥",
     body: [
       "Be respectful — no harassment, bullying, or hate speech.",
       "Be accurate — only share scam alerts you have reasonable grounds to believe are real.",
@@ -74,7 +73,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Disclaimers & Limitation of Liability",
-    icon: "alert-triangle",
+    icon: "⚠️",
     body: [
       `${APP_NAME} is provided \"as is\" without warranties of any kind. We do not verify the accuracy of user-submitted scam reports.`,
       "All content is user-submitted and for public awareness purposes only. Do not rely solely on App content for financial, legal, or security decisions.",
@@ -83,7 +82,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Contact Us",
-    icon: "mail",
+    icon: "📧",
     body: [
       `For general support: ${SUPPORT_EMAIL}`,
       `For copyright / DMCA notices: ${DMCA_EMAIL}`,
@@ -98,10 +97,10 @@ function SectionCard({ section, colors }: { section: Section; colors: ReturnType
     <View style={[S.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <TouchableOpacity style={S.cardHeader} onPress={() => setOpen(o => !o)} activeOpacity={0.75}>
         <View style={[S.iconBadge, { backgroundColor: colors.primary + "18" }]}>
-          <Feather name={section.icon as any} size={16} color={colors.primary} />
+          <Text style={{ fontSize: 16, color: colors.primary }}>{section.icon}</Text>
         </View>
         <Text style={[S.cardTitle, { color: colors.text }]}>{section.title}</Text>
-        <Feather name={open ? "chevron-up" : "chevron-down"} size={16} color={colors.textMuted} />
+        <Text style={{ fontSize: 16, color: colors.textMuted }}>{open ? "▲" : "▼"}</Text>
       </TouchableOpacity>
       {open && (
         <View style={S.cardBody}>
@@ -141,7 +140,7 @@ export default function TosScreen() {
     <View style={[S.screen, { backgroundColor: colors.background }]}>
       <View style={[S.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Text style={{ fontSize: 22, color: colors.text }}>←</Text>
         </TouchableOpacity>
         <Text style={[S.headerTitle, { color: colors.text }]}>Terms & Legal</Text>
         <View style={{ width: 22 }} />
@@ -150,7 +149,7 @@ export default function TosScreen() {
       <ScrollView contentContainerStyle={[S.content, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={[S.hero, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
-          <Feather name="shield" size={28} color={colors.primary} />
+          <Text style={{ fontSize: 28, color: colors.primary }}>🛡️</Text>
           <Text style={[S.heroTitle, { color: colors.text }]}>Terms of Service</Text>
           <Text style={[S.heroSub, { color: colors.textMuted }]}>Effective {EFFECTIVE_DATE}</Text>
         </View>
@@ -161,12 +160,12 @@ export default function TosScreen() {
           onPress={() => Linking.openURL(`mailto:${DMCA_EMAIL}`)}
           activeOpacity={0.8}
         >
-          <Feather name="alert-octagon" size={18} color="#7C3AED" />
+          <Text style={{ fontSize: 18, color: "#7C3AED" }}>⚠️</Text>
           <View style={{ flex: 1 }}>
             <Text style={[S.dmcaTitle, { color: "#7C3AED" }]}>Copyright / DMCA Takedown?</Text>
             <Text style={[S.dmcaSub, { color: colors.textMuted }]}>Tap to email {DMCA_EMAIL}</Text>
           </View>
-          <Feather name="external-link" size={14} color="#7C3AED" />
+          <Text style={{ fontSize: 14, color: "#7C3AED" }}>↗️</Text>
         </TouchableOpacity>
 
         {/* Sections */}

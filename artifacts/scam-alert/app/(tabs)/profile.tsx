@@ -19,7 +19,6 @@ import {
   Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import {
   collection,
   query,
@@ -223,11 +222,11 @@ function SocialShareModal({
         <View style={[SSM.divider, { backgroundColor: colors.border }]} />
         <View style={SSM.bottomRow}>
           <TouchableOpacity style={[SSM.bottomBtn, { backgroundColor: colors.muted }]} onPress={handleCopyLink}>
-            <Feather name="link" size={16} color={colors.text} />
+            <Image source={APP_ICON} style={SSM.btnIcon} resizeMode="cover" />
             <Text style={[SSM.bottomBtnTxt, { color: colors.text }]}>Copy Link</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[SSM.bottomBtn, { backgroundColor: "#FF3B3B" }]} onPress={handleNativeShare}>
-            <Feather name="share-2" size={16} color="#fff" />
+            <Image source={APP_ICON} style={SSM.btnIcon} resizeMode="cover" />
             <Text style={[SSM.bottomBtnTxt, { color: "#fff" }]}>Share via…</Text>
           </TouchableOpacity>
         </View>
@@ -250,6 +249,7 @@ const SSM = StyleSheet.create({
   bottomRow:    { flexDirection: "row", gap: 10 },
   bottomBtn:    { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 13, borderRadius: 14 },
   bottomBtnTxt: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  btnIcon:      { width: 16, height: 16, borderRadius: 4 },
 });
 
 export default function ProfileScreen() {
@@ -580,7 +580,7 @@ export default function ProfileScreen() {
                   <Text style={[styles.username, { color: colors.text }]}>{profile.username}</Text>
                   {(profile.isAdmin) && (
                     <View style={[styles.verifiedBadge, { backgroundColor: colors.primary }]}>
-                      <Feather name="check" size={10} color="#fff" />
+                      <Text style={{ color: "#fff", fontSize: 9, fontFamily: "Inter_700Bold" }}>✓</Text>
                     </View>
                   )}
                 </View>
@@ -712,7 +712,7 @@ export default function ProfileScreen() {
                     Share scam warnings as short videos
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -739,7 +739,7 @@ export default function ProfileScreen() {
                     Facebook, TikTok, Instagram, Reddit & more
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -753,7 +753,7 @@ export default function ProfileScreen() {
                     4 games — run, tap, swipe & race to beat friends
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -767,7 +767,7 @@ export default function ProfileScreen() {
                     Design posts, graphics & alerts
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -776,7 +776,7 @@ export default function ProfileScreen() {
               >
                 <Image source={APP_ICON} style={styles.quickLinkIcon} resizeMode="cover" />
                 <Text style={[styles.quickLinkText, { color: colors.text }]}>Edit Profile</Text>
-                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -785,7 +785,7 @@ export default function ProfileScreen() {
               >
                 <Image source={APP_ICON} style={styles.quickLinkIcon} resizeMode="cover" />
                 <Text style={[styles.quickLinkText, { color: colors.text }]}>Settings</Text>
-                <Feather name="chevron-right" size={14} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1002,7 +1002,7 @@ export default function ProfileScreen() {
 
             {!displayedLoading && activeTab !== "reels" && displayedPosts.length === 0 && (
               <View style={styles.emptyPosts}>
-                <Feather name={activeTab === "posts" ? "file-text" : "bookmark"} size={36} color={colors.textMuted} />
+                <Text style={{ fontSize: 36 }}>{activeTab === "posts" ? "📄" : "🔖"}</Text>
                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                   {activeTab === "posts" ? "No posts yet" : "No saved posts yet"}
                 </Text>
@@ -1051,11 +1051,11 @@ export default function ProfileScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.card }]}>
             <Text style={[styles.sheetTitle, { color: colors.text }]}>Change Profile Photo</Text>
             <TouchableOpacity style={[styles.sheetOption, { borderBottomColor: colors.border }]} onPress={() => doUpload("camera")}>
-              <Feather name="camera" size={20} color={colors.primary} />
+              <Text style={{ fontSize: 20 }}>📷</Text>
               <Text style={[styles.sheetOptionText, { color: colors.text }]}>Take Photo</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sheetOption} onPress={() => doUpload("gallery")}>
-              <Feather name="image" size={20} color={colors.primary} />
+              <Text style={{ fontSize: 20 }}>🖼️</Text>
               <Text style={[styles.sheetOptionText, { color: colors.text }]}>Choose from Gallery</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.sheetCancel, { backgroundColor: colors.muted }]} onPress={() => setShowPhotoSheet(false)}>
@@ -1192,6 +1192,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   quickLinkIcon: { width: 18, height: 18, borderRadius: 5 },
+  quickLinkChevron: { width: 14, height: 14, borderRadius: 3, opacity: 0.4 },
   quickLinkText: { fontFamily: "Inter_500Medium", fontSize: 14, flex: 1 },
   themePill: {
     paddingHorizontal: 10,

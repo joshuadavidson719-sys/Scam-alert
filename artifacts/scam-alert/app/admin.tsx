@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import {
   collection,
   query,
@@ -25,6 +25,8 @@ import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { formatTimeAgo } from "@/lib/utils";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface Report {
   id: string;
@@ -66,7 +68,7 @@ export default function AdminScreen() {
   if (!profile?.isAdmin) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <Feather name="lock" size={48} color={colors.textMuted} />
+        <Text style={{ fontSize: 48 }}>🔒</Text>
         <Text style={[styles.noAccess, { color: colors.textSecondary }]}>
           Admin access required
         </Text>
@@ -114,10 +116,10 @@ export default function AdminScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color={colors.text} />
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Moderation</Text>
-        <Feather name="shield" size={22} color={colors.primary} />
+        <Image source={APP_ICON} style={styles.headerIcon} resizeMode="cover" />
       </View>
 
       <View style={styles.filterRow}>
@@ -149,7 +151,7 @@ export default function AdminScreen() {
         <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
       ) : reports.length === 0 ? (
         <View style={styles.centered}>
-          <Feather name="check-circle" size={48} color={colors.success} />
+          <Text style={{ fontSize: 48 }}>✅</Text>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             No {filter} reports
           </Text>
@@ -170,7 +172,7 @@ export default function AdminScreen() {
                 <View
                   style={[styles.reportType, { backgroundColor: colors.primary + "20" }]}
                 >
-                  <Feather name="flag" size={12} color={colors.primary} />
+                  <Text style={{ fontSize: 12 }}>🚩</Text>
                   <Text style={[styles.reportTypeText, { color: colors.primary }]}>
                     {item.targetType}
                   </Text>
@@ -197,21 +199,21 @@ export default function AdminScreen() {
                     style={[styles.actionBtn, { backgroundColor: colors.destructive }]}
                     onPress={() => handleDeletePost(item)}
                   >
-                    <Feather name="trash-2" size={14} color="#fff" />
+                    <Text style={{ fontSize: 14 }}>🗑️</Text>
                     <Text style={styles.actionBtnText}>Delete Post</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: colors.success }]}
                     onPress={() => handleResolve(item)}
                   >
-                    <Feather name="check" size={14} color="#fff" />
+                    <Text style={{ fontSize: 14 }}>✓</Text>
                     <Text style={styles.actionBtnText}>Resolve</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: colors.muted }]}
                     onPress={() => handleDismiss(item)}
                   >
-                    <Feather name="x" size={14} color={colors.text} />
+                    <Text style={{ fontSize: 14, color: colors.text }}>✕</Text>
                     <Text style={[styles.actionBtnText, { color: colors.text }]}>Dismiss</Text>
                   </TouchableOpacity>
                 </View>
@@ -235,6 +237,8 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
+  navIcon:    { width: 24, height: 24, borderRadius: 6 },
+  headerIcon: { width: 22, height: 22, borderRadius: 6 },
   title: {
     fontFamily: "Inter_700Bold",
     fontSize: 18,
