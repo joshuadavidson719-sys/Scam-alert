@@ -895,6 +895,21 @@ export default function ProfileScreen() {
                               <Text style={[styles.reelActionCount, { color: saved ? colors.primary : colors.textMuted }]}>{saved ? "Saved" : "Save"}</Text>
                             </TouchableOpacity>
 
+                            {/* Follow / Share Profile */}
+                            <TouchableOpacity
+                              style={styles.reelActionBtn}
+                              onPress={() =>
+                                Share.share({
+                                  message: `Follow me on Scam Alert! @${profile?.username ?? ""}`,
+                                  url: `https://${process.env.EXPO_PUBLIC_DOMAIN}/user/${user?.uid}`,
+                                }).catch(() => {})
+                              }
+                              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                              <Text style={styles.reelFollowEagle}>🦅</Text>
+                              <Text style={[styles.reelActionCount, { color: "#3B82F6", fontFamily: "Inter_700Bold" }]}>Follow</Text>
+                            </TouchableOpacity>
+
                             {/* Report */}
                             <TouchableOpacity
                               style={styles.reelActionBtn}
@@ -1256,4 +1271,5 @@ const styles = StyleSheet.create({
   reelPlayLabel:        { fontFamily: "Inter_700Bold", fontSize: 12, color: "#fff", marginTop: 4, textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   reelStatIcon:         { width: 9, height: 9, borderRadius: 2 },
   reelActionIcon:       { width: 15, height: 15, borderRadius: 3 },
+  reelFollowEagle:      { fontSize: 22 },
 });
