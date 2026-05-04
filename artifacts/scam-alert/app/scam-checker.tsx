@@ -8,12 +8,14 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface AnalysisResult {
   isScam: boolean;
@@ -24,41 +26,39 @@ interface AnalysisResult {
   scamType: string | null;
 }
 
-// ── Scam type → icon + colour ─────────────────────────────────────────────────
+// ── Scam type → emoji + colour ────────────────────────────────────────────────
 interface ScamTypeConfig {
-  icon: keyof typeof Feather.glyphMap;
+  emoji: string;
   color: string;
 }
 
 const SCAM_TYPE_CONFIG: Record<string, ScamTypeConfig> = {
-  "Phishing":              { icon: "link",        color: "#F97316" }, // orange
-  "Lottery scam":          { icon: "gift",        color: "#8B5CF6" }, // purple
-  "Prize scam":            { icon: "award",       color: "#8B5CF6" }, // purple
-  "Romance scam":          { icon: "heart",       color: "#EC4899" }, // pink
-  "Tech support scam":     { icon: "monitor",     color: "#3B82F6" }, // blue
-  "Investment fraud":      { icon: "trending-up", color: "#059669" }, // dark green
-  "Impersonation":         { icon: "user-x",      color: "#EF4444" }, // red
-  "OTP scam":              { icon: "lock",        color: "#EAB308" }, // yellow
-  "Cryptocurrency scam":   { icon: "cpu",         color: "#06B6D4" }, // teal
-  "Job scam":              { icon: "briefcase",   color: "#6366F1" }, // indigo
-  "Advance fee fraud":     { icon: "dollar-sign", color: "#DC2626" }, // dark red
-  "Identity theft":        { icon: "user-check",  color: "#7C3AED" }, // violet
-  "Smishing":              { icon: "message-square", color: "#F59E0B" }, // amber
-  "Vishing":               { icon: "phone-off",   color: "#EF4444" }, // red
+  "Phishing":              { emoji: "🔗", color: "#F97316" },
+  "Lottery scam":          { emoji: "🎁", color: "#8B5CF6" },
+  "Prize scam":            { emoji: "🏆", color: "#8B5CF6" },
+  "Romance scam":          { emoji: "❤️", color: "#EC4899" },
+  "Tech support scam":     { emoji: "🖥️", color: "#3B82F6" },
+  "Investment fraud":      { emoji: "📈", color: "#059669" },
+  "Impersonation":         { emoji: "🎭", color: "#EF4444" },
+  "OTP scam":              { emoji: "🔒", color: "#EAB308" },
+  "Cryptocurrency scam":   { emoji: "💎", color: "#06B6D4" },
+  "Job scam":              { emoji: "💼", color: "#6366F1" },
+  "Advance fee fraud":     { emoji: "💸", color: "#DC2626" },
+  "Identity theft":        { emoji: "🪪", color: "#7C3AED" },
+  "Smishing":              { emoji: "💬", color: "#F59E0B" },
+  "Vishing":               { emoji: "📵", color: "#EF4444" },
 };
 
 function getScamTypeConfig(scamType: string | null): ScamTypeConfig {
-  if (!scamType) return { icon: "alert-triangle", color: "#FF3B3B" };
-  // Exact match first
+  if (!scamType) return { emoji: "⚠️", color: "#FF3B3B" };
   if (SCAM_TYPE_CONFIG[scamType]) return SCAM_TYPE_CONFIG[scamType];
-  // Fuzzy match — find a key that is a substring of the scam type or vice versa
   const lower = scamType.toLowerCase();
   for (const key of Object.keys(SCAM_TYPE_CONFIG)) {
     if (lower.includes(key.toLowerCase()) || key.toLowerCase().includes(lower)) {
       return SCAM_TYPE_CONFIG[key];
     }
   }
-  return { icon: "alert-triangle", color: "#FF3B3B" };
+  return { emoji: "⚠️", color: "#FF3B3B" };
 }
 
 export default function ScamCheckerScreen() {
@@ -84,8 +84,7 @@ export default function ScamCheckerScreen() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: message.trim() }),
-      }
-      );
+      });
       if (!response.ok) throw new Error("Analysis failed");
       const data = await response.json() as AnalysisResult;
       setResult(data);
@@ -101,10 +100,6 @@ export default function ScamCheckerScreen() {
     }
   };
 
-  // Confidence colour must factor in the verdict:
-  // - High confidence SCAM → red  | High confidence SAFE → green
-  // - Medium → amber in either case (some uncertainty)
-  // - Low → muted in either case (barely confident)
   const confidenceColor = (c: "high" | "medium" | "low", isScam: boolean) => {
     if (c === "low") return colors.textMuted;
     if (c === "medium") return colors.warning;
@@ -121,11 +116,12 @@ export default function ScamCheckerScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="x" size={24} color={colors.text} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Image source={APP_ICON} style={styles.backIcon} resizeMode="cover" />
+          <Text style={[styles.backLabel, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>AI Scam Checker</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 60 }} />
       </View>
 
       <View
@@ -135,7 +131,7 @@ export default function ScamCheckerScreen() {
         ]}
       >
         <View style={[styles.heroIcon, { backgroundColor: colors.primary }]}>
-          <Feather name="shield" size={28} color="#fff" />
+          <Image source={APP_ICON} style={styles.heroIconImg} resizeMode="cover" />
         </View>
         <Text style={[styles.heroTitle, { color: colors.text }]}>
           Detect Scams Instantly
@@ -178,7 +174,7 @@ export default function ScamCheckerScreen() {
           <ActivityIndicator color="#fff" />
         ) : (
           <>
-            <Feather name="search" size={18} color="#fff" />
+            <Image source={APP_ICON} style={styles.analyzeBtnIcon} resizeMode="cover" />
             <Text style={styles.analyzeBtnText}>Analyze Message</Text>
           </>
         )}
@@ -191,7 +187,7 @@ export default function ScamCheckerScreen() {
             { backgroundColor: colors.destructive + "15", borderColor: colors.destructive + "33" },
           ]}
         >
-          <Feather name="alert-circle" size={16} color={colors.destructive} />
+          <Text style={{ fontSize: 16 }}>⚠️</Text>
           <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
         </View>
       ) : null}
@@ -210,16 +206,10 @@ export default function ScamCheckerScreen() {
             <View
               style={[
                 styles.resultIcon,
-                {
-                  backgroundColor: result.isScam ? colors.destructive : colors.success,
-                },
+                { backgroundColor: result.isScam ? colors.destructive : colors.success },
               ]}
             >
-              <Feather
-                name={result.isScam ? "alert-triangle" : "check-circle"}
-                size={24}
-                color="#fff"
-              />
+              <Image source={APP_ICON} style={styles.resultIconImg} resizeMode="cover" />
             </View>
             <View style={{ flex: 1 }}>
               <Text
@@ -241,7 +231,7 @@ export default function ScamCheckerScreen() {
                 const cfg = getScamTypeConfig(result.scamType!);
                 return (
                   <View style={[styles.scamTypeChip, { backgroundColor: cfg.color + "18", borderColor: cfg.color + "44" }]}>
-                    <Feather name={cfg.icon} size={13} color={cfg.color} />
+                    <Text style={{ fontSize: 13 }}>{cfg.emoji}</Text>
                     <Text style={[styles.scamTypeText, { color: cfg.color }]}>
                       {result.scamType}
                     </Text>
@@ -259,7 +249,7 @@ export default function ScamCheckerScreen() {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Red Flags Detected</Text>
               {result.redFlags.map((flag, i) => (
                 <View key={i} style={styles.redFlagRow}>
-                  <Feather name="alert-circle" size={13} color={colors.destructive} />
+                  <Text style={{ fontSize: 13 }}>🚩</Text>
                   <Text style={[styles.redFlagText, { color: colors.textSecondary }]}>
                     {flag}
                   </Text>
@@ -274,13 +264,12 @@ export default function ScamCheckerScreen() {
               { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
-            <Feather name="info" size={14} color={colors.info} />
+            <Text style={{ fontSize: 14 }}>ℹ️</Text>
             <Text style={[styles.recommendationText, { color: colors.text }]}>
               {result.recommendation}
             </Text>
           </View>
 
-          {/* Action row — only shown when a scam is detected */}
           {result.isScam && (
             <View style={styles.actionRow}>
               <TouchableOpacity
@@ -305,7 +294,7 @@ export default function ScamCheckerScreen() {
                   } as never);
                 }}
               >
-                <Feather name="edit-3" size={15} color="#fff" />
+                <Image source={APP_ICON} style={styles.actionBtnIcon} resizeMode="cover" />
                 <Text style={styles.postAlertText}>Post an Alert</Text>
               </TouchableOpacity>
 
@@ -317,7 +306,7 @@ export default function ScamCheckerScreen() {
                   Haptics.selectionAsync();
                 }}
               >
-                <Feather name="refresh-cw" size={14} color={colors.textSecondary} />
+                <Text style={{ fontSize: 14 }}>🔄</Text>
                 <Text style={[styles.checkAnotherText, { color: colors.textSecondary }]}>
                   Check Another
                 </Text>
@@ -334,7 +323,7 @@ export default function ScamCheckerScreen() {
                 Haptics.selectionAsync();
               }}
             >
-              <Feather name="refresh-cw" size={14} color={colors.textSecondary} />
+              <Text style={{ fontSize: 14 }}>🔄</Text>
               <Text style={[styles.checkAnotherText, { color: colors.textSecondary }]}>
                 Check Another Message
               </Text>
@@ -358,10 +347,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 20,
   },
-  title: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 18,
-  },
+  backBtn: { flexDirection: "row", alignItems: "center", gap: 5 },
+  backIcon: { width: 22, height: 22, borderRadius: 6 },
+  backLabel: { fontFamily: "Inter_600SemiBold", fontSize: 13 },
+  title: { fontFamily: "Inter_700Bold", fontSize: 18 },
   heroBanner: {
     borderRadius: 16,
     borderWidth: 1,
@@ -377,17 +366,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  heroTitle: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 18,
-    textAlign: "center",
-  },
-  heroDesc: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
-    textAlign: "center",
-    lineHeight: 19,
-  },
+  heroIconImg: { width: 36, height: 36, borderRadius: 10 },
+  heroTitle: { fontFamily: "Inter_700Bold", fontSize: 18, textAlign: "center" },
+  heroDesc: { fontFamily: "Inter_400Regular", fontSize: 13, textAlign: "center", lineHeight: 19 },
   label: {
     fontFamily: "Inter_500Medium",
     fontSize: 13,
@@ -420,11 +401,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
   },
-  analyzeBtnText: {
-    color: "#fff",
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 16,
-  },
+  analyzeBtnIcon: { width: 20, height: 20, borderRadius: 5 },
+  analyzeBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 16 },
   errorBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -434,11 +412,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 16,
   },
-  errorText: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
-    flex: 1,
-  },
+  errorText: { fontFamily: "Inter_400Regular", fontSize: 13, flex: 1 },
   resultCard: {
     borderRadius: 16,
     borderWidth: 1,
@@ -446,11 +420,7 @@ const styles = StyleSheet.create({
     gap: 14,
     marginBottom: 16,
   },
-  resultHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
+  resultHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   resultIcon: {
     width: 52,
     height: 52,
@@ -458,20 +428,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  verdict: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 17,
-  },
-  confidence: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 13,
-    marginTop: 2,
-  },
-  explanation: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 15,
-    lineHeight: 22,
-  },
+  resultIconImg: { width: 32, height: 32, borderRadius: 8 },
+  verdict: { fontFamily: "Inter_700Bold", fontSize: 17 },
+  confidence: { fontFamily: "Inter_500Medium", fontSize: 13, marginTop: 2 },
+  explanation: { fontFamily: "Inter_400Regular", fontSize: 15, lineHeight: 22 },
   scamTypeChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -482,16 +442,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
-  scamTypeText: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 12,
-    letterSpacing: 0.3,
-  },
-  actionRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 4,
-  },
+  scamTypeText: { fontFamily: "Inter_600SemiBold", fontSize: 12, letterSpacing: 0.3 },
+  actionRow: { flexDirection: "row", gap: 10, marginTop: 4 },
   postAlertBtn: {
     flex: 1,
     flexDirection: "row",
@@ -501,11 +453,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
   },
-  postAlertText: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 14,
-    color: "#fff",
-  },
+  actionBtnIcon: { width: 16, height: 16, borderRadius: 4 },
+  postAlertText: { fontFamily: "Inter_700Bold", fontSize: 14, color: "#fff" },
   checkAnotherBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -516,27 +465,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  checkAnotherText: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 13,
-  },
+  checkAnotherText: { fontFamily: "Inter_500Medium", fontSize: 13 },
   redFlagsSection: { gap: 6 },
-  sectionTitle: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  redFlagRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-  },
-  redFlagText: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
-    flex: 1,
-    lineHeight: 19,
-  },
+  sectionTitle: { fontFamily: "Inter_700Bold", fontSize: 14, marginBottom: 4 },
+  redFlagRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  redFlagText: { fontFamily: "Inter_400Regular", fontSize: 13, flex: 1, lineHeight: 19 },
   recommendationBox: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -545,12 +478,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  recommendationText: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
-    flex: 1,
-    lineHeight: 19,
-  },
+  recommendationText: { fontFamily: "Inter_400Regular", fontSize: 13, flex: 1, lineHeight: 19 },
   disclaimer: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,

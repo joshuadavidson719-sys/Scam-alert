@@ -14,7 +14,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
@@ -37,6 +37,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { UserAvatar } from "@/components/UserAvatar";
 
+const APP_ICON = require("@/assets/images/icon.png");
 const { width: SCREEN_W } = Dimensions.get("window");
 const STORY_DURATION = 5000;
 
@@ -283,7 +284,7 @@ export default function StoriesScreen() {
           style={[styles.closeBtn, { top: insets.top + 8 }]}
           onPress={() => { setMode("browse"); setActiveGroup(null); }}
         >
-          <Feather name="x" size={22} color="#fff" />
+          <Image source={APP_ICON} style={styles.closeBtnIcon} resizeMode="cover" />
         </TouchableOpacity>
 
         {/* Story content */}
@@ -356,8 +357,9 @@ export default function StoriesScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={() => setMode("browse")}>
-            <Feather name="x" size={22} color={colors.text} />
+          <TouchableOpacity onPress={() => setMode("browse")} style={styles.headerBackBtn}>
+            <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
+            <Text style={[styles.headerBtnLabel, { color: colors.text }]}>Cancel</Text>
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>New Story</Text>
           <TouchableOpacity onPress={publishStory} disabled={uploading}>
@@ -375,7 +377,7 @@ export default function StoriesScreen() {
                 style={[styles.typeBtn, createType === t && { backgroundColor: colors.primary }]}
                 onPress={() => setCreateType(t)}
               >
-                <Feather name={t === "text" ? "type" : "image"} size={16} color={createType === t ? "#fff" : colors.textSecondary} />
+                <Text style={{ fontSize: 16 }}>{t === "text" ? "🔤" : "🖼️"}</Text>
                 <Text style={[styles.typeBtnText, { color: createType === t ? "#fff" : colors.textSecondary }]}>
                   {t === "text" ? "Text" : "Photo"}
                 </Text>
@@ -416,7 +418,8 @@ export default function StoriesScreen() {
                 <Image source={{ uri: pickedImage }} style={styles.pickedImage} resizeMode="cover" />
               ) : (
                 <>
-                  <Feather name="image" size={40} color={colors.textMuted} />
+                  <Image source={APP_ICON} style={styles.imagePickerIcon} resizeMode="cover" />
+                  <Text style={{ fontSize: 32 }}>🖼️</Text>
                   <Text style={[styles.imagePickerText, { color: colors.textSecondary }]}>Tap to choose a photo</Text>
                 </>
               )}
@@ -430,12 +433,14 @@ export default function StoriesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
+          <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
+          <Text style={[styles.headerBtnLabel, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Stories</Text>
-        <TouchableOpacity onPress={() => setMode("create")}>
-          <Feather name="plus-circle" size={22} color={colors.primary} />
+        <TouchableOpacity onPress={() => setMode("create")} style={styles.headerBackBtn}>
+          <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
+          <Text style={[styles.headerBtnLabel, { color: colors.primary }]}>New</Text>
         </TouchableOpacity>
       </View>
 
@@ -445,11 +450,12 @@ export default function StoriesScreen() {
         </View>
       ) : groups.length === 0 ? (
         <View style={styles.centered}>
-          <Feather name="camera" size={48} color={colors.textMuted} />
+          <Image source={APP_ICON} style={styles.emptyStateIcon} resizeMode="cover" />
+          <Text style={{ fontSize: 36 }}>📷</Text>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No stories yet</Text>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Be the first to share a 24-hour story</Text>
           <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.primary }]} onPress={() => setMode("create")}>
-            <Feather name="plus" size={18} color="#fff" />
+            <Image source={APP_ICON} style={styles.createBtnIcon} resizeMode="cover" />
             <Text style={styles.createBtnText}>Create Story</Text>
           </TouchableOpacity>
         </View>
@@ -461,7 +467,7 @@ export default function StoriesScreen() {
             onPress={() => setMode("create")}
           >
             <View style={[styles.addStoryIcon, { backgroundColor: colors.primary + "20" }]}>
-              <Feather name="plus" size={24} color={colors.primary} />
+              <Image source={APP_ICON} style={styles.addStoryIconImg} resizeMode="cover" />
             </View>
             <Text style={[styles.addStoryText, { color: colors.text }]}>Add Story</Text>
             <Text style={[styles.addStoryHint, { color: colors.textMuted }]}>Disappears in 24h</Text>
@@ -552,4 +558,13 @@ const styles = StyleSheet.create({
   imagePicker: { height: 280, borderRadius: 20, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center", gap: 12 },
   pickedImage: { width: "100%", height: "100%", borderRadius: 18 },
   imagePickerText: { fontFamily: "Inter_400Regular", fontSize: 14 },
+  // new icon styles
+  closeBtnIcon:   { width: 26, height: 26, borderRadius: 8, opacity: 0.85 },
+  headerBackBtn:  { flexDirection: "row", alignItems: "center", gap: 5 },
+  headerBtnIcon:  { width: 20, height: 20, borderRadius: 6 },
+  headerBtnLabel: { fontFamily: "Inter_600SemiBold", fontSize: 13 },
+  imagePickerIcon:{ width: 40, height: 40, borderRadius: 12, opacity: 0.4 },
+  emptyStateIcon: { width: 52, height: 52, borderRadius: 14, opacity: 0.35, position: "absolute" },
+  createBtnIcon:  { width: 18, height: 18, borderRadius: 5 },
+  addStoryIconImg:{ width: 30, height: 30, borderRadius: 9 },
 });

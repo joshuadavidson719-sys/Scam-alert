@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -9,13 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface Message {
   id: string;
@@ -97,12 +99,13 @@ export default function ChatbotScreen() {
     >
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Image source={APP_ICON} style={styles.backIcon} resizeMode="cover" />
+          <Text style={[styles.backLabel, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={[styles.botIcon, { backgroundColor: colors.primary + "20" }]}>
-            <Feather name="cpu" size={18} color={colors.primary} />
+            <Image source={APP_ICON} style={styles.botIconImg} resizeMode="cover" />
           </View>
           <View>
             <Text style={[styles.botName, { color: colors.text }]}>ScamBot</Text>
@@ -116,8 +119,9 @@ export default function ChatbotScreen() {
             text: "Chat cleared! Ask me anything about scams and fraud protection.",
             ts: Date.now(),
           }])}
+          style={styles.clearBtn}
         >
-          <Feather name="trash-2" size={18} color={colors.textMuted} />
+          <Text style={[styles.clearEmoji, { color: colors.textMuted }]}>🗑</Text>
         </TouchableOpacity>
       </View>
 
@@ -138,7 +142,7 @@ export default function ChatbotScreen() {
           <View style={[styles.msgRow, item.role === "user" ? styles.userRow : styles.assistantRow]}>
             {item.role === "assistant" && (
               <View style={[styles.botAvatar, { backgroundColor: colors.primary }]}>
-                <Feather name="cpu" size={14} color="#fff" />
+                <Image source={APP_ICON} style={styles.botAvatarImg} resizeMode="cover" />
               </View>
             )}
             <View
@@ -190,7 +194,7 @@ export default function ChatbotScreen() {
           onPress={() => send(input)}
           disabled={!input.trim() || loading}
         >
-          <Feather name="send" size={18} color="#fff" />
+          <Image source={APP_ICON} style={styles.sendIcon} resizeMode="cover" />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -200,14 +204,21 @@ export default function ChatbotScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1 },
+  backBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+  backIcon: { width: 20, height: 20, borderRadius: 6 },
+  backLabel: { fontFamily: "Inter_600SemiBold", fontSize: 13 },
   headerCenter: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
   botIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  botIconImg: { width: 26, height: 26, borderRadius: 8 },
   botName: { fontFamily: "Inter_700Bold", fontSize: 16 },
   botStatus: { fontFamily: "Inter_400Regular", fontSize: 12 },
+  clearBtn: { padding: 4 },
+  clearEmoji: { fontSize: 18 },
   msgRow: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
   userRow: { justifyContent: "flex-end" },
   assistantRow: { justifyContent: "flex-start" },
   botAvatar: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  botAvatarImg: { width: 18, height: 18, borderRadius: 5 },
   bubble: { maxWidth: "80%", borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10 },
   userBubble: {},
   assistantBubble: { borderWidth: 1 },
@@ -218,4 +229,5 @@ const styles = StyleSheet.create({
   inputRow: { flexDirection: "row", alignItems: "flex-end", gap: 10, paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1 },
   input: { flex: 1, borderRadius: 22, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 10, fontFamily: "Inter_400Regular", fontSize: 15, maxHeight: 100 },
   sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  sendIcon: { width: 22, height: 22, borderRadius: 6 },
 });
