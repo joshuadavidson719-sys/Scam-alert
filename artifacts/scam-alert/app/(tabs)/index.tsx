@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
   Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import {
   collection,
   query,
@@ -20,6 +19,7 @@ import {
   limit,
   onSnapshot,
   where,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
@@ -39,6 +39,135 @@ import { LiveScamCounter } from "@/components/LiveScamCounter";
 import { ScamRadar } from "@/components/ScamRadar";
 import { DailyBriefingModal } from "@/components/DailyBriefingModal";
 import { router } from "expo-router";
+
+// ── Video Feed Strip ──────────────────────────────────────────────────────────
+type ReelPreview = {
+  id: string;
+  userId: string;
+  username: string;
+  caption: string;
+  videoUrl: string;
+  profilePhoto?: string | null;
+};
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function VideoFeedStrip() {
+  const colors = useColors();
+  const [reels, setReels] = useState<ReelPreview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const fetched = useRef(false);
+
+  useEffect(() => {
+    if (fetched.current) return;
+    fetched.current = true;
+    getDocs(query(collection(db, "reels"), orderBy("createdAt", "desc"), limit(40)))
+      .then((snap) => {
+        const data = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ReelPreview, "id">) }));
+        setReels(shuffle(data));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={vStyles.loadingRow}>
+        <ActivityIndicator color="#FF3B3B" size="small" />
+        <Text style={[vStyles.loadingTxt, { color: colors.textMuted }]}>Loading videos…</Text>
+      </View>
+    );
+  }
+
+  if (reels.length === 0) return null;
+
+  return (
+    <View style={vStyles.section}>
+      {/* Header */}
+      <View style={vStyles.sectionHeader}>
+        <Text style={[vStyles.sectionTitle, { color: colors.text }]}>🎬 Videos</Text>
+        <TouchableOpacity onPress={() => router.push("/reels-viewer" as never)}>
+          <Text style={[vStyles.seeAll, { color: colors.primary }]}>See All</Text>
+        </TouchableOpacity>
+      </View>
+
+      <FlatList
+        data={reels}
+        horizontal
+        keyExtractor={(r) => r.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={vStyles.strip}
+        renderItem={({ item, index }) => (
+          <TouchableOpacity
+            style={[vStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+            activeOpacity={0.85}
+            onPress={() => router.push(`/reels-viewer?startIndex=${index}` as never)}
+          >
+            {/* Dark video placeholder */}
+            <View style={vStyles.thumb}>
+              <View style={vStyles.thumbBg} />
+              {/* Play overlay */}
+              <View style={vStyles.playOverlay}>
+                <View style={vStyles.playCircle}>
+                  <Image source={APP_ICON} style={vStyles.playIcon} resizeMode="cover" />
+                </View>
+                <Text style={vStyles.playLabel}>Play</Text>
+              </View>
+              {/* Username badge */}
+              <View style={vStyles.userBadge}>
+                {item.profilePhoto ? (
+                  <Image source={{ uri: item.profilePhoto }} style={vStyles.avatar} resizeMode="cover" />
+                ) : (
+                  <View style={[vStyles.avatar, { backgroundColor: "#FF3B3B", alignItems: "center", justifyContent: "center" }]}>
+                    <Text style={{ color: "#fff", fontSize: 9, fontFamily: "Inter_700Bold" }}>
+                      {(item.username ?? "?")[0].toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+                <Text style={vStyles.username} numberOfLines={1}>@{item.username}</Text>
+              </View>
+            </View>
+            {/* Caption */}
+            {!!item.caption && (
+              <Text style={[vStyles.caption, { color: colors.textSecondary }]} numberOfLines={2}>
+                {item.caption}
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+}
+
+const vStyles = StyleSheet.create({
+  section:       { marginTop: 12 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, marginBottom: 10 },
+  sectionTitle:  { fontFamily: "Inter_700Bold", fontSize: 16 },
+  seeAll:        { fontFamily: "Inter_600SemiBold", fontSize: 13 },
+  strip:         { paddingHorizontal: 16, gap: 10 },
+  loadingRow:    { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  loadingTxt:    { fontFamily: "Inter_400Regular", fontSize: 13 },
+
+  card:          { width: 120, borderRadius: 14, overflow: "hidden", borderWidth: 1 },
+  thumb:         { width: "100%", height: 180, backgroundColor: "#111", position: "relative" },
+  thumbBg:       { ...StyleSheet.absoluteFillObject, backgroundColor: "#1a0000" },
+  playOverlay:   { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 6 },
+  playCircle:    { width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(255,59,59,0.85)", alignItems: "center", justifyContent: "center" },
+  playIcon:      { width: 24, height: 24, borderRadius: 6 },
+  playLabel:     { fontFamily: "Inter_700Bold", fontSize: 11, color: "#fff" },
+  userBadge:     { position: "absolute", bottom: 6, left: 6, right: 6, flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "rgba(0,0,0,0.65)", borderRadius: 8, paddingHorizontal: 5, paddingVertical: 3 },
+  avatar:        { width: 16, height: 16, borderRadius: 8 },
+  username:      { fontFamily: "Inter_600SemiBold", fontSize: 9, color: "#fff", flex: 1 },
+  caption:       { fontFamily: "Inter_400Regular", fontSize: 10, lineHeight: 14, padding: 7 },
+});
 
 const APP_ICON = require("@/assets/images/icon.png");
 const HEADER_HEIGHT = 60;
@@ -183,6 +312,7 @@ export default function HomeScreen() {
             <>
               {activeCategory === "all" && (
                 <>
+                  <VideoFeedStrip />
                   <ScamOfTheDay />
                   <LiveScamCounter />
                   <TrendingScamsToday />
