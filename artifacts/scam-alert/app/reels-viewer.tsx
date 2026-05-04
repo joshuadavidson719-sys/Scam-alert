@@ -56,23 +56,26 @@ const ST = StyleSheet.create({
 
 // ── Single Reel Item ────────────────────────────────────────────────────────
 function ReelItem({
-  reel, isActive, isNear, currentUserId, onLike, onOpenComments, onDelete,
+  reel, isActive, isNear, currentUserId, followedUsers, onLike, onOpenComments, onDelete, onFollow,
 }: {
   reel: ReelDoc;
   isActive: boolean;
   isNear: boolean;
   currentUserId?: string;
+  followedUsers: Set<string>;
   onLike: (id: string, liked: boolean) => void;
   onOpenComments: (reel: ReelDoc) => void;
   onDelete: (id: string) => void;
+  onFollow: (userId: string, isFollowing: boolean) => void;
 }) {
   const soundRef    = useRef<Audio.Sound | null>(null);
   const webVideoRef = useRef<HTMLVideoElement | null>(null);
   const [paused, setPaused] = useState(false);
   const [viewed, setViewed] = useState(false);
-  const isOwner  = !!currentUserId && currentUserId === reel.userId;
-  const liked    = currentUserId ? reel.likes.includes(currentUserId) : false;
-  const hasMusic = !!reel.musicUrl;
+  const isOwner     = !!currentUserId && currentUserId === reel.userId;
+  const liked       = currentUserId ? reel.likes.includes(currentUserId) : false;
+  const hasMusic    = !!reel.musicUrl;
+  const isFollowing = followedUsers.has(reel.userId);
 
   // ── expo-video (native only) ─────────────────────────────────────────────
   const player = useVideoPlayer(
@@ -247,15 +250,30 @@ function ReelItem({
 
       {/* Bottom info */}
       <View style={S.bottomOverlay}>
-        <TouchableOpacity
-          style={S.userRow}
-          onPress={() => router.push(`/user/${reel.userId}` as never)}
-        >
-          <UserAvatar uri={reel.profilePhoto} name={reel.username} size={36} />
-          <View style={{ marginLeft: 10 }}>
-            <Text style={S.reelUsername}>@{reel.username}</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={S.userRow}>
+          <TouchableOpacity
+            style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+            onPress={() => router.push(`/user/${reel.userId}` as never)}
+          >
+            <UserAvatar uri={reel.profilePhoto} name={reel.username} size={36} />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={S.reelUsername}>@{reel.username}</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Follow button — hidden for own reels */}
+          {!isOwner && currentUserId && (
+            <TouchableOpacity
+              style={[S.followBtn, isFollowing && S.followBtnActive]}
+              onPress={() => onFollow(reel.userId, isFollowing)}
+              activeOpacity={0.8}
+            >
+              <Text style={[S.followBtnText, isFollowing && S.followBtnTextActive]}>
+                {isFollowing ? "Following" : "Follow"}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <Text style={S.caption} numberOfLines={3}>{reel.caption}</Text>
 
         {hasMusic && reel.musicName && (
@@ -425,6 +443,48 @@ export default function ReelsViewer() {
   const [loading, setLoading]         = useState(true);
   const [activeIndex, setActiveIndex] = useState(parseInt(params.startIndex ?? "0") || 0);
   const [commentReel, setCommentReel] = useState<ReelDoc | null>(null);
+  const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
+
+  // ── Load current user's following list ──────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
+      const data = snap.data();
+      const list: string[] = data?.following ?? [];
+      setFollowedUsers(new Set(list));
+    });
+    return unsub;
+  }, [user?.uid]);
+
+  const handleFollow = useCallback(async (targetUserId: string, isFollowing: boolean) => {
+    if (!user) return;
+    // Optimistic update
+    setFollowedUsers(prev => {
+      const next = new Set(prev);
+      if (isFollowing) next.delete(targetUserId);
+      else next.add(targetUserId);
+      return next;
+    });
+    try {
+      const meRef     = doc(db, "users", user.uid);
+      const themRef   = doc(db, "users", targetUserId);
+      if (isFollowing) {
+        await updateDoc(meRef,   { following:  arrayRemove(targetUserId) });
+        await updateDoc(themRef, { followers:  arrayRemove(user.uid) });
+      } else {
+        await updateDoc(meRef,   { following:  arrayUnion(targetUserId) });
+        await updateDoc(themRef, { followers:  arrayUnion(user.uid) });
+      }
+    } catch {
+      // Revert on failure
+      setFollowedUsers(prev => {
+        const next = new Set(prev);
+        if (isFollowing) next.add(targetUserId);
+        else next.delete(targetUserId);
+        return next;
+      });
+    }
+  }, [user?.uid]);
 
   const handleDeleteReel = useCallback((deletedId: string) => {
     setReels(prev => {
@@ -557,9 +617,11 @@ export default function ReelsViewer() {
             isActive={index === activeIndex}
             isNear={Math.abs(index - activeIndex) <= 1}
             currentUserId={user?.uid}
+            followedUsers={followedUsers}
             onLike={handleLike}
             onOpenComments={setCommentReel}
             onDelete={handleDeleteReel}
+            onFollow={handleFollow}
           />
         )}
       />
@@ -589,6 +651,10 @@ const S = StyleSheet.create({
   bottomOverlay:{ position: "absolute", bottom: 90, left: 16, right: 80 },
   userRow:      { flexDirection: "row", alignItems: "center", marginBottom: 10 },
   reelUsername: { fontFamily: "Inter_700Bold", fontSize: 15, color: "#fff" },
+  followBtn:       { borderWidth: 1.5, borderColor: "#fff", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 5 },
+  followBtnActive: { backgroundColor: "rgba(255,255,255,0.18)", borderColor: "rgba(255,255,255,0.5)" },
+  followBtnText:       { fontFamily: "Inter_700Bold", fontSize: 13, color: "#fff" },
+  followBtnTextActive: { color: "rgba(255,255,255,0.75)" },
   caption:      { fontFamily: "Inter_400Regular", fontSize: 14, color: "#fff", lineHeight: 20, marginBottom: 8 },
   statsRow:     { flexDirection: "row", alignItems: "center" },
   statTxt:      { fontFamily: "Inter_400Regular", fontSize: 12, color: "rgba(255,255,255,0.7)", marginLeft: 4 },
