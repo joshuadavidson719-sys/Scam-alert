@@ -2,14 +2,14 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   Dimensions, ActivityIndicator, TextInput, Modal,
-  KeyboardAvoidingView, Platform, Alert, Share,
+  KeyboardAvoidingView, Platform, Alert, Share, Image,
 } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Audio } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
+const APP_ICON = require("@/assets/images/icon.png");
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -243,7 +243,8 @@ function ReelItem({
         {/* Pause indicator */}
         {paused && (
           <View style={S.pauseIcon}>
-            <Feather name="pause" size={40} color="rgba(255,255,255,0.8)" />
+            <Image source={APP_ICON} style={S.pauseAppIcon} resizeMode="cover" />
+            <Text style={S.pauseLabel}>Paused</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -286,41 +287,43 @@ function ReelItem({
       <View style={S.rightActions}>
         {/* Like */}
         <TouchableOpacity style={S.actionBtn} onPress={() => onLike(reel.id, liked)}>
-          <Feather name="heart" size={30} color={liked ? "#FF3B3B" : "#fff"} />
+          <Image source={APP_ICON} style={[S.actionIcon, liked && { tintColor: "#FF3B3B" }]} resizeMode="cover" />
           <Text style={S.actionCount}>{reel.likes.length}</Text>
+          <Text style={S.actionLabel}>Like</Text>
         </TouchableOpacity>
 
         {/* Comments */}
         <TouchableOpacity style={S.actionBtn} onPress={() => onOpenComments(reel)}>
-          <Feather name="message-circle" size={28} color="#fff" />
-          <Text style={S.actionCount}>Comment</Text>
+          <Image source={APP_ICON} style={S.actionIcon} resizeMode="cover" />
+          <Text style={S.actionLabel}>Comment</Text>
         </TouchableOpacity>
 
         {/* Views */}
         <View style={S.actionBtn}>
-          <Feather name="eye" size={26} color="rgba(255,255,255,0.85)" />
+          <Image source={APP_ICON} style={S.actionIcon} resizeMode="cover" />
           <Text style={S.actionCount}>{reel.views.toLocaleString()}</Text>
+          <Text style={S.actionLabel}>Views</Text>
         </View>
 
         {/* Share */}
         <TouchableOpacity style={S.actionBtn} onPress={handleShare}>
-          <Feather name="share-2" size={26} color="#fff" />
-          <Text style={S.actionCount}>Share</Text>
+          <Image source={APP_ICON} style={S.actionIcon} resizeMode="cover" />
+          <Text style={S.actionLabel}>Share</Text>
         </TouchableOpacity>
 
         {/* Music toggle */}
         {hasMusic && (
           <TouchableOpacity style={S.actionBtn} onPress={handleTap}>
-            <Feather name={paused ? "volume-x" : "music"} size={24} color="#EC4899" />
-            <Text style={[S.actionCount, { color: "#EC4899" }]}>Music</Text>
+            <Image source={APP_ICON} style={S.actionIcon} resizeMode="cover" />
+            <Text style={[S.actionLabel, { color: "#EC4899" }]}>{paused ? "Mute" : "Music"}</Text>
           </TouchableOpacity>
         )}
 
         {/* Delete (owner only) */}
         {isOwner && (
           <TouchableOpacity style={S.actionBtn} onPress={handleDelete}>
-            <Feather name="trash-2" size={24} color="#FF3B3B" />
-            <Text style={[S.actionCount, { color: "#FF3B3B" }]}>Delete</Text>
+            <Image source={APP_ICON} style={S.actionIcon} resizeMode="cover" />
+            <Text style={[S.actionLabel, { color: "#FF3B3B" }]}>Delete</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -423,7 +426,7 @@ function CommentsModal({
             >
               {posting
                 ? <ActivityIndicator size="small" color="#fff" />
-                : <Feather name="send" size={16} color="#fff" />
+                : <Image source={APP_ICON} style={S.sendIcon} resizeMode="cover" />
               }
             </TouchableOpacity>
           </View>
@@ -551,12 +554,13 @@ export default function ReelsViewer() {
       <View style={[S.screen, { justifyContent: "center", alignItems: "center", gap: 16 }]}>
         <LinearGradient colors={["#1a0000", "#2d0a0a", "#000"]} style={StyleSheet.absoluteFill} />
         <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: "#FF3B3B", alignItems: "center", justifyContent: "center" }}>
-          <Feather name="film" size={32} color="#fff" />
+          <Image source={APP_ICON} style={S.loadingIcon} resizeMode="cover" />
         </View>
         <ActivityIndicator size="large" color="#FF3B3B" />
         <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 16, color: "#fff" }}>Loading Reels…</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ position: "absolute", top: insets.top + 8, left: 16 }}>
-          <Feather name="arrow-left" size={22} color="#fff" />
+        <TouchableOpacity onPress={() => router.back()} style={{ position: "absolute", top: insets.top + 8, left: 16, flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Image source={APP_ICON} style={S.backIcon} resizeMode="cover" />
+          <Text style={S.backLabel}>Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -565,8 +569,9 @@ export default function ReelsViewer() {
   if (reels.length === 0) {
     return (
       <View style={[S.screen, { justifyContent: "center", alignItems: "center", paddingTop: insets.top }]}>
-        <TouchableOpacity style={S.backBtn} onPress={() => router.back()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <Feather name="arrow-left" size={22} color="#fff" />
+        <TouchableOpacity style={[S.backBtn, { flexDirection: "row", alignItems: "center", gap: 4 }]} onPress={() => router.back()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <Image source={APP_ICON} style={S.backIcon} resizeMode="cover" />
+          <Text style={S.backLabel}>Back</Text>
         </TouchableOpacity>
         <Text style={{ fontSize: 48 }}>🎬</Text>
         <Text style={{ fontFamily: "Inter_700Bold", fontSize: 18, color: "#fff", marginTop: 12 }}>No Reels Yet</Text>
@@ -577,7 +582,7 @@ export default function ReelsViewer() {
           style={[S.uploadEmpty, { marginTop: 24 }]}
           onPress={() => router.push("/reels-upload" as never)}
         >
-          <Feather name="plus" size={16} color="#fff" />
+          <Image source={APP_ICON} style={S.uploadEmptyIcon} resizeMode="cover" />
           <Text style={{ fontFamily: "Inter_700Bold", fontSize: 14, color: "#fff" }}>Post a Reel</Text>
         </TouchableOpacity>
       </View>
@@ -587,12 +592,14 @@ export default function ReelsViewer() {
   return (
     <View style={S.screen}>
       <View style={[S.topBar, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Feather name="arrow-left" size={22} color="#fff" />
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Image source={APP_ICON} style={S.backIcon} resizeMode="cover" />
+          <Text style={S.backLabel}>Back</Text>
         </TouchableOpacity>
         <Text style={S.topTitle}>Reels</Text>
-        <TouchableOpacity onPress={() => router.push("/reels-upload" as never)}>
-          <Feather name="plus-circle" size={22} color="#fff" />
+        <TouchableOpacity onPress={() => router.push("/reels-upload" as never)} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Image source={APP_ICON} style={S.backIcon} resizeMode="cover" />
+          <Text style={S.backLabel}>Post Reel</Text>
         </TouchableOpacity>
       </View>
 
@@ -670,4 +677,14 @@ const S = StyleSheet.create({
   commentInput: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, marginTop: 8 },
   commentBox:   { flex: 1, fontFamily: "Inter_400Regular", fontSize: 14, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderWidth: 1 },
   sendBtn:      { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+
+  actionIcon:     { width: 28, height: 28, borderRadius: 6 },
+  actionLabel:    { fontFamily: "Inter_600SemiBold", fontSize: 11, color: "#fff", textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  pauseAppIcon:   { width: 44, height: 44, borderRadius: 10 },
+  pauseLabel:     { fontFamily: "Inter_700Bold", fontSize: 14, color: "rgba(255,255,255,0.9)", marginTop: 8, textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  backIcon:       { width: 20, height: 20, borderRadius: 4 },
+  backLabel:      { fontFamily: "Inter_600SemiBold", fontSize: 13, color: "#fff" },
+  loadingIcon:    { width: 40, height: 40, borderRadius: 8 },
+  uploadEmptyIcon:{ width: 16, height: 16, borderRadius: 4 },
+  sendIcon:       { width: 16, height: 16, borderRadius: 4 },
 });
