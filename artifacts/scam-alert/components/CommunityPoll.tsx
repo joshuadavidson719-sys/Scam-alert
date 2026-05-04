@@ -175,7 +175,7 @@ export function ActivePoll() {
   }, []);
 
   if (loading) return null;
-  if (!poll) return <NoPollCTA />;
+  if (!poll) return null;
   return <PollCard poll={poll} />;
 }
 

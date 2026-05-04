@@ -5,11 +5,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface BannerConfig {
   icon: keyof typeof Feather.glyphMap;
@@ -166,18 +169,8 @@ export function SmartBanner() {
         {/* Urgency stripe on the left edge */}
         <View style={[styles.stripe, { backgroundColor: config.iconColor }]} />
 
-        {/* Icon box — clearly amber OR red */}
-        <View
-          style={[
-            styles.iconBox,
-            {
-              backgroundColor: config.iconColor + "28",
-              borderColor: config.iconColor + "50",
-            },
-          ]}
-        >
-          <Feather name={config.icon} size={18} color={config.iconColor} />
-        </View>
+        {/* App icon */}
+        <Image source={APP_ICON} style={styles.iconBox} resizeMode="cover" />
 
         {/* Text */}
         <View style={styles.content}>
@@ -249,10 +242,7 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: 10,
     flexShrink: 0,
     marginTop: 2,
     marginLeft: 6,
