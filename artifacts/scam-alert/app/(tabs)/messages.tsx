@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+
 
 import {
   collection,
@@ -132,8 +132,8 @@ export default function MessagesScreen() {
             onChangeText={setSearch}
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch("")}>
-              <Feather name="x" size={15} color={colors.textMuted} />
+            <TouchableOpacity onPress={() => setSearch("")} style={styles.clearBtn}>
+              <Text style={[styles.clearTxt, { color: colors.textMuted }]}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -307,4 +307,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     fontSize: 13,
   },
+  clearBtn: { padding: 4 },
+  clearTxt: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
 });

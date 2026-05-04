@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   FlatList,
   TouchableOpacity,
@@ -9,7 +10,6 @@ import {
   RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import {
   collection,
   query,
@@ -26,6 +26,8 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import { formatTimeAgo } from "@/lib/utils";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 // ── Types ────────────────────────────────────────────────
 type NType = "like" | "comment" | "share" | "follow" | "report" | "system";
@@ -46,16 +48,13 @@ interface AppNotification {
 }
 
 // ── Per-type config ──────────────────────────────────────
-const TYPE_CONFIG: Record<
-  NType,
-  { icon: keyof typeof Feather.glyphMap; color: string; label: string }
-> = {
-  like:    { icon: "heart",         color: "#FF3B3B", label: "liked your post"       },
-  comment: { icon: "message-circle",color: "#3B82F6", label: "commented on your post" },
-  share:   { icon: "share-2",       color: "#10B981", label: "shared your post"       },
-  follow:  { icon: "user-plus",     color: "#F59E0B", label: "followed you"           },
-  report:  { icon: "flag",          color: "#8B5CF6", label: "flagged your post"      },
-  system:  { icon: "bell",          color: "#6B7280", label: ""                       },
+const TYPE_CONFIG: Record<NType, { emoji: string; color: string; label: string }> = {
+  like:    { emoji: "❤️",  color: "#FF3B3B", label: "liked your post"        },
+  comment: { emoji: "💬",  color: "#3B82F6", label: "commented on your post"  },
+  share:   { emoji: "📤",  color: "#10B981", label: "shared your post"        },
+  follow:  { emoji: "👤",  color: "#F59E0B", label: "followed you"            },
+  report:  { emoji: "🚩",  color: "#8B5CF6", label: "flagged your post"       },
+  system:  { emoji: "🔔",  color: "#6B7280", label: ""                        },
 };
 
 // ── Notification row ─────────────────────────────────────
@@ -92,12 +91,13 @@ function NotificationRow({
         <View>
           <UserAvatar uri={item.actorAvatar} name={item.actorName ?? "?"} size={42} />
           <View style={[styles.typeBadge, { backgroundColor: cfg.color }]}>
-            <Feather name={cfg.icon} size={10} color="#fff" />
+            <Text style={styles.badgeEmoji}>{cfg.emoji}</Text>
           </View>
         </View>
       ) : (
         <View style={[styles.iconCircle, { backgroundColor: cfg.color + "20" }]}>
-          <Feather name={cfg.icon} size={20} color={cfg.color} />
+          <Text style={styles.iconEmoji}>{cfg.emoji}</Text>
+          <Image source={APP_ICON} style={styles.iconImg} resizeMode="cover" />
         </View>
       )}
 
@@ -121,7 +121,7 @@ function NotificationRow({
 
       {/* Chevron for navigable items */}
       {(item.postId || item.actorId) && (
-        <Feather name="chevron-right" size={16} color={colors.textMuted} />
+        <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
       )}
     </TouchableOpacity>
   );
@@ -188,13 +188,12 @@ export default function NotificationsScreen() {
     const unread = notifications.filter((n) => !n.read);
     if (unread.length === 0) return;
 
-    // Batch write — Firestore limit is 500 per batch
     const batch = writeBatch(db);
     unread.slice(0, 500).forEach((n) => {
       batch.update(doc(db, "notifications", n.id), { read: true });
     });
     batch.commit().catch(() => {});
-  }, [user, notifications.length]); // only re-run when count changes
+  }, [user, notifications.length]);
 
   const handlePress = useCallback((item: AppNotification) => {
     if (item.postId) {
@@ -206,32 +205,24 @@ export default function NotificationsScreen() {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    // listener refreshes automatically; just reset flag after a tick
     setTimeout(() => setRefreshing(false), 800);
   }, []);
 
-  // Grouped sections: Today / Earlier
   const now = Date.now();
-  const today = notifications.filter((n) => now - n.createdAt < 86_400_000);
+  const today   = notifications.filter((n) => now - n.createdAt < 86_400_000);
   const earlier = notifications.filter((n) => now - n.createdAt >= 86_400_000);
 
   const listData: (AppNotification | { sectionTitle: string })[] = [
-    ...(today.length > 0 ? [{ sectionTitle: "Today" }, ...today] : []),
+    ...(today.length   > 0 ? [{ sectionTitle: "Today" },   ...today]   : []),
     ...(earlier.length > 0 ? [{ sectionTitle: "Earlier" }, ...earlier] : []),
   ];
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View
-        style={[
-          styles.header,
-          { paddingTop: insets.top + 12, borderBottomColor: colors.border },
-        ]}
-      >
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Notifications
-        </Text>
+      <View style={[styles.header, { paddingTop: insets.top + 12, borderBottomColor: colors.border }]}>
+        <Image source={APP_ICON} style={styles.headerIcon} resizeMode="cover" />
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
       </View>
 
       {loading ? (
@@ -240,8 +231,9 @@ export default function NotificationsScreen() {
         </View>
       ) : notifications.length === 0 ? (
         <View style={styles.centered}>
-          <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
-            <Feather name="bell-off" size={32} color={colors.textMuted} />
+          <View style={[styles.emptyIconWrap, { backgroundColor: colors.muted }]}>
+            <Text style={styles.emptyEmoji}>🔕</Text>
+            <Image source={APP_ICON} style={styles.emptyImg} resizeMode="cover" />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
             No notifications yet
@@ -271,9 +263,7 @@ export default function NotificationsScreen() {
           renderItem={({ item }) => {
             if ("sectionTitle" in item) {
               return (
-                <Text
-                  style={[styles.sectionLabel, { color: colors.textMuted }]}
-                >
+                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
                   {item.sectionTitle}
                 </Text>
               );
@@ -293,25 +283,24 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
+  screen:  { flex: 1 },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     paddingHorizontal: 18,
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
-  headerTitle: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 24,
-  },
+  headerIcon:  { width: 28, height: 28, borderRadius: 8 },
+  headerTitle: { fontFamily: "Inter_700Bold", fontSize: 24 },
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 32,
   },
-  emptyIcon: {
+  emptyIconWrap: {
     width: 72,
     height: 72,
     borderRadius: 36,
@@ -319,18 +308,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 16,
   },
-  emptyTitle: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 18,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptyBody: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
-  },
+  emptyEmoji: { fontSize: 28, position: "absolute" },
+  emptyImg:   { width: 28, height: 28, borderRadius: 8, opacity: 0.3 },
+  emptyTitle: { fontFamily: "Inter_700Bold", fontSize: 18, marginBottom: 8, textAlign: "center" },
+  emptyBody:  { fontFamily: "Inter_400Regular", fontSize: 14, textAlign: "center", lineHeight: 20 },
   sectionLabel: {
     fontFamily: "Inter_600SemiBold",
     fontSize: 12,
@@ -366,6 +347,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
+  iconEmoji:  { fontSize: 20, position: "absolute" },
+  iconImg:    { width: 20, height: 20, borderRadius: 6, opacity: 0.25 },
   typeBadge: {
     position: "absolute",
     bottom: -2,
@@ -378,23 +361,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#fff",
   },
-  textCol: {
-    flex: 1,
-    gap: 2,
-  },
-  body: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  postTitle: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 12,
-    fontStyle: "italic",
-  },
-  time: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 11,
-    marginTop: 2,
-  },
+  badgeEmoji: { fontSize: 9 },
+  textCol:   { flex: 1, gap: 2 },
+  body:      { fontFamily: "Inter_500Medium", fontSize: 13, lineHeight: 18 },
+  postTitle: { fontFamily: "Inter_400Regular", fontSize: 12, fontStyle: "italic" },
+  time:      { fontFamily: "Inter_400Regular", fontSize: 11, marginTop: 2 },
+  chevronIcon: { width: 16, height: 16, borderRadius: 4, opacity: 0.4 },
 });
