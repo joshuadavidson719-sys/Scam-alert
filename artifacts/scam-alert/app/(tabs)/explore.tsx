@@ -8,9 +8,11 @@ import {
   TextInput,
   ActivityIndicator,
   Platform,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
+
 import {
   collection,
   query,
@@ -29,6 +31,8 @@ import { CategoryPill } from "@/components/CategoryPill";
 import { ScamStatsChart } from "@/components/ScamStatsChart";
 import { formatTimeAgo } from "@/lib/utils";
 import type { PostData } from "@/components/PostCard";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface UserResult {
   uid: string;
@@ -305,7 +309,7 @@ export default function ExploreScreen() {
           <Text style={[styles.userHandle, { color: colors.textMuted }]}>@{user.username}</Text>
         ) : null}
       </View>
-      <Feather name="chevron-right" size={16} color={colors.textMuted} />
+      <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
     </TouchableOpacity>
   );
 
@@ -331,7 +335,7 @@ export default function ExploreScreen() {
             </Text>
           </View>
         </View>
-        <Feather name="chevron-right" size={16} color={colors.textMuted} />
+        <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
       </TouchableOpacity>
     );
   };
@@ -346,7 +350,7 @@ export default function ExploreScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Explore</Text>
         {/* Search bar */}
         <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Feather name="search" size={16} color={colors.textMuted} style={{ marginLeft: 2 }} />
+          <Image source={APP_ICON} style={[styles.searchIcon, { marginLeft: 2 }]} resizeMode="cover" />
           <TextInput
             ref={inputRef}
             style={[styles.searchInput, { color: colors.text }]}
@@ -362,7 +366,7 @@ export default function ExploreScreen() {
           {searching && <ActivityIndicator size="small" color={colors.primary} />}
           {search.length > 0 && !searching && (
             <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Feather name="x" size={16} color={colors.textMuted} />
+              <Image source={APP_ICON} style={styles.searchIcon} resizeMode="cover" />
             </TouchableOpacity>
           )}
           {isActive && !search && (
@@ -382,7 +386,7 @@ export default function ExploreScreen() {
             <View>
               {noResults ? (
                 <View style={styles.emptyState}>
-                  <Feather name="search" size={40} color={colors.textMuted} />
+                  <Image source={APP_ICON} style={styles.emptyIcon} resizeMode="cover" />
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>No results found</Text>
                   <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                     Try a different keyword or browse by category
@@ -433,7 +437,7 @@ export default function ExploreScreen() {
                 activeOpacity={0.85}
               >
                 <View style={[styles.aiIconBox, { backgroundColor: colors.primary }]}>
-                  <Feather name="shield" size={20} color="#fff" />
+                  <Image source={APP_ICON} style={styles.aiBoxIcon} resizeMode="cover" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.aiTitle, { color: colors.text }]}>AI Scam Checker</Text>
@@ -442,7 +446,7 @@ export default function ExploreScreen() {
                   </Text>
                 </View>
                 <View style={[styles.aiArrow, { backgroundColor: colors.primary }]}>
-                  <Feather name="arrow-right" size={14} color="#fff" />
+                  <Image source={APP_ICON} style={styles.aiArrowIcon} resizeMode="cover" />
                 </View>
               </TouchableOpacity>
               {/* Scam statistics chart */}
@@ -577,6 +581,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  aiBoxIcon:  { width: 22, height: 22, borderRadius: 6 },
+  aiArrowIcon:{ width: 14, height: 14, borderRadius: 3 },
+  searchIcon: { width: 16, height: 16, borderRadius: 4 },
+  chevronIcon:{ width: 16, height: 16, borderRadius: 4 },
+  emptyIcon:  { width: 48, height: 48, borderRadius: 12 },
   aiTitle: {
     fontFamily: "Inter_700Bold",
     fontSize: 14,
