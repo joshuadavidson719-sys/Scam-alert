@@ -51,7 +51,6 @@ import { useAchievements, getRarityColor, ALL_ACHIEVEMENTS } from "@/hooks/useAc
 import { AchievementToast } from "@/components/AchievementToast";
 import { CustomThemePicker } from "@/components/CustomThemePicker";
 import * as VideoThumbnails from "expo-video-thumbnails";
-import { Image } from "react-native";
 
 const APP_ICON = require("@/assets/images/icon.png");
 
