@@ -7,9 +7,11 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
+
 import { collection, getDocs, query, limit, doc, setDoc } from "firebase/firestore";
 import { router } from "expo-router";
 import { db } from "@/lib/firebase";
@@ -17,6 +19,8 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import type { UserProfile } from "@/context/AuthContext";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 export default function NewMessageScreen() {
   const colors = useColors();
@@ -80,7 +84,7 @@ export default function NewMessageScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="x" size={24} color={colors.text} />
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>New Message</Text>
         <View style={{ width: 24 }} />
@@ -88,7 +92,7 @@ export default function NewMessageScreen() {
 
       <View style={[styles.searchWrap, { borderBottomColor: colors.border }]}>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Feather name="search" size={16} color={colors.textMuted} />
+          <Image source={APP_ICON} style={styles.searchIcon} resizeMode="cover" />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search users..."
@@ -99,7 +103,7 @@ export default function NewMessageScreen() {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch("")}>
-              <Feather name="x" size={15} color={colors.textMuted} />
+              <Image source={APP_ICON} style={styles.clearIcon} resizeMode="cover" />
             </TouchableOpacity>
           )}
         </View>
@@ -111,7 +115,7 @@ export default function NewMessageScreen() {
         </View>
       ) : filtered.length === 0 ? (
         <View style={styles.centered}>
-          <Feather name="users" size={40} color={colors.textMuted} />
+          <Image source={APP_ICON} style={styles.emptyIcon} resizeMode="cover" />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             {search ? "No users found" : "No users yet"}
           </Text>
@@ -139,7 +143,7 @@ export default function NewMessageScreen() {
                 <ActivityIndicator color={colors.primary} size="small" />
               ) : (
                 <View style={[styles.msgIcon, { backgroundColor: colors.primary + "15" }]}>
-                  <Feather name="message-circle" size={18} color={colors.primary} />
+                  <Image source={APP_ICON} style={styles.msgIconImg} resizeMode="cover" />
                 </View>
               )}
             </TouchableOpacity>
@@ -188,5 +192,10 @@ const styles = StyleSheet.create({
   },
   username: { fontFamily: "Inter_600SemiBold", fontSize: 15 },
   niche: { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 },
-  msgIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+  msgIcon:    { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+  navIcon:    { width: 22, height: 22, borderRadius: 6 },
+  searchIcon: { width: 16, height: 16, borderRadius: 4 },
+  clearIcon:  { width: 15, height: 15, borderRadius: 4 },
+  emptyIcon:  { width: 48, height: 48, borderRadius: 12 },
+  msgIconImg: { width: 20, height: 20, borderRadius: 5 },
 });

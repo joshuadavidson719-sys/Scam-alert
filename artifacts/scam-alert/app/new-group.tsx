@@ -9,9 +9,11 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
+
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { collection, query, getDocs, addDoc } from "firebase/firestore";
@@ -19,6 +21,8 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { UserAvatar } from "@/components/UserAvatar";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface UserResult {
   id: string;
@@ -105,7 +109,7 @@ export default function NewGroupScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => step === "name" ? setStep("select") : router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           {step === "select" ? "New Group" : "Group Details"}
@@ -134,13 +138,13 @@ export default function NewGroupScreen() {
                 <TouchableOpacity key={u.id} style={styles.selectedChip} onPress={() => toggleSelect(u)}>
                   <UserAvatar uri={u.profilePhoto} name={u.username} size={28} />
                   <Text style={[styles.chipName, { color: colors.text }]}>{u.username}</Text>
-                  <Feather name="x" size={12} color={colors.textMuted} />
+                  <Image source={APP_ICON} style={styles.chipIcon} resizeMode="cover" />
                 </TouchableOpacity>
               ))}
             </View>
           )}
           <View style={[styles.searchBar, { borderColor: colors.border, backgroundColor: colors.card, margin: 16 }]}>
-            <Feather name="search" size={16} color={colors.textMuted} />
+            <Image source={APP_ICON} style={styles.searchIcon} resizeMode="cover" />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
               placeholder="Search users..."
@@ -167,7 +171,7 @@ export default function NewGroupScreen() {
                     <Text style={[styles.userNiche, { color: colors.textMuted }]}>{item.niche}</Text>
                   </View>
                   <View style={[styles.checkbox, { borderColor: colors.border }, isSelected(item.id) && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
-                    {isSelected(item.id) && <Feather name="check" size={14} color="#fff" />}
+                    {isSelected(item.id) && <Image source={APP_ICON} style={styles.checkIcon} resizeMode="cover" />}
                   </View>
                 </TouchableOpacity>
               )}
@@ -228,6 +232,10 @@ const styles = StyleSheet.create({
   userName: { fontFamily: "Inter_600SemiBold", fontSize: 15 },
   userNiche: { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 },
   checkbox: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  navIcon:   { width: 22, height: 22, borderRadius: 6 },
+  chipIcon:  { width: 12, height: 12, borderRadius: 3 },
+  searchIcon:{ width: 16, height: 16, borderRadius: 4 },
+  checkIcon: { width: 14, height: 14, borderRadius: 3 },
   label: { fontFamily: "Inter_500Medium", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.6 },
   nameInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontFamily: "Inter_400Regular", fontSize: 15 },
   memberLabel: { fontFamily: "Inter_500Medium", fontSize: 13 },
