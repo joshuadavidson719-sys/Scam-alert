@@ -97,18 +97,24 @@ export default function MessagesScreen() {
         <View style={styles.headerTop}>
           <Text style={[styles.title, { color: colors.text }]}>Messages</Text>
           <View style={styles.headerBtns}>
-            <TouchableOpacity
-              style={[styles.newMsgBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-              onPress={() => router.push("/new-group" as never)}
-            >
-              <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.newMsgBtn, { backgroundColor: colors.primary }]}
-              onPress={() => router.push("/new-message" as never)}
-            >
-              <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
-            </TouchableOpacity>
+            <View style={styles.btnWrap}>
+              <TouchableOpacity
+                style={[styles.newMsgBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                onPress={() => router.push("/new-group" as never)}
+              >
+                <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
+              </TouchableOpacity>
+              <Text style={[styles.btnLabel, { color: colors.textSecondary }]}>Group</Text>
+            </View>
+            <View style={styles.btnWrap}>
+              <TouchableOpacity
+                style={[styles.newMsgBtn, { backgroundColor: colors.primary }]}
+                onPress={() => router.push("/new-message" as never)}
+              >
+                <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
+              </TouchableOpacity>
+              <Text style={[styles.btnLabel, { color: colors.textSecondary }]}>New Chat</Text>
+            </View>
           </View>
         </View>
         <View
@@ -225,7 +231,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  btnWrap:    { alignItems: "center", gap: 3 },
   btnIcon:    { width: 20, height: 20, borderRadius: 5 },
+  btnLabel:   { fontFamily: "Inter_400Regular", fontSize: 10 },
   searchIcon: { width: 16, height: 16, borderRadius: 4 },
   emptyIcon:  { width: 52, height: 52, borderRadius: 14 },
   searchBar: {
