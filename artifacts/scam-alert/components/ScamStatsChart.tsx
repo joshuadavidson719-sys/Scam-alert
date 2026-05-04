@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { View, Text, StyleSheet, ActivityIndicator, Image } from "react-native";
+
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { CATEGORIES } from "@/context/AuthContext";
 import type { CategoryId } from "@/context/AuthContext";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface CategoryCount {
   id: CategoryId;
@@ -84,7 +86,7 @@ export function ScamStatsChart() {
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.titleRow}>
         <View style={[styles.titleIcon, { backgroundColor: colors.primary + "20" }]}>
-          <Feather name="bar-chart-2" size={16} color={colors.primary} />
+          <Image source={APP_ICON} style={styles.titleIconImg} resizeMode="cover" />
         </View>
         <View>
           <Text style={[styles.title, { color: colors.text }]}>Trending Topics</Text>
@@ -100,11 +102,7 @@ export function ScamStatsChart() {
           return (
             <View key={item.id} style={styles.barRow}>
               <View style={styles.barLabel}>
-                <Feather
-                  name={item.icon as keyof typeof Feather.glyphMap}
-                  size={13}
-                  color={item.color}
-                />
+                <Image source={APP_ICON} style={styles.barIcon} resizeMode="cover" />
                 <Text style={[styles.catLabel, { color: colors.textSecondary }]} numberOfLines={1}>
                   {item.label}
                 </Text>
@@ -148,6 +146,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  titleIconImg: { width: 18, height: 18, borderRadius: 5 },
+  barIcon:      { width: 13, height: 13, borderRadius: 3 },
   title: {
     fontFamily: "Inter_700Bold",
     fontSize: 15,
