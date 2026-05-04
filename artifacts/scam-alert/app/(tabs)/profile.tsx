@@ -515,7 +515,7 @@ export default function ProfileScreen() {
                     {uploadingPhoto ? (
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
-                      <Feather name="camera" size={14} color="#fff" />
+                      <Image source={APP_ICON} style={{ width: 16, height: 16, borderRadius: 4 }} resizeMode="cover" />
                     )}
                   </View>
                 </TouchableOpacity>
