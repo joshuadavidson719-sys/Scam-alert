@@ -51,6 +51,8 @@ import { CustomThemePicker } from "@/components/CustomThemePicker";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import { Image } from "react-native";
 
+const APP_ICON = require("@/assets/images/icon.png");
+
 // ── ReelThumbnail ────────────────────────────────────────────────────────────
 // Web  → native <video preload="metadata"> shows first frame automatically.
 // Native → expo-video-thumbnails generates a real JPEG frame at 500ms.
@@ -486,7 +488,7 @@ export default function ProfileScreen() {
                     onPress={() => router.push("/admin" as never)}
                     style={[styles.iconBtn, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "40" }]}
                   >
-                    <Feather name="shield" size={16} color={colors.primary} />
+                    <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
                     <Text style={[styles.iconBtnLabel, { color: colors.primary }]}>Admin</Text>
                   </TouchableOpacity>
                 )}
@@ -494,14 +496,14 @@ export default function ProfileScreen() {
                   onPress={() => router.push("/legal/privacy" as never)}
                   style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
                 >
-                  <Feather name="file-text" size={16} color={colors.textSecondary} />
+                  <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
                   <Text style={[styles.iconBtnLabel, { color: colors.textSecondary }]}>Privacy</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleLogout}
                   style={[styles.iconBtn, { backgroundColor: "#EF444415", borderColor: "#EF444430" }]}
                 >
-                  <Feather name="log-out" size={16} color="#EF4444" />
+                  <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
                   <Text style={[styles.iconBtnLabel, { color: "#EF4444" }]}>Log Out</Text>
                 </TouchableOpacity>
               </View>
@@ -711,7 +713,7 @@ export default function ProfileScreen() {
                 style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
                 onPress={() => router.push("/edit-profile" as never)}
               >
-                <Feather name="edit-2" size={16} color={colors.primary} />
+                <Image source={APP_ICON} style={styles.quickLinkIcon} resizeMode="cover" />
                 <Text style={[styles.quickLinkText, { color: colors.text }]}>Edit Profile</Text>
                 <Feather name="chevron-right" size={14} color={colors.textMuted} />
               </TouchableOpacity>
@@ -720,7 +722,7 @@ export default function ProfileScreen() {
                 style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
                 onPress={() => router.push("/settings" as never)}
               >
-                <Feather name="settings" size={16} color={colors.textSecondary} />
+                <Image source={APP_ICON} style={styles.quickLinkIcon} resizeMode="cover" />
                 <Text style={[styles.quickLinkText, { color: colors.text }]}>Settings</Text>
                 <Feather name="chevron-right" size={14} color={colors.textMuted} />
               </TouchableOpacity>
@@ -729,11 +731,7 @@ export default function ProfileScreen() {
                 style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
                 onPress={() => setShowThemePicker(true)}
               >
-                <Feather
-                  name="droplet"
-                  size={16}
-                  color={colors.tint ?? colors.primary}
-                />
+                <Image source={APP_ICON} style={styles.quickLinkIcon} resizeMode="cover" />
                 <Text style={[styles.quickLinkText, { color: colors.text }]}>Theme</Text>
                 <View style={[styles.themePill, { backgroundColor: colors.primary + "20" }]}>
                   <Text style={[styles.themePillText, { color: colors.primary }]}>
@@ -765,7 +763,7 @@ export default function ProfileScreen() {
                   style={[styles.toolCard, { backgroundColor: item.color + "15", borderColor: item.color + "30" }]}
                   onPress={() => router.push(item.route as never)}
                 >
-                  <Feather name={item.icon as keyof typeof Feather.glyphMap} size={20} color={item.color} />
+                  <Image source={APP_ICON} style={styles.toolIcon} resizeMode="cover" />
                   <Text style={[styles.toolLabel, { color: colors.text }]}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -783,10 +781,10 @@ export default function ProfileScreen() {
                   style={[styles.tabBtn, activeTab === tab.key && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
                   onPress={() => setActiveTab(tab.key)}
                 >
-                  <Feather
-                    name={tab.icon as keyof typeof Feather.glyphMap}
-                    size={14}
-                    color={activeTab === tab.key ? colors.primary : colors.textMuted}
+                  <Image
+                    source={APP_ICON}
+                    style={[styles.tabIcon, { opacity: activeTab === tab.key ? 1 : 0.4 }]}
+                    resizeMode="cover"
                   />
                   <Text style={[styles.tabLabel, { color: activeTab === tab.key ? colors.primary : colors.textMuted }]}>
                     {tab.label}
@@ -1027,6 +1025,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
+  iconBtnImg: { width: 16, height: 16, borderRadius: 4 },
   iconBtnLabel: {
     fontFamily: "Inter_600SemiBold",
     fontSize: 12,
@@ -1110,6 +1109,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
+  quickLinkIcon: { width: 18, height: 18, borderRadius: 5 },
   quickLinkText: { fontFamily: "Inter_500Medium", fontSize: 14, flex: 1 },
   themePill: {
     paddingHorizontal: 10,
@@ -1131,6 +1131,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
   },
+  tabIcon: { width: 15, height: 15, borderRadius: 4 },
   tabLabel: { fontFamily: "Inter_600SemiBold", fontSize: 13 },
   emptyPosts: { alignItems: "center", paddingVertical: 40, gap: 10 },
   emptyText: { fontFamily: "Inter_400Regular", fontSize: 14 },
@@ -1158,6 +1159,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
   },
+  toolIcon: { width: 22, height: 22, borderRadius: 6 },
   toolLabel: { fontFamily: "Inter_500Medium", fontSize: 13, flex: 1 },
   sheetBackdrop: {
     flex: 1,
