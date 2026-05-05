@@ -16,6 +16,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
+import * as Sharing from "expo-sharing";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 
@@ -55,6 +58,51 @@ const SIZE_OPTIONS: { label: string; value: ImageSize }[] = [
 
 const FRAME_OPTIONS = [2, 3, 4, 5, 6];
 
+// ── Save / Share helpers ───────────────────────────────────────────────────────
+
+async function writeBase64ToCache(b64: string, filename: string): Promise<string> {
+  const path = (FileSystem.cacheDirectory ?? "") + filename;
+  await FileSystem.writeAsStringAsync(path, b64, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  return path;
+}
+
+async function saveToGallery(b64: string, filename: string): Promise<void> {
+  if (Platform.OS === "web") {
+    const link = document.createElement("a");
+    link.href = `data:image/png;base64,${b64}`;
+    link.download = filename;
+    link.click();
+    return;
+  }
+  const { status } = await MediaLibrary.requestPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert("Permission Required", "Please allow access to your photo library to save images.");
+    return;
+  }
+  const path = await writeBase64ToCache(b64, filename);
+  await MediaLibrary.saveToLibraryAsync(path);
+  Alert.alert("Saved!", "Image saved to your photo library.");
+}
+
+async function shareFile(b64: string, filename: string): Promise<void> {
+  if (Platform.OS === "web") {
+    const link = document.createElement("a");
+    link.href = `data:image/png;base64,${b64}`;
+    link.download = filename;
+    link.click();
+    return;
+  }
+  const isAvailable = await Sharing.isAvailableAsync();
+  if (!isAvailable) {
+    Alert.alert("Sharing not available on this device.");
+    return;
+  }
+  const path = await writeBase64ToCache(b64, filename);
+  await Sharing.shareAsync(path, { mimeType: "image/png", dialogTitle: "Share AI Image" });
+}
+
 // ── Animated Frame Player ──────────────────────────────────────────────────────
 function AnimatedPlayer({ frames, style }: { frames: string[]; style?: object }) {
   const [idx, setIdx] = useState(0);
@@ -71,7 +119,6 @@ function AnimatedPlayer({ frames, style }: { frames: string[]; style?: object })
   }, [frames]);
 
   if (!frames[idx]) return null;
-
   return (
     <Image
       source={{ uri: `data:image/png;base64,${frames[idx]}` }}
@@ -80,6 +127,130 @@ function AnimatedPlayer({ frames, style }: { frames: string[]; style?: object })
     />
   );
 }
+
+// ── Action bar below a result ─────────────────────────────────────────────────
+function ResultActions({ result }: { result: GenerationResult }) {
+  const [saving, setSaving] = useState(false);
+  const [sharing, setSharing] = useState(false);
+
+  const b64 = result.mode === "image" ? result.b64 : result.frames[0];
+  const filename = `swiftop_${result.id}.png`;
+
+  const handleSave = async () => {
+    setSaving(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      if (result.mode === "animation") {
+        // Save all frames
+        for (let i = 0; i < result.frames.length; i++) {
+          await saveToGallery(result.frames[i], `swiftop_${result.id}_frame${i + 1}.png`);
+        }
+        if (Platform.OS !== "web") {
+          Alert.alert("Saved!", `All ${result.frames.length} frames saved to your photo library.`);
+        }
+      } else {
+        await saveToGallery(b64, filename);
+      }
+    } catch {
+      Alert.alert("Save Failed", "Could not save the image. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    setSharing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await shareFile(b64, filename);
+    } catch {
+      Alert.alert("Share Failed", "Could not share the image. Please try again.");
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  return (
+    <View style={actionStyles.row}>
+      <TouchableOpacity
+        style={[actionStyles.btn, actionStyles.saveBtn]}
+        onPress={handleSave}
+        disabled={saving}
+        activeOpacity={0.8}
+      >
+        {saving ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <>
+            <Text style={actionStyles.btnIcon}>⬇</Text>
+            <Text style={actionStyles.saveText}>
+              {result.mode === "animation" ? "Save All Frames" : "Save to Gallery"}
+            </Text>
+          </>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[actionStyles.btn, actionStyles.shareBtn]}
+        onPress={handleShare}
+        disabled={sharing}
+        activeOpacity={0.8}
+      >
+        {sharing ? (
+          <ActivityIndicator color="#A78BFA" size="small" />
+        ) : (
+          <>
+            <Text style={actionStyles.shareIcon}>↑</Text>
+            <Text style={actionStyles.shareText}>Share</Text>
+          </>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const actionStyles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+  btn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 11,
+    borderRadius: 12,
+  },
+  saveBtn: {
+    backgroundColor: "#7C3AED",
+  },
+  btnIcon: {
+    fontSize: 14,
+    color: "#fff",
+  },
+  saveText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+    color: "#fff",
+  },
+  shareBtn: {
+    backgroundColor: "#1E1535",
+    borderWidth: 1,
+    borderColor: "#3D2F5A",
+  },
+  shareIcon: {
+    fontSize: 14,
+    color: "#A78BFA",
+  },
+  shareText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+    color: "#A78BFA",
+  },
+});
 
 // ── Quick prompts ──────────────────────────────────────────────────────────────
 const IMAGE_PROMPTS = [
@@ -96,8 +267,8 @@ const ANIMATION_PROMPTS = [
   "Lightning storm over mountains",
 ];
 
+// ── Main Screen ───────────────────────────────────────────────────────────────
 export default function SwiftopAIScreen() {
-  const colors = useColors();
   const insets = useSafeAreaInsets();
 
   const [mode, setMode] = useState<Mode>("image");
@@ -220,8 +391,6 @@ export default function SwiftopAIScreen() {
               textAlignVertical="top"
               maxLength={4000}
             />
-
-            {/* Quick Prompts */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickRow}>
               {quickPrompts.map((qp) => (
                 <TouchableOpacity
@@ -289,7 +458,7 @@ export default function SwiftopAIScreen() {
                 </View>
               ) : (
                 <Text style={styles.generateBtnText}>
-                  {mode === "image" ? "Generate Image" : "Generate Animation"}
+                  {mode === "image" ? "✦  Generate Image" : "✦  Generate Animation"}
                 </Text>
               )}
             </LinearGradient>
@@ -322,6 +491,9 @@ export default function SwiftopAIScreen() {
                   </View>
                 </View>
               )}
+
+              {/* ── Save / Share Actions ── */}
+              <ResultActions result={selected} />
             </View>
           )}
 
