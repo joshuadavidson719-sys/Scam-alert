@@ -173,20 +173,27 @@ export default function UserProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
-        {/* Nav bar */}
-        <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Image source={APP_ICON} style={styles.backIcon} resizeMode="cover" />
-            <Text style={[styles.backTxt, { color: colors.text }]}>Back</Text>
-          </TouchableOpacity>
-          <Text style={[styles.navTitle, { color: colors.text }]} numberOfLines={1}>
-            {targetUser.username}
-          </Text>
-          <View style={{ width: 56 }} />
+        {/* Banner photo */}
+        <View style={styles.bannerWrap}>
+          {targetUser.bannerPhoto ? (
+            <Image source={{ uri: targetUser.bannerPhoto }} style={styles.bannerImg} resizeMode="cover" />
+          ) : (
+            <View style={[styles.bannerFallback, { backgroundColor: "#160000" }]} />
+          )}
+          {/* Nav bar overlaid on banner */}
+          <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: "transparent" }]}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+              <View style={styles.backBtnBg}>
+                <Image source={APP_ICON} style={styles.backIcon} resizeMode="cover" />
+                <Text style={[styles.backTxt, { color: "#fff" }]}>Back</Text>
+              </View>
+            </TouchableOpacity>
+            <View style={{ width: 56 }} />
+          </View>
         </View>
 
         {/* Profile header */}
-        <View style={styles.profileSection}>
+        <View style={[styles.profileSection, { marginTop: -42 }]}>
           <UserAvatar uri={targetUser.profilePhoto} name={targetUser.username} size={84} />
           <Text style={[styles.username, { color: colors.text }]}>{targetUser.username}</Text>
           <Text style={[styles.niche, { color: colors.primary }]}>
@@ -361,16 +368,25 @@ const styles = StyleSheet.create({
   container:  { flex: 1 },
   centered:   { alignItems: "center", justifyContent: "center" },
 
+  bannerWrap:    { width: "100%", height: 150, position: "relative", overflow: "hidden" },
+  bannerImg:     { width: "100%", height: 150 },
+  bannerFallback:{ width: "100%", height: 150 },
+
   navBar: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    borderBottomWidth: 1,
+    zIndex: 10,
   },
-  navTitle:   { fontFamily: "Inter_600SemiBold", fontSize: 17, flex: 1, textAlign: "center" },
+  navTitle:   { fontFamily: "Inter_600SemiBold", fontSize: 17, flex: 1, textAlign: "center", color: "#fff" },
   backBtn:    { flexDirection: "row", alignItems: "center", gap: 6 },
+  backBtnBg:  { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(0,0,0,0.45)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   backIcon:   { width: 22, height: 22, borderRadius: 6 },
   backTxt:    { fontFamily: "Inter_600SemiBold", fontSize: 13 },
 

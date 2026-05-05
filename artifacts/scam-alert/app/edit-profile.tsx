@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
   ActionSheetIOS,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -20,6 +21,9 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth, NICHES } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import { storage } from "@/lib/firebase";
+import { pickAndUploadBanner } from "@/lib/uploadImage";
+
+const APP_ICON = require("@/assets/images/icon.png");
 
 export default function EditProfileScreen() {
   const colors = useColors();
@@ -30,7 +34,9 @@ export default function EditProfileScreen() {
   const [bio, setBio] = useState(profile?.bio ?? "");
   const [niche, setNiche] = useState(profile?.niche ?? "");
   const [avatarUri, setAvatarUri] = useState<string | null>(profile?.profilePhoto ?? null);
+  const [bannerUri, setBannerUri] = useState<string | null>(profile?.bannerPhoto ?? null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const pickImage = async (source: "camera" | "gallery") => {
@@ -84,6 +90,33 @@ export default function EditProfileScreen() {
     }
   };
 
+  const handlePickBanner = async (source: "gallery") => {
+    if (!user) return;
+    setUploadingBanner(true);
+    try {
+      const url = await pickAndUploadBanner(user.uid, source);
+      if (url) setBannerUri(url);
+    } catch {
+      Alert.alert("Banner upload failed", "Could not upload banner. Please try again.");
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
+  const showBannerPicker = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ["Cancel", "Choose from Library"], cancelButtonIndex: 0 },
+        (i) => { if (i === 1) handlePickBanner("gallery"); }
+      );
+    } else {
+      Alert.alert("Change Banner", "Select source", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Photo Library", onPress: () => handlePickBanner("gallery") },
+      ]);
+    }
+  };
+
   const showImagePicker = () => {
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
@@ -112,6 +145,7 @@ export default function EditProfileScreen() {
         bio: bio.trim(),
         niche: niche.trim(),
         profilePhoto: avatarUri,
+        bannerPhoto: bannerUri,
       });
       await refreshProfile();
       router.back();
@@ -142,6 +176,27 @@ export default function EditProfileScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Banner Photo */}
+        <TouchableOpacity style={styles.bannerSection} onPress={showBannerPicker} disabled={uploadingBanner} activeOpacity={0.85}>
+          <View style={[styles.bannerPreview, { backgroundColor: "#1a0000", borderColor: colors.border }]}>
+            {bannerUri ? (
+              <Image source={{ uri: bannerUri }} style={styles.bannerImg} resizeMode="cover" />
+            ) : (
+              <View style={styles.bannerPlaceholder}>
+                <Text style={{ fontSize: 28, marginBottom: 6 }}>🖼️</Text>
+                <Text style={[styles.bannerPlaceholderTxt, { color: colors.textMuted }]}>Tap to add a cover photo</Text>
+              </View>
+            )}
+            <View style={styles.bannerEditOverlay}>
+              {uploadingBanner ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.bannerEditTxt}>📷 Change Banner</Text>
+              )}
+            </View>
+          </View>
+        </TouchableOpacity>
+
         {/* Avatar */}
         <TouchableOpacity style={styles.avatarSection} onPress={showImagePicker} disabled={uploading}>
           <View style={styles.avatarWrap}>
@@ -199,9 +254,7 @@ export default function EditProfileScreen() {
               ]}
               onPress={() => { setNiche(n === niche ? "" : n); Haptics.selectionAsync(); }}
             >
-              <Text
-                style={[styles.nicheText, { color: niche === n ? "#fff" : colors.text }]}
-              >
+              <Text style={[styles.nicheText, { color: niche === n ? "#fff" : colors.text }]}>
                 {n}
               </Text>
             </TouchableOpacity>
@@ -225,7 +278,31 @@ const styles = StyleSheet.create({
   navTitle: { fontFamily: "Inter_600SemiBold", fontSize: 17 },
   saveBtn: { fontFamily: "Inter_600SemiBold", fontSize: 16 },
   content: { padding: 16, gap: 8 },
-  avatarSection: { alignItems: "center", gap: 12, paddingVertical: 20 },
+
+  bannerSection: { marginBottom: 8 },
+  bannerPreview: {
+    width: "100%",
+    height: 130,
+    borderRadius: 14,
+    overflow: "hidden",
+    borderWidth: 1,
+    position: "relative",
+  },
+  bannerImg: { width: "100%", height: "100%" },
+  bannerPlaceholder: { flex: 1, alignItems: "center", justifyContent: "center" },
+  bannerPlaceholderTxt: { fontFamily: "Inter_400Regular", fontSize: 13 },
+  bannerEditOverlay: {
+    position: "absolute",
+    bottom: 8,
+    right: 8,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  bannerEditTxt: { fontFamily: "Inter_500Medium", fontSize: 11, color: "#fff" },
+
+  avatarSection: { alignItems: "center", gap: 12, paddingVertical: 16 },
   avatarWrap: { position: "relative" },
   cameraOverlay: {
     position: "absolute",

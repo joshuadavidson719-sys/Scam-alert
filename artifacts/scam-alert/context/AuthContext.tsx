@@ -31,6 +31,7 @@ export interface UserProfile {
   email: string;
   username: string;
   profilePhoto: string | null;
+  bannerPhoto?: string | null;
   niche: string;
   bio: string;
   followers: string[];

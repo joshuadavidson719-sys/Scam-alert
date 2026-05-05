@@ -43,7 +43,7 @@ import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { router } from "expo-router";
-import { pickAndUploadImage } from "@/lib/uploadImage";
+import { pickAndUploadImage, pickAndUploadBanner } from "@/lib/uploadImage";
 import { useStreak } from "@/hooks/useStreak";
 import { useAchievements, getRarityColor, ALL_ACHIEVEMENTS } from "@/hooks/useAchievements";
 import { AchievementToast } from "@/components/AchievementToast";
@@ -279,6 +279,8 @@ export default function ProfileScreen() {
   const [localLikes, setLocalLikes] = useState<Record<string, string[]>>({});
   const [localDislikes, setLocalDislikes] = useState<Record<string, string[]>>({});
   const [myStoryCount, setMyStoryCount] = useState(0);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [showBannerSheet, setShowBannerSheet] = useState(false);
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   // My posts
@@ -358,6 +360,31 @@ export default function ProfileScreen() {
       setSavedLoading(false);
     });
   }, [activeTab, bookmarks]);
+
+  const handlePickBanner = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ["Cancel", "Choose from Gallery"], cancelButtonIndex: 0 },
+        async (idx) => { if (idx === 1) await doUploadBanner("gallery"); }
+      );
+    } else {
+      setShowBannerSheet(true);
+    }
+  };
+
+  const doUploadBanner = async (source: "camera" | "gallery") => {
+    if (!user) return;
+    setUploadingBanner(true);
+    setShowBannerSheet(false);
+    try {
+      const url = await pickAndUploadBanner(user.uid, source);
+      if (url) await updateUserProfile({ bannerPhoto: url });
+    } catch {
+      Alert.alert("Error", "Failed to upload banner. Please try again.");
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -495,34 +522,57 @@ export default function ProfileScreen() {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <View>
-            <View style={[styles.header, { paddingTop: topPad + 10, borderBottomColor: colors.border }]}>
-              <View style={styles.headerActions}>
-                {profile.isAdmin && (
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              {/* ── Profile Banner ───────────────────────────────── */}
+              <View style={styles.bannerWrap}>
+                <TouchableOpacity
+                  onPress={handlePickBanner}
+                  activeOpacity={0.88}
+                  disabled={uploadingBanner}
+                  style={styles.bannerTouchable}
+                >
+                  {profile.bannerPhoto ? (
+                    <Image source={{ uri: profile.bannerPhoto }} style={styles.bannerImg} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.bannerFallback, { backgroundColor: "#160000" }]} />
+                  )}
+                </TouchableOpacity>
+                {/* Action buttons overlaid on banner */}
+                <View style={[styles.headerActions, { paddingTop: topPad + 6 }]}>
+                  {profile.isAdmin && (
+                    <TouchableOpacity
+                      onPress={() => router.push("/admin" as never)}
+                      style={[styles.iconBtn, { backgroundColor: colors.primary + "30", borderColor: colors.primary + "60" }]}
+                    >
+                      <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
+                      <Text style={[styles.iconBtnLabel, { color: "#fff" }]}>Admin</Text>
+                    </TouchableOpacity>
+                  )}
                   <TouchableOpacity
-                    onPress={() => router.push("/admin" as never)}
-                    style={[styles.iconBtn, { backgroundColor: colors.primary + "18", borderColor: colors.primary + "40" }]}
+                    onPress={() => router.push("/legal/privacy" as never)}
+                    style={[styles.iconBtn, { backgroundColor: "rgba(0,0,0,0.45)", borderColor: "rgba(255,255,255,0.18)" }]}
                   >
                     <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
-                    <Text style={[styles.iconBtnLabel, { color: colors.primary }]}>Admin</Text>
+                    <Text style={[styles.iconBtnLabel, { color: "#fff" }]}>Privacy</Text>
                   </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  onPress={() => router.push("/legal/privacy" as never)}
-                  style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                >
-                  <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
-                  <Text style={[styles.iconBtnLabel, { color: colors.textSecondary }]}>Privacy</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleLogout}
-                  style={[styles.iconBtn, { backgroundColor: "#EF444415", borderColor: "#EF444430" }]}
-                >
-                  <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
-                  <Text style={[styles.iconBtnLabel, { color: "#EF4444" }]}>Log Out</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleLogout}
+                    style={[styles.iconBtn, { backgroundColor: "rgba(239,68,68,0.3)", borderColor: "rgba(239,68,68,0.5)" }]}
+                  >
+                    <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
+                    <Text style={[styles.iconBtnLabel, { color: "#fca5a5" }]}>Log Out</Text>
+                  </TouchableOpacity>
+                </View>
+                {/* Change banner hint */}
+                <View style={styles.bannerEditHint}>
+                  {uploadingBanner
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Text style={styles.bannerEditTxt}>📷 Change Banner</Text>
+                  }
+                </View>
               </View>
 
-              <View style={styles.avatarSection}>
+              <View style={[styles.avatarSection, { marginTop: -46 }]}>
                 {/* Story ring + avatar */}
                 <View style={styles.storyRingWrap}>
                   {myStoryCount > 0 && (
@@ -737,6 +787,20 @@ export default function ProfileScreen() {
                   <Text style={[styles.quickLinkText, { color: colors.text }]}>Share to Social Media</Text>
                   <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
                     Facebook, TikTok, Instagram, Reddit & more
+                  </Text>
+                </View>
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.quickLink, { borderColor: "#0EA5E960", backgroundColor: "#0EA5E90D" }]}
+                onPress={() => router.push("/activity-feed" as never)}
+              >
+                <Text style={{ fontSize: 16 }}>👥</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.quickLinkText, { color: colors.text }]}>Activity Feed</Text>
+                  <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
+                    See what people you follow are posting
                   </Text>
                 </View>
                 <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
@@ -1059,6 +1123,22 @@ export default function ProfileScreen() {
         />
       )}
 
+      {/* Banner source picker (Android / Web) */}
+      <Modal visible={showBannerSheet} transparent animationType="fade" onRequestClose={() => setShowBannerSheet(false)}>
+        <Pressable style={styles.sheetBackdrop} onPress={() => setShowBannerSheet(false)}>
+          <View style={[styles.sheet, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>Change Cover Photo</Text>
+            <TouchableOpacity style={styles.sheetOption} onPress={() => doUploadBanner("gallery")}>
+              <Text style={{ fontSize: 20 }}>🖼️</Text>
+              <Text style={[styles.sheetOptionText, { color: colors.text }]}>Choose from Gallery</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.sheetCancel, { backgroundColor: colors.muted }]} onPress={() => setShowBannerSheet(false)}>
+              <Text style={[styles.sheetCancelText, { color: colors.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+
       {/* Android / Web photo source picker */}
       <Modal visible={showPhotoSheet} transparent animationType="fade" onRequestClose={() => setShowPhotoSheet(false)}>
         <Pressable style={styles.sheetBackdrop} onPress={() => setShowPhotoSheet(false)}>
@@ -1097,12 +1177,38 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingBottom: 16, borderBottomWidth: 1 },
+  bannerWrap: {
+    width: "100%",
+    height: 150,
+    position: "relative",
+    overflow: "hidden",
+  },
+  bannerTouchable: { width: "100%", height: 150 },
+  bannerImg: { width: "100%", height: 150 },
+  bannerFallback: { width: "100%", height: 150 },
+  bannerEditHint: {
+    position: "absolute",
+    bottom: 8,
+    right: 8,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  bannerEditTxt: { fontFamily: "Inter_500Medium", fontSize: 10, color: "#fff" },
   headerActions: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 10,
     paddingHorizontal: 16,
     paddingBottom: 12,
+    zIndex: 10,
   },
   iconBtn: {
     flexDirection: "row",
