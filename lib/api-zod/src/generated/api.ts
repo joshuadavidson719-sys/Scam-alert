@@ -44,8 +44,11 @@ export const GenerateImageResponse = zod.object({
  */
 export const generateAnimationBodyPromptMax = 4000;
 
-export const generateAnimationBodyFrameCountMin = 2;
-export const generateAnimationBodyFrameCountMax = 6;
+export const generateAnimationBodyFrameCountMin = 4;
+export const generateAnimationBodyFrameCountMax = 12;
+
+export const generateAnimationBodyFpsMin = 4;
+export const generateAnimationBodyFpsMax = 16;
 
 export const GenerateAnimationBody = zod.object({
   prompt: zod
@@ -58,7 +61,17 @@ export const GenerateAnimationBody = zod.object({
     .min(generateAnimationBodyFrameCountMin)
     .max(generateAnimationBodyFrameCountMax)
     .optional()
-    .describe("Number of frames to generate (default 4)"),
+    .describe("Number of frames to generate (default 8)"),
+  style: zod
+    .enum(["flow", "zoom", "pan", "morph"])
+    .optional()
+    .describe("Animation style preset (default flow)"),
+  fps: zod
+    .number()
+    .min(generateAnimationBodyFpsMin)
+    .max(generateAnimationBodyFpsMax)
+    .optional()
+    .describe("Target playback FPS hint (default 8)"),
 });
 
 export const GenerateAnimationResponse = zod.object({

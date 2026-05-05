@@ -38,6 +38,19 @@ export interface GenerateImageResponse {
   prompt: string;
 }
 
+/**
+ * Animation style preset (default flow)
+ */
+export type GenerateAnimationBodyStyle =
+  (typeof GenerateAnimationBodyStyle)[keyof typeof GenerateAnimationBodyStyle];
+
+export const GenerateAnimationBodyStyle = {
+  flow: "flow",
+  zoom: "zoom",
+  pan: "pan",
+  morph: "morph",
+} as const;
+
 export interface GenerateAnimationBody {
   /**
    * Text description of the animation scene to generate
@@ -46,11 +59,19 @@ export interface GenerateAnimationBody {
    */
   prompt: string;
   /**
-   * Number of frames to generate (default 4)
-   * @minimum 2
-   * @maximum 6
+   * Number of frames to generate (default 8)
+   * @minimum 4
+   * @maximum 12
    */
   frameCount?: number;
+  /** Animation style preset (default flow) */
+  style?: GenerateAnimationBodyStyle;
+  /**
+   * Target playback FPS hint (default 8)
+   * @minimum 4
+   * @maximum 16
+   */
+  fps?: number;
 }
 
 export interface GenerateAnimationResponse {
