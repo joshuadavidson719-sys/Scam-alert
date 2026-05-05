@@ -5,18 +5,28 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  ErrorResponse,
+  GenerateAnimationBody,
+  GenerateAnimationResponse,
+  GenerateImageBody,
+  GenerateImageResponse,
+  HealthStatus,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -99,3 +109,177 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * Generates a single AI image from a text prompt using gpt-image-1
+ * @summary Generate an AI image
+ */
+export const getGenerateImageUrl = () => {
+  return `/api/swiftop/generate-image`;
+};
+
+export const generateImage = async (
+  generateImageBody: GenerateImageBody,
+  options?: RequestInit,
+): Promise<GenerateImageResponse> => {
+  return customFetch<GenerateImageResponse>(getGenerateImageUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generateImageBody),
+  });
+};
+
+export const getGenerateImageMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateImage>>,
+    TError,
+    { data: BodyType<GenerateImageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateImage>>,
+  TError,
+  { data: BodyType<GenerateImageBody> },
+  TContext
+> => {
+  const mutationKey = ["generateImage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateImage>>,
+    { data: BodyType<GenerateImageBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateImage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateImageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateImage>>
+>;
+export type GenerateImageMutationBody = BodyType<GenerateImageBody>;
+export type GenerateImageMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Generate an AI image
+ */
+export const useGenerateImage = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateImage>>,
+    TError,
+    { data: BodyType<GenerateImageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateImage>>,
+  TError,
+  { data: BodyType<GenerateImageBody> },
+  TContext
+> => {
+  return useMutation(getGenerateImageMutationOptions(options));
+};
+
+/**
+ * Generates multiple AI image frames from a text prompt to create an animated sequence
+ * @summary Generate an AI animation as a sequence of frames
+ */
+export const getGenerateAnimationUrl = () => {
+  return `/api/swiftop/generate-animation`;
+};
+
+export const generateAnimation = async (
+  generateAnimationBody: GenerateAnimationBody,
+  options?: RequestInit,
+): Promise<GenerateAnimationResponse> => {
+  return customFetch<GenerateAnimationResponse>(getGenerateAnimationUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generateAnimationBody),
+  });
+};
+
+export const getGenerateAnimationMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateAnimation>>,
+    TError,
+    { data: BodyType<GenerateAnimationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateAnimation>>,
+  TError,
+  { data: BodyType<GenerateAnimationBody> },
+  TContext
+> => {
+  const mutationKey = ["generateAnimation"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateAnimation>>,
+    { data: BodyType<GenerateAnimationBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateAnimation(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateAnimationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateAnimation>>
+>;
+export type GenerateAnimationMutationBody = BodyType<GenerateAnimationBody>;
+export type GenerateAnimationMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Generate an AI animation as a sequence of frames
+ */
+export const useGenerateAnimation = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateAnimation>>,
+    TError,
+    { data: BodyType<GenerateAnimationBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateAnimation>>,
+  TError,
+  { data: BodyType<GenerateAnimationBody> },
+  TContext
+> => {
+  return useMutation(getGenerateAnimationMutationOptions(options));
+};

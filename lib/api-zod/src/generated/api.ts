@@ -14,3 +14,57 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Generates a single AI image from a text prompt using gpt-image-1
+ * @summary Generate an AI image
+ */
+export const generateImageBodyPromptMax = 4000;
+
+export const GenerateImageBody = zod.object({
+  prompt: zod
+    .string()
+    .min(1)
+    .max(generateImageBodyPromptMax)
+    .describe("Text description of the image to generate"),
+  size: zod
+    .enum(["1024x1024", "1536x1024", "1024x1536"])
+    .optional()
+    .describe("Output image size (default 1024x1024)"),
+});
+
+export const GenerateImageResponse = zod.object({
+  b64_json: zod.string().describe("Base64-encoded PNG image"),
+  prompt: zod.string(),
+});
+
+/**
+ * Generates multiple AI image frames from a text prompt to create an animated sequence
+ * @summary Generate an AI animation as a sequence of frames
+ */
+export const generateAnimationBodyPromptMax = 4000;
+
+export const generateAnimationBodyFrameCountMin = 2;
+export const generateAnimationBodyFrameCountMax = 6;
+
+export const GenerateAnimationBody = zod.object({
+  prompt: zod
+    .string()
+    .min(1)
+    .max(generateAnimationBodyPromptMax)
+    .describe("Text description of the animation scene to generate"),
+  frameCount: zod
+    .number()
+    .min(generateAnimationBodyFrameCountMin)
+    .max(generateAnimationBodyFrameCountMax)
+    .optional()
+    .describe("Number of frames to generate (default 4)"),
+});
+
+export const GenerateAnimationResponse = zod.object({
+  frames: zod
+    .array(zod.string())
+    .describe("Array of base64-encoded PNG frames"),
+  prompt: zod.string(),
+  frameCount: zod.number(),
+});

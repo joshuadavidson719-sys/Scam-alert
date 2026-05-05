@@ -5,6 +5,7 @@ import linkCheckRouter from "./link-check";
 import phoneCheckRouter from "./phone-check";
 import chatbotRouter from "./chatbot";
 import darkWebCheckRouter from "./dark-web-check";
+import swiftopRouter from "./swiftop";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(linkCheckRouter);
 router.use(phoneCheckRouter);
 router.use(chatbotRouter);
 router.use(darkWebCheckRouter);
+router.use(swiftopRouter);
 
 export default router;

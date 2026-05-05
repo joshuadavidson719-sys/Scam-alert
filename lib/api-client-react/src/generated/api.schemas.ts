@@ -8,3 +8,58 @@
 export interface HealthStatus {
   status: string;
 }
+
+/**
+ * Output image size (default 1024x1024)
+ */
+export type GenerateImageBodySize =
+  (typeof GenerateImageBodySize)[keyof typeof GenerateImageBodySize];
+
+export const GenerateImageBodySize = {
+  "1024x1024": "1024x1024",
+  "1536x1024": "1536x1024",
+  "1024x1536": "1024x1536",
+} as const;
+
+export interface GenerateImageBody {
+  /**
+   * Text description of the image to generate
+   * @minLength 1
+   * @maxLength 4000
+   */
+  prompt: string;
+  /** Output image size (default 1024x1024) */
+  size?: GenerateImageBodySize;
+}
+
+export interface GenerateImageResponse {
+  /** Base64-encoded PNG image */
+  b64_json: string;
+  prompt: string;
+}
+
+export interface GenerateAnimationBody {
+  /**
+   * Text description of the animation scene to generate
+   * @minLength 1
+   * @maxLength 4000
+   */
+  prompt: string;
+  /**
+   * Number of frames to generate (default 4)
+   * @minimum 2
+   * @maximum 6
+   */
+  frameCount?: number;
+}
+
+export interface GenerateAnimationResponse {
+  /** Array of base64-encoded PNG frames */
+  frames: string[];
+  prompt: string;
+  frameCount: number;
+}
+
+export interface ErrorResponse {
+  error: string;
+}

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: swiftop
+    description: Swiftop AI image and animation generation
 paths:
   /healthz:
     get:
@@ -24,6 +26,71 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /swiftop/generate-image:
+    post:
+      operationId: generateImage
+      tags: [swiftop]
+      summary: Generate an AI image
+      description: Generates a single AI image from a text prompt using gpt-image-1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateImageBody"
+      responses:
+        "200":
+          description: Generated image as base64
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateImageResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Generation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /swiftop/generate-animation:
+    post:
+      operationId: generateAnimation
+      tags: [swiftop]
+      summary: Generate an AI animation as a sequence of frames
+      description: Generates multiple AI image frames from a text prompt to create an animated sequence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateAnimationBody"
+      responses:
+        "200":
+          description: Animated frames as base64 images
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateAnimationResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Generation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +101,70 @@ components:
       required:
         - status
 
+    GenerateImageBody:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: Text description of the image to generate
+          minLength: 1
+          maxLength: 4000
+        size:
+          type: string
+          enum: ["1024x1024", "1536x1024", "1024x1536"]
+          description: Output image size (default 1024x1024)
+      required:
+        - prompt
+
+    GenerateImageResponse:
+      type: object
+      properties:
+        b64_json:
+          type: string
+          description: Base64-encoded PNG image
+        prompt:
+          type: string
+      required:
+        - b64_json
+        - prompt
+
+    GenerateAnimationBody:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: Text description of the animation scene to generate
+          minLength: 1
+          maxLength: 4000
+        frameCount:
+          type: integer
+          minimum: 2
+          maximum: 6
+          description: Number of frames to generate (default 4)
+      required:
+        - prompt
+
+    GenerateAnimationResponse:
+      type: object
+      properties:
+        frames:
+          type: array
+          items:
+            type: string
+          description: Array of base64-encoded PNG frames
+        prompt:
+          type: string
+        frameCount:
+          type: integer
+      required:
+        - frames
+        - prompt
+        - frameCount
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
