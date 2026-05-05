@@ -138,9 +138,18 @@ components:
           maxLength: 4000
         frameCount:
           type: integer
-          minimum: 2
-          maximum: 6
-          description: Number of frames to generate (default 4)
+          minimum: 4
+          maximum: 12
+          description: Number of frames to generate (default 8)
+        style:
+          type: string
+          enum: ["flow", "zoom", "pan", "morph"]
+          description: Animation style preset (default flow)
+        fps:
+          type: integer
+          minimum: 4
+          maximum: 16
+          description: Target playback FPS hint (default 8)
       required:
         - prompt
 
