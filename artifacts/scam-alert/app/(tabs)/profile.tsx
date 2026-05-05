@@ -821,6 +821,20 @@ export default function ProfileScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
+                style={[styles.quickLink, { borderColor: "#A855F760", backgroundColor: "#A855F70D" }]}
+                onPress={() => router.push("/swiftop-ai" as never)}
+              >
+                <Text style={{ fontSize: 16 }}>✦</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.quickLinkText, { color: colors.text }]}>Swiftop AI</Text>
+                  <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
+                    AI image & animation generator
+                  </Text>
+                </View>
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={[styles.quickLink, { borderColor: "#00FF8840", backgroundColor: "#00FF8808" }]}
                 onPress={() => router.push("/recording-studio" as never)}
               >
