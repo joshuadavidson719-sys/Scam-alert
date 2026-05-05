@@ -1,0 +1,31 @@
+kind = "video"
+previewPath = "/fox-fighters/"
+title = "Fox Fighters"
+version = "1.0.0"
+id = "artifacts/fox-fighters"
+router = "path"
+
+[[integratedSkills]]
+name = "video-js"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/fox-fighters/" ]
+localPort = 18129
+
+[services.development]
+run = "pnpm --filter @workspace/fox-fighters run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/fox-fighters", "run", "build" ]
+publicDir = "artifacts/fox-fighters/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18129"
+BASE_PATH = "/fox-fighters/"
