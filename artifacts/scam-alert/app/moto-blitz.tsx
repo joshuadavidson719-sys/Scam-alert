@@ -12,6 +12,7 @@ import {
   collection, addDoc, query, where, orderBy,
   limit, getDocs, serverTimestamp,
 } from "firebase/firestore";
+import { playSound, startMusic, stopMusic } from "@/lib/soundEngine";
 
 const APP_ICON = require("@/assets/images/icon.png");
 const { width: SW, height: SH } = Dimensions.get("window");
@@ -109,6 +110,7 @@ export default function MotoBlitz() {
 
   const endGame = useCallback(async (finalScore: number) => {
     if (timerRef.current) clearInterval(timerRef.current);
+    stopMusic(); playSound("defeat");
     setScreen("gameover");
     if (!user || finalScore === 0) return;
     setSubmitting(true);
@@ -126,7 +128,7 @@ export default function MotoBlitz() {
     const s = gs.current;
     s.tick++;
     const spd = BASE_SPD + (s.level - 1) * SPD_INC;
-    if (s.tick % LVL_TICKS === 0) s.level++;
+    if (s.tick % LVL_TICKS === 0) { s.level++; playSound("levelUp"); }
 
     // Move vehicles down
     s.vehicles = s.vehicles
@@ -175,6 +177,7 @@ export default function MotoBlitz() {
           s.flashes.push({ id: `f${s.nextId++}`, text: "SHIELD!", x: px, y: py - 20, op: 1 });
         } else {
           s.lives--;
+          playSound("crash");
           s.flashes.push({ id: `f${s.nextId++}`, text: "💥 CRASH!", x: px, y: py - 20, op: 1 });
           died = true;
         }
@@ -190,6 +193,7 @@ export default function MotoBlitz() {
                   Math.abs(py - cy) < (BIKE_H / 2 + COIN_SIZE / 2);
       if (hit) {
         s.score += 50;
+        playSound("coin");
         s.flashes.push({ id: `f${s.nextId++}`, text: "+50 🪙", x: cx, y: cy - 10, op: 1 });
       }
       return !hit;
@@ -205,6 +209,7 @@ export default function MotoBlitz() {
     Animated.timing(playerX, { toValue: laneX(1), duration: 0, useNativeDriver: true }).start();
     setDisplay({ score: 0, lives: 3, level: 1, shielded: false });
     setScreen("playing");
+    startMusic("racing");
     timerRef.current = setInterval(tick, TICK_MS);
   }, [tick, playerX]);
 

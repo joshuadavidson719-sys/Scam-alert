@@ -12,6 +12,7 @@ import {
   limit, getDocs, serverTimestamp,
 } from "firebase/firestore";
 import * as Haptics from "expo-haptics";
+import { playSound, startMusic, stopMusic } from "@/lib/soundEngine";
 
 const APP_ICON = require("@/assets/images/icon.png");
 
@@ -91,6 +92,7 @@ export default function Royal21() {
   }, []);
 
   useEffect(() => { fetchLeaders(); }, [fetchLeaders]);
+  useEffect(() => { startMusic("casino"); return () => stopMusic(); }, []);
 
   const flash = (color: string) => {
     flashAnim.setValue(0);
@@ -113,6 +115,7 @@ export default function Royal21() {
 
   const dealGame = useCallback(() => {
     if (bet === 0) { setMessage("Place a bet first!"); return; }
+    playSound("cardDeal");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const d = shuffle(makeDeck());
     const ph = [d[0], d[2]];
@@ -131,13 +134,14 @@ export default function Royal21() {
       setGameState("result");
       const ds = handScore(dh);
       if (ds === 21) { setResult("push"); setMessage("🤝 Push — Both Blackjack!"); setChips(c => c); }
-      else { setResult("blackjack"); setMessage("🃏 Blackjack! You win 3:2!"); setChips(c => c + Math.floor(bet * 2.5)); flash("#FFD700"); }
+      else { playSound("victory"); setResult("blackjack"); setMessage("🃏 Blackjack! You win 3:2!"); setChips(c => c + Math.floor(bet * 2.5)); flash("#FFD700"); }
       setStatsGames(g => g + 1); setStatsWins(w => w + 1);
     }
   }, [bet, chips]);
 
   const hit = useCallback(() => {
     if (gameState !== "playing") return;
+    playSound("cardFlip");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setPlayerHand(prev => {
       const next = [...prev, deck[0]];
@@ -171,12 +175,12 @@ export default function Royal21() {
     setGameState("result");
     setStatsGames(g => g + 1);
     if (ds > 21 || ps > ds) {
-      setResult("win"); setMessage(`🎉 You win! ${ps} vs ${ds}`);
+      playSound("win"); setResult("win"); setMessage(`🎉 You win! ${ps} vs ${ds}`);
       setChips(c => c + bet); setStatsWins(w => w + 1); flash("#10B981");
     } else if (ps === ds) {
       setResult("push"); setMessage(`🤝 Push! Both ${ps}`); flash("#F59E0B");
     } else {
-      setResult("lose"); setMessage(`😞 Dealer wins. ${ds} vs ${ps}`);
+      playSound("lose"); setResult("lose"); setMessage(`😞 Dealer wins. ${ds} vs ${ps}`);
       setChips(c => { const n = c - bet; if (n > highScore) { setHighScore(n); saveScore(n); } return n; }); flash("#EF4444");
     }
   }, [gameState, dealerHand, playerHand, deck, bet, highScore]);

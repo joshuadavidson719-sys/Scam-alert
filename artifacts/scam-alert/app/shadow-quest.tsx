@@ -12,6 +12,7 @@ import {
   limit, getDocs, serverTimestamp,
 } from "firebase/firestore";
 import * as Haptics from "expo-haptics";
+import { playSound, startMusic, stopMusic } from "@/lib/soundEngine";
 
 const APP_ICON = require("@/assets/images/icon.png");
 
@@ -135,11 +136,14 @@ export default function ShadowQuest() {
     ]).start();
   };
 
+  useEffect(() => () => stopMusic(), []);
+
   const startGame = () => {
     const p = initPlayer();
     setPlayer(p);
     setMap(generateMap(1));
     setCombatLog([]);
+    startMusic("dungeon");
     setScreen("map");
   };
 
@@ -155,6 +159,7 @@ export default function ShadowQuest() {
       xp -= needed; level++;
       maxHp += 20; hp = Math.min(hp + 20, maxHp); atk += 3; def += 1;
       addLog(`⬆️ Level Up! Now Level ${level}!`, "#FFD700");
+      playSound("levelUp");
     }
     return { ...p, xp, level, maxHp, hp, atk, def };
   };
@@ -207,6 +212,7 @@ export default function ShadowQuest() {
   // ── Combat ────────────────────────────────────────────────────────────────
   const combatAttack = useCallback(() => {
     if (!monster || combatTurn !== "player") return;
+    playSound("punch");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const playerAtk = player.atk + tempAtk;
     const dmgToEnemy = Math.max(1, playerAtk - monster.tempDef + Math.floor(Math.random() * 6));
@@ -215,6 +221,7 @@ export default function ShadowQuest() {
 
     if (newEnemyHp <= 0) {
       addLog(`🏆 ${monster.name} defeated! +${monster.xp} XP, +${monster.gold} gold`, "#FFD700");
+      playSound("victory");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       const updated = levelUp({ ...player, gold: player.gold + monster.gold }, monster.xp);
       setPlayer(updated); setMonster(null); setTempAtk(0); setTempDef(0);
@@ -234,6 +241,7 @@ export default function ShadowQuest() {
     const dmgToPlayer = Math.max(1, atkVal - player.def - tempDef);
     shake();
     addLog(`👾 ${m.name} hits you for ${dmgToPlayer} dmg!`, m.color);
+    playSound("enemyHit");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     const newHp = player.hp - dmgToPlayer;
     if (newHp <= 0) {
@@ -242,6 +250,7 @@ export default function ShadowQuest() {
       setCombatTurn("over");
       setTimeout(() => {
         saveScore(player.floor * 100 + player.gold);
+        stopMusic(); playSound("defeat");
         setScreen("gameover");
       }, 800);
     } else {

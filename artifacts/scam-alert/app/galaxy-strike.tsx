@@ -12,6 +12,7 @@ import {
   collection, addDoc, query, where, orderBy,
   limit, getDocs, serverTimestamp,
 } from "firebase/firestore";
+import { playSound, startMusic, stopMusic } from "@/lib/soundEngine";
 
 const APP_ICON = require("@/assets/images/icon.png");
 const { width: SW, height: SH } = Dimensions.get("window");
@@ -99,6 +100,7 @@ export default function GalaxyStrike() {
 
   const endGame = useCallback(async (finalScore: number) => {
     if (timerRef.current) clearInterval(timerRef.current);
+    stopMusic(); playSound("defeat");
     setScreen("gameover");
     if (!user || finalScore === 0) return;
     setSubmitting(true);
@@ -125,6 +127,7 @@ export default function GalaxyStrike() {
         ...e, y: e.y + (s.wave - 1) * 10, pts: e.pts + s.wave * 10,
       }));
       s.score += 500;
+      playSound("levelUp");
     }
 
     // Move enemies left/right
@@ -171,6 +174,7 @@ export default function GalaxyStrike() {
         if (b.x < e.x + ENEMY_W && b.x + BULLET_W > e.x &&
             b.y < e.y + ENEMY_H && b.y + BULLET_H > e.y) {
           e.alive = false;
+          playSound("explode");
           s.score += e.pts;
           for (let p = 0; p < 6; p++) {
             const angle = (Math.PI * 2 * p) / 6;
@@ -191,7 +195,7 @@ export default function GalaxyStrike() {
                   b.y + EBULLET_H > shipTop && b.y < shipBot;
       if (hit) {
         if (s.shielded) { s.shielded = false; s.shieldTicks = 0; }
-        else s.lives--;
+        else { s.lives--; playSound("enemyHit"); }
       }
       return !hit;
     });
@@ -209,6 +213,7 @@ export default function GalaxyStrike() {
     const s = gs.current;
     if (s.fireCooldown > 0) return;
     s.bullets.push({ id: `b${s.nextId++}`, x: s.shipX + SHIP_W / 2 - BULLET_W / 2, y: GAME_H - SHIP_H - 20 });
+    playSound("shoot");
     s.fireCooldown = 12;
     // Double shot bonus
     if (s.score > 1000) {
@@ -228,6 +233,7 @@ export default function GalaxyStrike() {
     shipAnim.setValue(SW / 2 - SHIP_W / 2);
     setDisplay({ score: 0, lives: 3, wave: 1, shielded: false });
     setScreen("playing");
+    startMusic("space");
     timerRef.current = setInterval(tick, TICK_MS);
   }, [tick, shipAnim]);
 
