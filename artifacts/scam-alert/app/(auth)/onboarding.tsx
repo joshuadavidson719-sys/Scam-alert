@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,12 +25,18 @@ export default function OnboardingScreen() {
     setLoading(true);
     try {
       await updateUserProfile({ niche: selectedNiche });
-      router.replace("/(tabs)/" as never);
     } catch {
-      // ignore
-    } finally {
+      // Profile update failed — still navigate, niche can be set later in settings
+      Alert.alert(
+        "Almost there!",
+        "We couldn't save your niche right now, but you can set it anytime in your profile settings.",
+        [{ text: "Continue", onPress: () => router.replace("/(tabs)/" as never) }]
+      );
       setLoading(false);
+      return;
     }
+    setLoading(false);
+    router.replace("/(tabs)/" as never);
   };
 
   const handleSkip = () => {
