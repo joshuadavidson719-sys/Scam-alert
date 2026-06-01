@@ -11,7 +11,7 @@ import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import Constants from "expo-constants";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Platform, View } from "react-native";
+import { Animated, Image, Platform, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -104,6 +104,8 @@ function RootLayoutNav() {
   );
 }
 
+const APP_ICON = require("@/assets/images/icon.png");
+
 export default function RootLayout() {
   const [nativeFontsLoaded, nativeFontError] = useFonts({
     Inter_400Regular,
@@ -118,7 +120,35 @@ export default function RootLayout() {
   const fontError = Platform.OS === "web" ? null : nativeFontError;
   const [fontTimedOut, setFontTimedOut] = useState(false);
 
+  // Loading progress — counts 0→95 automatically, jumps to 100 when ready
+  const [progress, setProgress] = useState(0);
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const notificationListener = useRef<{ remove: () => void } | null>(null);
+
+  // Start progress counter on mount
+  useEffect(() => {
+    tickRef.current = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 95) {
+          if (tickRef.current) clearInterval(tickRef.current);
+          return 95;
+        }
+        return prev + 1;
+      });
+    }, 28); // 95 ticks × 28ms ≈ 2.7s
+    return () => { if (tickRef.current) clearInterval(tickRef.current); };
+  }, []);
+
+  // Animate bar width whenever progress changes
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: 80,
+      useNativeDriver: false,
+    }).start();
+  }, [progress, progressAnim]);
 
   useEffect(() => {
     // Skip in Expo Go (Android push removed in SDK 53) and web
@@ -147,14 +177,63 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError || fontTimedOut) {
-      SplashScreen.hideAsync().catch(() => {});
+      // Jump to 100 then hide
+      if (tickRef.current) clearInterval(tickRef.current);
+      setProgress(100);
+      setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 120);
     }
   }, [fontsLoaded, fontError, fontTimedOut]);
 
   if (!fontsLoaded && !fontError && !fontTimedOut) {
+    const barWidth = progressAnim.interpolate({
+      inputRange: [0, 100],
+      outputRange: ["0%", "100%"],
+    });
+
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#000000" }}>
-        <ActivityIndicator color="#FF3B3B" size="large" />
+      <View style={{
+        flex: 1, alignItems: "center", justifyContent: "center",
+        backgroundColor: "#080808",
+      }}>
+        {/* Logo */}
+        <Image
+          source={APP_ICON}
+          style={{ width: 88, height: 88, borderRadius: 22, marginBottom: 20 }}
+          resizeMode="cover"
+        />
+
+        {/* App name */}
+        <Text style={{
+          color: "#FF3B3B", fontSize: 30, fontWeight: "800",
+          letterSpacing: 0.5, marginBottom: 4,
+        }}>
+          Scam Alert
+        </Text>
+        <Text style={{
+          color: "#666", fontSize: 13, marginBottom: 52,
+          letterSpacing: 0.3,
+        }}>
+          Protecting your community
+        </Text>
+
+        {/* Progress bar track */}
+        <View style={{
+          width: 220, height: 3, backgroundColor: "#1c1c1c",
+          borderRadius: 2, overflow: "hidden", marginBottom: 14,
+        }}>
+          <Animated.View style={{
+            width: barWidth, height: 3,
+            backgroundColor: "#FF3B3B", borderRadius: 2,
+          }} />
+        </View>
+
+        {/* Percentage number */}
+        <Text style={{
+          color: "#FF3B3B", fontSize: 15, fontWeight: "700",
+          fontVariant: ["tabular-nums"],
+        }}>
+          {progress}%
+        </Text>
       </View>
     );
   }

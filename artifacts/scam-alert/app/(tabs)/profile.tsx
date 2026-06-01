@@ -381,8 +381,17 @@ export default function ProfileScreen() {
     try {
       const url = await pickAndUploadBanner(user.uid, source);
       if (url) await updateUserProfile({ bannerPhoto: url });
-    } catch {
-      Alert.alert("Error", "Failed to upload banner. Please try again.");
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code ?? "";
+      const msg = (err as Error)?.message ?? "";
+      if (code === "storage/unauthorized" || msg.includes("permission")) {
+        Alert.alert(
+          "Storage Permission Error",
+          "Your Firebase Storage rules are blocking uploads. Go to Firebase Console → Storage → Rules and publish the rules that allow authenticated users to write."
+        );
+      } else {
+        Alert.alert("Upload Failed", msg || "Failed to upload banner. Please try again.");
+      }
     } finally {
       setUploadingBanner(false);
     }
