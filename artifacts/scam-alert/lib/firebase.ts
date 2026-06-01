@@ -5,6 +5,21 @@ import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { Platform } from "react-native";
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 
+// Suppress Firebase's internal console.error for permission-denied so the
+// Expo Go red overlay doesn't pop up — errors are handled gracefully in-app.
+if (__DEV__) {
+  const _origError = console.error.bind(console);
+  console.error = (...args: unknown[]) => {
+    const msg = String(args[0] ?? "");
+    if (
+      msg.includes("permission-denied") ||
+      msg.includes("Missing or insufficient permissions") ||
+      msg.includes("@firebase/firestore")
+    ) return;
+    _origError(...args);
+  };
+}
+
 export const isFirebaseConfigured = !!(
   process.env.EXPO_PUBLIC_FIREBASE_API_KEY &&
   process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID
