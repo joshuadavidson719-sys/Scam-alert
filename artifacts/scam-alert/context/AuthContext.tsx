@@ -128,12 +128,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const cred = await signInWithEmailAndPassword(auth, email, password);
-    const snap = await getDoc(doc(db, "users", cred.user.uid));
-    if (snap.exists() && (snap.data() as UserProfile).isBanned) {
-      await signOut(auth);
-      throw new Error("Your account has been suspended. Please contact support.");
+    try {
+      const snap = await getDoc(doc(db, "users", cred.user.uid));
+      if (snap.exists() && (snap.data() as UserProfile).isBanned) {
+        await signOut(auth);
+        throw new Error("Your account has been suspended. Please contact support.");
+      }
+      await fetchProfile(cred.user.uid);
+    } catch (firestoreErr: unknown) {
+      const code = (firestoreErr as { code?: string })?.code ?? "";
+      const msg = (firestoreErr as Error)?.message ?? "";
+      // If Firestore rules haven't been configured yet, still let the user in
+      // but surface a clear message for suspension errors
+      if (msg.includes("suspended")) {
+        throw firestoreErr;
+      }
+      if (code !== "permission-denied" && !msg.includes("permission")) {
+        throw firestoreErr;
+      }
+      // permission-denied on profile read: auth succeeded, profile will retry via onAuthStateChanged
     }
-    await fetchProfile(cred.user.uid);
   };
 
   const signup = async (
