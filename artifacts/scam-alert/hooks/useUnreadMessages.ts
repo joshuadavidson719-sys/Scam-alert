@@ -4,11 +4,11 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 
 export function useUnreadMessages(): number {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    if (!user) {
+    if (loading || !user) {
       setTotal(0);
       return;
     }

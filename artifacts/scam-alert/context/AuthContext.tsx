@@ -100,7 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const code = (err as { code?: string })?.code ?? "";
       // Retry up to 3 times on permission errors (auth token may not be ready yet)
       if (code === "permission-denied" && attempt < 3) {
-        setTimeout(() => fetchProfile(uid, attempt + 1), 1500 * (attempt + 1));
+        setTimeout(() => {
+          fetchProfile(uid, attempt + 1).catch(() => setProfile(null));
+        }, 1500 * (attempt + 1));
       } else {
         setProfile(null);
       }

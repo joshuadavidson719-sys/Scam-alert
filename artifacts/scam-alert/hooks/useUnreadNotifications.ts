@@ -9,11 +9,11 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 
 export function useUnreadNotifications(): number {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (!user) {
+    if (loading || !user) {
       setCount(0);
       return;
     }
@@ -26,7 +26,7 @@ export function useUnreadNotifications(): number {
 
     const unsub = onSnapshot(q, (snap) => {
       setCount(snap.size);
-    });
+    }, () => setCount(0));
 
     return unsub;
   }, [user]);
