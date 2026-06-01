@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { useAuth } from "@/context/AuthContext";
+import { router } from "expo-router";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -9,12 +11,23 @@ const GITHUB_DISCOVERY = {
   authorizationEndpoint: "https://github.com/login/oauth/authorize",
 };
 
+// In Expo Go the custom URI scheme isn't registered with the OS, so we must
+// use the Expo auth proxy (HTTPS) as the redirect target. In a real build the
+// app's own scheme (scamalert://) is registered and works natively.
+const isExpoGo =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+const redirectUri = AuthSession.makeRedirectUri(
+  isExpoGo
+    ? { useProxy: true }
+    : { scheme: "scamalert", path: "oauth" },
+);
+
 export function useGitHubAuth() {
-  const { signInWithGitHub } = useAuth();
+  const { signInWithGitHub, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
   const clientId = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? "";
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
@@ -70,6 +83,7 @@ export function useGitHubAuth() {
         }
 
         await signInWithGitHub(tokenData.access_token);
+        router.replace("/(tabs)/" as never);
       } catch (e) {
         setError(e instanceof Error ? e.message : "GitHub sign-in failed");
       } finally {
@@ -84,7 +98,7 @@ export function useGitHubAuth() {
       setError("GitHub sign-in is not configured yet.");
       return;
     }
-    await promptAsync({ useProxy: true });
+    await promptAsync(isExpoGo ? { useProxy: true } : {});
   }, [promptAsync, clientId]);
 
   return { trigger, loading, error, ready: !!request };
