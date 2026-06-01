@@ -9,9 +9,6 @@ const GITHUB_DISCOVERY = {
   authorizationEndpoint: "https://github.com/login/oauth/authorize",
 };
 
-const DOMAIN = process.env.EXPO_PUBLIC_DOMAIN ?? "";
-const BASE = DOMAIN ? `https://${DOMAIN}` : "";
-
 export function useGitHubAuth() {
   const { signInWithGitHub } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -25,6 +22,7 @@ export function useGitHubAuth() {
       clientId,
       scopes: ["read:user", "user:email"],
       redirectUri,
+      usePKCE: true,
     },
     GITHUB_DISCOVERY,
   );
@@ -32,6 +30,7 @@ export function useGitHubAuth() {
   useEffect(() => {
     if (response?.type !== "success") return;
     const code = response.params.code;
+    const codeVerifier = request?.codeVerifier;
     if (!code) return;
 
     setLoading(true);
@@ -39,18 +38,37 @@ export function useGitHubAuth() {
 
     (async () => {
       try {
-        const tokenRes = await fetch(`${BASE}/api/github-token`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code, redirectUri }),
-        });
+        const tokenRes = await fetch(
+          "https://github.com/login/oauth/access_token",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              client_id: clientId,
+              code,
+              redirect_uri: redirectUri,
+              ...(codeVerifier ? { code_verifier: codeVerifier } : {}),
+            }),
+          },
+        );
+
         const tokenData = (await tokenRes.json()) as {
           access_token?: string;
           error?: string;
+          error_description?: string;
         };
+
         if (!tokenData.access_token) {
-          throw new Error(tokenData.error ?? "Failed to get GitHub access token");
+          throw new Error(
+            tokenData.error_description ??
+              tokenData.error ??
+              "Could not get GitHub access token",
+          );
         }
+
         await signInWithGitHub(tokenData.access_token);
       } catch (e) {
         setError(e instanceof Error ? e.message : "GitHub sign-in failed");
