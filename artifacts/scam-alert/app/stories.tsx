@@ -131,6 +131,9 @@ export default function StoriesScreen() {
       });
       setGroups(sorted);
       setLoading(false);
+    }, () => {
+      // Firestore error (e.g. permission-denied) — stop spinner, show empty state
+      setLoading(false);
     });
     return unsub;
   }, [user]);
