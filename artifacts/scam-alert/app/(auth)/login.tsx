@@ -37,13 +37,44 @@ export default function LoginScreen() {
       await login(email.trim(), password);
       router.replace("/(tabs)/" as never);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Login failed";
-      if (msg.includes("invalid-credential") || msg.includes("wrong-password")) {
-        setError("Invalid email or password");
-      } else if (msg.includes("user-not-found")) {
-        setError("No account found with this email");
+      const code = (e as { code?: string })?.code ?? "";
+      const msg = e instanceof Error ? e.message : "";
+      if (
+        code.includes("invalid-credential") ||
+        code.includes("wrong-password") ||
+        code.includes("invalid-password") ||
+        msg.includes("invalid-credential") ||
+        msg.includes("wrong-password")
+      ) {
+        setError("Invalid email or password. Please check and try again.");
+      } else if (
+        code.includes("user-not-found") ||
+        msg.includes("user-not-found")
+      ) {
+        setError("No account found with this email. Please sign up first.");
+      } else if (
+        code.includes("too-many-requests") ||
+        msg.includes("too-many-requests")
+      ) {
+        setError("Too many failed attempts. Please wait a moment and try again.");
+      } else if (
+        code.includes("network-request-failed") ||
+        msg.includes("network-request-failed") ||
+        msg.includes("network")
+      ) {
+        setError("Network error. Check your internet connection and try again.");
+      } else if (
+        code.includes("user-disabled") ||
+        msg.includes("suspended")
+      ) {
+        setError(msg || "Your account has been suspended. Contact support.");
+      } else if (
+        code.includes("invalid-email") ||
+        msg.includes("invalid-email")
+      ) {
+        setError("Please enter a valid email address.");
       } else {
-        setError("Login failed. Please try again.");
+        setError(`Login failed: ${code || msg || "Unknown error. Please try again."}`);
       }
     } finally {
       setLoading(false);
