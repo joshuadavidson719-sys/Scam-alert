@@ -177,6 +177,10 @@ export default function NotificationsScreen() {
       setNotifications(items);
       setLoading(false);
       setRefreshing(false);
+    }, () => {
+      // Firestore error (e.g. permission-denied on startup) — stop spinner
+      setLoading(false);
+      setRefreshing(false);
     });
 
     return unsub;

@@ -90,21 +90,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (uid: string, attempt = 0) => {
-    try {
-      const snap = await getDoc(doc(db, "users", uid));
-      if (snap.exists()) {
-        setProfile(snap.data() as UserProfile);
+  const fetchProfile = useCallback(async (uid: string) => {
+    // Sequential retry loop — keeps the promise alive so callers can await the
+    // full result before deciding what to render (no premature setLoading(false)).
+    const maxAttempts = 4;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (attempt > 0) {
+        await new Promise<void>((res) => setTimeout(res, 1000 * attempt));
       }
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code ?? "";
-      // Retry up to 3 times on permission errors (auth token may not be ready yet)
-      if (code === "permission-denied" && attempt < 3) {
-        setTimeout(() => {
-          fetchProfile(uid, attempt + 1).catch(() => setProfile(null));
-        }, 1500 * (attempt + 1));
-      } else {
-        setProfile(null);
+      try {
+        const snap = await getDoc(doc(db, "users", uid));
+        if (snap.exists()) {
+          setProfile(snap.data() as UserProfile);
+        }
+        return; // success
+      } catch (err: unknown) {
+        const code = (err as { code?: string })?.code ?? "";
+        const isLast = attempt === maxAttempts - 1;
+        if (code !== "permission-denied" || isLast) {
+          setProfile(null);
+          return;
+        }
+        // permission-denied — auth token may not be ready yet, retry
       }
     }
   }, []);

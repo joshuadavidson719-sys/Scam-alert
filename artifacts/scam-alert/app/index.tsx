@@ -16,6 +16,9 @@ export default function Index() {
   }
 
   if (!user) return <Redirect href="/(auth)/login" />;
-  if (!profile?.niche) return <Redirect href="/(auth)/onboarding" />;
+  // Only force onboarding when profile loaded successfully but has no niche.
+  // If profile is null (Firestore failed after retries), skip onboarding and
+  // go straight to tabs — the user can set their niche later in settings.
+  if (profile !== null && !profile.niche) return <Redirect href="/(auth)/onboarding" />;
   return <Redirect href="/(tabs)/" />;
 }
