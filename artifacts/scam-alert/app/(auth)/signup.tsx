@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
+import { useGitHubAuth } from "@/hooks/useGitHubAuth";
 
 const APP_ICON = require("@/assets/images/icon.png");
 
@@ -28,6 +29,12 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const {
+    trigger: triggerGitHub,
+    loading: githubLoading,
+    error: githubError,
+  } = useGitHubAuth();
 
   const handleSignup = async () => {
     if (!username.trim() || !email.trim() || !password) {
@@ -57,6 +64,8 @@ export default function SignupScreen() {
     }
   };
 
+  const displayError = error || githubError;
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -81,14 +90,38 @@ export default function SignupScreen() {
           Join the Scam Alert community
         </Text>
 
-        {error ? (
+        {displayError ? (
           <View style={[styles.errorBox, { backgroundColor: colors.destructive + "15", borderColor: colors.destructive + "33" }]}>
             <Text style={{ fontSize: 14, color: colors.destructive }}>⚠️</Text>
-            <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+            <Text style={[styles.errorText, { color: colors.destructive }]}>{displayError}</Text>
           </View>
         ) : null}
 
         <View style={styles.form}>
+          <TouchableOpacity
+            style={[styles.githubBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+            onPress={triggerGitHub}
+            disabled={loading || githubLoading}
+            activeOpacity={0.85}
+          >
+            {githubLoading ? (
+              <ActivityIndicator color={colors.text} />
+            ) : (
+              <>
+                <Text style={styles.githubIcon}>🐙</Text>
+                <Text style={[styles.githubBtnText, { color: colors.text }]}>
+                  Sign up with GitHub
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.dividerRow}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textMuted }]}>or with email</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
+
           <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
             <Text style={{ fontSize: 16, color: colors.textMuted }}>👤</Text>
             <TextInput
@@ -133,7 +166,7 @@ export default function SignupScreen() {
           <TouchableOpacity
             style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
             onPress={handleSignup}
-            disabled={loading}
+            disabled={loading || githubLoading}
             activeOpacity={0.85}
           >
             {loading ? (
@@ -204,6 +237,36 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 12,
+  },
+  githubBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  githubIcon: {
+    fontSize: 20,
+  },
+  githubBtnText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
   },
   inputWrapper: {
     flexDirection: "row",

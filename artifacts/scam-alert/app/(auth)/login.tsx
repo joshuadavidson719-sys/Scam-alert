@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
+import { useGitHubAuth } from "@/hooks/useGitHubAuth";
 
 export default function LoginScreen() {
   const colors = useColors();
@@ -25,6 +26,12 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const {
+    trigger: triggerGitHub,
+    loading: githubLoading,
+    error: githubError,
+  } = useGitHubAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -81,6 +88,8 @@ export default function LoginScreen() {
     }
   };
 
+  const displayError = error || githubError;
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -117,10 +126,10 @@ export default function LoginScreen() {
         <View style={styles.form}>
           <Text style={[styles.welcomeText, { color: colors.text }]}>Welcome back</Text>
 
-          {error ? (
+          {displayError ? (
             <View style={[styles.errorBox, { backgroundColor: colors.destructive + "15", borderColor: colors.destructive + "33" }]}>
               <Text style={{ fontSize: 14, color: colors.destructive }}>⚠️</Text>
-              <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
+              <Text style={[styles.errorText, { color: colors.destructive }]}>{displayError}</Text>
             </View>
           ) : null}
 
@@ -157,13 +166,37 @@ export default function LoginScreen() {
           <TouchableOpacity
             style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
             onPress={handleLogin}
-            disabled={loading}
+            disabled={loading || githubLoading}
             activeOpacity={0.85}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.primaryBtnText}>Sign In</Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.dividerRow}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textMuted }]}>or</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
+
+          <TouchableOpacity
+            style={[styles.githubBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+            onPress={triggerGitHub}
+            disabled={loading || githubLoading}
+            activeOpacity={0.85}
+          >
+            {githubLoading ? (
+              <ActivityIndicator color={colors.text} />
+            ) : (
+              <>
+                <Text style={styles.githubIcon}>🐙</Text>
+                <Text style={[styles.githubBtnText, { color: colors.text }]}>
+                  Continue with GitHub
+                </Text>
+              </>
             )}
           </TouchableOpacity>
 
@@ -279,6 +312,36 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
     fontSize: 16,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+  },
+  githubBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  githubIcon: {
+    fontSize: 20,
+  },
+  githubBtnText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
   },
   linkRow: {
     flexDirection: "row",

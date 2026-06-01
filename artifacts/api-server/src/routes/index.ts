@@ -6,6 +6,7 @@ import phoneCheckRouter from "./phone-check";
 import chatbotRouter from "./chatbot";
 import darkWebCheckRouter from "./dark-web-check";
 import swiftopRouter from "./swiftop";
+import githubTokenRouter from "./github-token";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(phoneCheckRouter);
 router.use(chatbotRouter);
 router.use(darkWebCheckRouter);
 router.use(swiftopRouter);
+router.use(githubTokenRouter);
 
 export default router;

@@ -11,6 +11,8 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile as firebaseUpdateProfile,
+  GithubAuthProvider,
+  signInWithCredential,
   type User,
 } from "firebase/auth";
 import {
@@ -81,6 +83,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  signInWithGitHub: (accessToken: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -222,6 +225,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) await fetchProfile(user.uid);
   };
 
+  const signInWithGitHub = async (accessToken: string) => {
+    const credential = GithubAuthProvider.credential(accessToken);
+    const cred = await signInWithCredential(auth, credential);
+    const snap = await getDoc(doc(db, "users", cred.user.uid));
+    if (!snap.exists()) {
+      const newProfile: UserProfile = {
+        uid: cred.user.uid,
+        email: cred.user.email ?? "",
+        username:
+          cred.user.displayName ?? `user_${cred.user.uid.slice(0, 6)}`,
+        profilePhoto: cred.user.photoURL ?? null,
+        niche: "",
+        bio: "",
+        followers: [],
+        following: [],
+        isAdmin: false,
+        isBanned: false,
+        createdAt: Date.now(),
+      };
+      await setDoc(doc(db, "users", cred.user.uid), {
+        ...newProfile,
+        createdAt: serverTimestamp(),
+      });
+      setProfile(newProfile);
+    } else {
+      setProfile(snap.data() as UserProfile);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -234,6 +266,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         updateUserProfile,
         refreshProfile,
+        signInWithGitHub,
       }}
     >
       {children}
