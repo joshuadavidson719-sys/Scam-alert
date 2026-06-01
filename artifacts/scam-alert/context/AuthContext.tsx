@@ -90,14 +90,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (uid: string) => {
+  const fetchProfile = useCallback(async (uid: string, attempt = 0) => {
     try {
       const snap = await getDoc(doc(db, "users", uid));
       if (snap.exists()) {
         setProfile(snap.data() as UserProfile);
       }
-    } catch {
-      setProfile(null);
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code ?? "";
+      // Retry up to 3 times on permission errors (auth token may not be ready yet)
+      if (code === "permission-denied" && attempt < 3) {
+        setTimeout(() => fetchProfile(uid, attempt + 1), 1500 * (attempt + 1));
+      } else {
+        setProfile(null);
+      }
     }
   }, []);
 
