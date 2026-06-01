@@ -299,6 +299,8 @@ export default function ProfileScreen() {
         .sort((a, b) => (b.createdAt as number) - (a.createdAt as number));
       setPosts(data);
       setLoading(false);
+    }, () => {
+      setLoading(false);
     });
     return unsub;
   }, [user]);
@@ -510,7 +512,13 @@ export default function ProfileScreen() {
     light: "Light",
   };
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   const displayedPosts = activeTab === "posts" ? posts : activeTab === "bookmarks" ? savedPosts : [];
   const displayedLoading = activeTab === "posts" ? loading : activeTab === "bookmarks" ? savedLoading : reelsLoading;
