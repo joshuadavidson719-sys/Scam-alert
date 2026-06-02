@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { useGitHubAuth } from "@/hooks/useGitHubAuth";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 
 const APP_ICON = require("@/assets/images/icon.png");
 
@@ -35,6 +36,12 @@ export default function SignupScreen() {
     loading: githubLoading,
     error: githubError,
   } = useGitHubAuth();
+
+  const {
+    trigger: triggerGoogle,
+    loading: googleLoading,
+    error: googleError,
+  } = useGoogleAuth();
 
   const handleSignup = async () => {
     if (!username.trim() || !email.trim() || !password) {
@@ -64,7 +71,8 @@ export default function SignupScreen() {
     }
   };
 
-  const displayError = error || githubError;
+  const displayError = error || githubError || googleError;
+  const anyLoading = loading || githubLoading || googleLoading;
 
   return (
     <KeyboardAvoidingView
@@ -99,17 +107,35 @@ export default function SignupScreen() {
 
         <View style={styles.form}>
           <TouchableOpacity
-            style={[styles.githubBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+            style={[styles.socialBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+            onPress={triggerGoogle}
+            disabled={anyLoading}
+            activeOpacity={0.85}
+          >
+            {googleLoading ? (
+              <ActivityIndicator color={colors.text} />
+            ) : (
+              <>
+                <Text style={styles.socialIcon}>🔵</Text>
+                <Text style={[styles.socialBtnText, { color: colors.text }]}>
+                  Sign up with Google
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.socialBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
             onPress={triggerGitHub}
-            disabled={loading || githubLoading}
+            disabled={anyLoading}
             activeOpacity={0.85}
           >
             {githubLoading ? (
               <ActivityIndicator color={colors.text} />
             ) : (
               <>
-                <Text style={styles.githubIcon}>🐙</Text>
-                <Text style={[styles.githubBtnText, { color: colors.text }]}>
+                <Text style={styles.socialIcon}>🐙</Text>
+                <Text style={[styles.socialBtnText, { color: colors.text }]}>
                   Sign up with GitHub
                 </Text>
               </>
@@ -238,7 +264,7 @@ const styles = StyleSheet.create({
   form: {
     gap: 12,
   },
-  githubBtn: {
+  socialBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -247,10 +273,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  githubIcon: {
+  socialIcon: {
     fontSize: 20,
   },
-  githubBtnText: {
+  socialBtnText: {
     fontFamily: "Inter_600SemiBold",
     fontSize: 15,
   },
