@@ -71,7 +71,6 @@
     "expo-video-thumbnails": "^10.0.8",
     "firebase": "^12.12.1",
     "openai": "^6.35.0",
-    "react-native-view-shot": "^4.0.3",
-    "react-native-webview": "^13.16.1"
+    "react-native-view-shot": "^4.0.3"
   }
 }
