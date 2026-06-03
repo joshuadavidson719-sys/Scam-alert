@@ -17,6 +17,7 @@ const GAME_HTML = `<!DOCTYPE html>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 body{background:#000;overflow:hidden;width:100vw;height:100vh;font-family:'Courier New',monospace}
 canvas{display:block;position:fixed;top:0;left:0;width:100vw;height:100vh}
+button{-webkit-appearance:none;appearance:none;font:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
 
 .scr{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20}
 .scr.off{display:none}
@@ -35,7 +36,7 @@ canvas{display:block;position:fixed;top:0;left:0;width:100vw;height:100vh}
 #sScrn{background:linear-gradient(180deg,#000,#0a001a);justify-content:flex-start;padding:max(env(safe-area-inset-top),12px) 16px 16px;overflow-y:auto}
 #aScrn{background:linear-gradient(180deg,#000,#0a001a);justify-content:flex-start;padding:max(env(safe-area-inset-top),12px) 16px 16px;overflow-y:auto}
 .nav{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:340px;margin-bottom:12px}
-.nav-back{font-size:13px;color:#888;font-weight:700;cursor:pointer;padding:4px}
+.nav-back{font-size:13px;color:#888;font-weight:700;padding:8px;background:none;border:none;flex-direction:row;gap:0}
 .nav-t{font-size:14px;font-weight:900;color:#fff;letter-spacing:2px}
 .sel-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:#0d0d0d;border:1.5px solid;width:100%;max-width:340px;margin-bottom:10px}
 .sel-e{font-size:50px;flex-shrink:0}
@@ -128,7 +129,7 @@ canvas{display:block;position:fixed;top:0;left:0;width:100vw;height:100vh}
 <!-- CHARACTER SELECT -->
 <div class="scr off" id="sScrn">
   <div class="nav">
-    <span class="nav-back" onclick="showMenu()">← Back</span>
+    <button type="button" class="nav-back" onclick="showMenu()">← Back</button>
     <span class="nav-t">SELECT FIGHTER</span>
     <span style="width:44px"></span>
   </div>
@@ -140,7 +141,7 @@ canvas{display:block;position:fixed;top:0;left:0;width:100vw;height:100vh}
 <!-- ARENA SELECT -->
 <div class="scr off" id="aScrn">
   <div class="nav">
-    <span class="nav-back" onclick="showSelect()">← Back</span>
+    <button type="button" class="nav-back" onclick="showSelect()">← Back</button>
     <span class="nav-t">SELECT ARENA</span>
     <span style="width:44px"></span>
   </div>
@@ -202,32 +203,32 @@ canvas{display:block;position:fixed;top:0;left:0;width:100vw;height:100vh}
 <!-- CONTROLS -->
 <div id="ctrl">
   <div class="c-row">
-    <div class="mb" style="border-color:#6C63FF" ontouchstart="doAttack('light')" onclick="doAttack('light')">
+    <button type="button" class="mb" style="border-color:#6C63FF" id="btnLight">
       <span class="mb-e">👊</span><span class="mb-l">LIGHT</span>
-    </div>
-    <div class="mb" style="border-color:#FF6B00" ontouchstart="doAttack('heavy')" onclick="doAttack('heavy')">
+    </button>
+    <button type="button" class="mb" style="border-color:#FF6B00" id="btnHeavy">
       <span class="mb-e">🤜</span><span class="mb-l">HEAVY</span>
-    </div>
-    <div class="mb" style="border-color:#FF3B3B" ontouchstart="doAttack('kick')" onclick="doAttack('kick')">
+    </button>
+    <button type="button" class="mb" style="border-color:#FF3B3B" id="btnKick">
       <span class="mb-e">🦵</span><span class="mb-l">KICK</span>
-    </div>
-    <div class="mb" style="border-color:#00C3FF" ontouchstart="doAttack('grab')" onclick="doAttack('grab')">
+    </button>
+    <button type="button" class="mb" style="border-color:#00C3FF" id="btnGrab">
       <span class="mb-e">✊</span><span class="mb-l">GRAB</span>
-    </div>
+    </button>
   </div>
   <div class="c-row">
-    <div class="mb" style="border-color:#00FF77" ontouchstart="doBlock()" onclick="doBlock()">
+    <button type="button" class="mb" style="border-color:#00FF77" id="btnBlock">
       <span class="mb-e">🛡️</span><span class="mb-l">BLOCK</span>
-    </div>
-    <div class="mb" style="border-color:#FFD700" ontouchstart="doDodge()" onclick="doDodge()">
+    </button>
+    <button type="button" class="mb" style="border-color:#FFD700" id="btnDodge">
       <span class="mb-e">💨</span><span class="mb-l">DODGE</span>
-    </div>
-    <div class="mb" style="border-color:#CC00AA" ontouchstart="doCounter()" onclick="doCounter()">
+    </button>
+    <button type="button" class="mb" style="border-color:#CC00AA" id="btnCounter">
       <span class="mb-e">⚡</span><span class="mb-l">COUNTER</span>
-    </div>
-    <div class="mb ult-btn dim" id="ultBtn" ontouchstart="doUltimate()" onclick="doUltimate()">
+    </button>
+    <button type="button" class="mb ult-btn dim" id="ultBtn">
       <span class="mb-e" id="ultE">💥</span><span class="mb-l">ULTIMATE</span>
-    </div>
+    </button>
   </div>
 </div>
 
@@ -899,10 +900,10 @@ function renderSelCard(){
 function renderFGrid(){
   const g=document.getElementById('fGrid');
   g.innerHTML=FIGHTERS.map(f=>
-    '<div class="f-card'+(f.id===pF.id?' on':'')+'" onclick="selFighter(\''+f.id+'\')" style="'+(f.id===pF.id?'border-color:'+f.hex:'')+'">'+
+    '<button type="button" class="f-card'+(f.id===pF.id?' on':'')+'" onclick="selFighter(\''+f.id+'\')" style="'+(f.id===pF.id?'border-color:'+f.hex:'')+'">'+
       '<span class="f-card-e">'+f.emoji+'</span>'+
       '<span class="f-card-n" style="color:'+(f.id===pF.id?f.hex:'#888')+'">'+f.name.toUpperCase()+'</span>'+
-    '</div>'
+    '</button>'
   ).join('');
 }
 
@@ -914,14 +915,14 @@ function selFighter(id){
 
 function renderArenas(){
   document.getElementById('aList').innerHTML=ARENAS.map((a,i)=>
-    '<div class="a-card'+(a.name===curArena.name?' on':'')+'" style="'+(a.name===curArena.name?'border-color:#'+a.floor.toString(16).padStart(6,'0'):'')+'" onclick="selArena('+i+')">'+
+    '<button type="button" class="a-card'+(a.name===curArena.name?' on':'')+'" style="width:100%;'+(a.name===curArena.name?'border-color:#'+a.floor.toString(16).padStart(6,'0'):'')+'" onclick="selArena('+i+')">'+
       '<span class="a-e">'+a.emoji+'</span>'+
       '<div>'+
         '<div class="a-n" style="color:#'+a.floor.toString(16).padStart(6,'0')+'">'+a.name+'</div>'+
         '<div class="a-b" style="background:#'+a.floor.toString(16).padStart(6,'0')+'"></div>'+
       '</div>'+
       (a.name===curArena.name?'<span class="a-sel" style="color:#'+a.floor.toString(16).padStart(6,'0')+'">✓ SELECTED</span>':'')+
-    '</div>'
+    '</button>'
   ).join('');
 }
 
@@ -961,6 +962,28 @@ loop();
 buildArena(ARENAS[0]);
 buildFighters();
 showMenu();
+
+// ─── TOUCH SETUP ─────────────────────────────────────────────────────────
+// Bind touchstart (passive:false) so buttons fire instantly on iOS/Android WebView
+function bindTouch(id, fn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    fn();
+  }, { passive: false });
+}
+function setupCtrlTouches() {
+  bindTouch('btnLight',   () => doAttack('light'));
+  bindTouch('btnHeavy',   () => doAttack('heavy'));
+  bindTouch('btnKick',    () => doAttack('kick'));
+  bindTouch('btnGrab',    () => doAttack('grab'));
+  bindTouch('btnBlock',   () => doBlock());
+  bindTouch('btnDodge',   () => doDodge());
+  bindTouch('btnCounter', () => doCounter());
+  bindTouch('ultBtn',     () => doUltimate());
+}
+setupCtrlTouches();
 </script>
 </body>
 </html>`;
