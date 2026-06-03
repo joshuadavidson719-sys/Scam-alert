@@ -176,9 +176,7 @@ export function SmartBanner() {
         <View style={styles.content}>
           {/* Urgency label chip */}
           <View style={[styles.urgencyChip, { backgroundColor: config.iconColor }]}>
-            <Text style={styles.urgencyLabel}>
-              {config.urgency === "greeting" ? "👋  WELCOME" : "⚠️  SCAM TIP"}
-            </Text>
+            <Text style={styles.urgencyLabel}>🚨  BE AWARE OF SCAMMERS EVERY DAY</Text>
           </View>
 
           <Text style={[styles.title, { color: colors.text }]}>
