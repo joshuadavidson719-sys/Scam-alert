@@ -1,0 +1,143 @@
+Replit AI Game Prompt — “Invisible War”
+
+Create a high-quality 3D fighting game called “Invisible War” inspired by the fast-paced combat style of Street Fighter 6 and the cinematic dark energy of Mortal Kombat 1.
+
+GAME STYLE
+Genre: 3D Fighting / Action Combat
+Camera Style:
+Side-view fighting camera during battles
+Cinematic zoom-ins during special attacks
+Smooth camera shake on heavy hits
+Graphics:
+Unreal Engine-style realistic graphics
+Dark neon cyberpunk atmosphere mixed with supernatural energy
+Realistic lighting, shadows, fog, sparks, and destruction
+Detailed character models and clothing physics
+GAME STORY
+
+The world is secretly controlled by invisible supernatural warriors called “Shades.”
+These fighters can manipulate invisibility energy, teleportation, dark matter, and illusion powers.
+
+An underground global tournament called Invisible War determines who controls humanity from the shadows.
+
+The main character discovers he can see invisible fighters and enters the tournament to stop a coming war between dimensions.
+
+MAIN FEATURES
+Fighting System
+Smooth combo fighting system
+Light attack
+Heavy attack
+Block system
+Counter attacks
+Air combos
+Grab attacks
+Dodge roll
+Power meter system
+Ultimate finishing moves
+Slow-motion final hits
+Special Abilities
+
+Each fighter has unique powers:
+
+Temporary invisibility
+Teleport attacks
+Energy blasts
+Shadow clones
+Time-slow effects
+Electric punches
+Fire and smoke effects
+CHARACTERS
+
+Create 8 unique fighters with different styles:
+
+Shadow assassin ninja
+Cyber soldier
+Female ghost warrior
+Fire monk
+Electric boxer
+Dark samurai
+Alien gladiator
+Invisible king boss
+
+Each character should have:
+
+Unique animations
+Voice effects
+Fighting stance
+Intro animation
+Victory pose
+Fatality-style finishing move
+MAPS / ARENAS
+
+Create cinematic arenas:
+
+Neon city rooftop
+Underground subway fight club
+Burning temple
+Rainy alleyway
+Abandoned military lab
+Floating dimension arena
+
+Maps should include:
+
+Animated backgrounds
+Dynamic weather
+Moving lights
+Explosions
+Crowd reactions
+GAME MODES
+Story Mode
+Arcade Mode
+Online Multiplayer
+Training Mode
+Tournament Mode
+Survival Mode
+UI DESIGN
+Modern futuristic HUD
+Health bars at top
+Power meter at bottom
+Animated combo counter
+Character portraits
+Dark neon interface colors
+AUDIO
+Heavy cinematic soundtrack
+Deep bass impacts
+Punch hit sounds
+Energy charging sounds
+Crowd cheering
+Voice acting for fighters
+TECH REQUIREMENTS
+Build using React + Three.js or Babylon.js for 3D rendering
+Responsive controls for keyboard and controller
+Smooth 60 FPS gameplay
+Particle effects system
+Character animation system
+Multiplayer-ready architecture
+Mobile-friendly optimization
+EXTRA DETAILS
+Add dramatic slow motion during finishing attacks
+Add realistic cloth physics
+Add glowing aura effects
+Add cinematic transitions between rounds
+Add destructible environment objects
+Add ranked online leaderboard system
+MENU DESIGN
+
+The game opens with:
+
+A cinematic intro scene
+“Invisible War” logo glowing in dark blue neon
+Animated smoke background
+Start Game button
+Multiplayer button
+Settings
+Character Select screen with rotating 3D fighters
+
+The overall feeling should be:
+
+Dark
+Cinematic
+Intense
+Stylish
+Competitive
+High-energy combat similar to classic arcade fighting games but modernized with realistic 3D visuals.
