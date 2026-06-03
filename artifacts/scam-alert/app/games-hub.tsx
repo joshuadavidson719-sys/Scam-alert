@@ -30,6 +30,17 @@ type GameMeta = {
 
 const GAMES: GameMeta[] = [
   {
+    id: "invisiblewar",
+    route: "/invisible-war",
+    emoji: "⚔️",
+    title: "Invisible War",
+    subtitle: "3D Fighting Game",
+    description: "Choose your shadow warrior and battle in the secret underground tournament. 8 fighters, special moves, combos, and an AI opponent that never holds back!",
+    color: "#6C63FF",
+    scoreCollection: "warScores",
+    tags: ["Fighting", "1v1", "Special Moves"],
+  },
+  {
     id: "surfer",
     route: "/scam-game",
     emoji: "🏃‍♂️",

@@ -38,7 +38,68 @@ import { ActivePoll } from "@/components/CommunityPoll";
 import { LiveScamCounter } from "@/components/LiveScamCounter";
 import { ScamRadar } from "@/components/ScamRadar";
 import { DailyBriefingModal } from "@/components/DailyBriefingModal";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+
+// ── Invisible War Featured Banner ─────────────────────────────────────────────
+function InvisibleWarBanner() {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.88}
+      onPress={() => router.push("/invisible-war" as never)}
+      style={iwb.wrap}
+    >
+      <LinearGradient
+        colors={["#0D0020", "#1a0035", "#0D0020"]}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={iwb.card}
+      >
+        {/* Glow accents */}
+        <View style={iwb.glowLeft} />
+        <View style={iwb.glowRight} />
+
+        {/* Left — fighter emojis */}
+        <View style={iwb.fighters}>
+          <Text style={iwb.fighterEmoji}>🥷</Text>
+          <Text style={iwb.vsText}>VS</Text>
+          <Text style={iwb.fighterEmoji}>👑</Text>
+        </View>
+
+        {/* Right — text */}
+        <View style={iwb.info}>
+          <View style={iwb.badgeRow}>
+            <View style={iwb.newBadge}><Text style={iwb.newTxt}>NEW</Text></View>
+            <Text style={iwb.genre}>Fighting Game</Text>
+          </View>
+          <Text style={iwb.title}>INVISIBLE WAR</Text>
+          <Text style={iwb.subtitle}>8 fighters · Special moves · AI battles</Text>
+          <View style={iwb.playBtn}>
+            <Text style={iwb.playTxt}>⚔️  PLAY NOW</Text>
+          </View>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
+
+const iwb = StyleSheet.create({
+  wrap:         { paddingHorizontal: 16, marginTop: 12 },
+  card:         { borderRadius: 20, padding: 16, flexDirection: "row", alignItems: "center", gap: 14, overflow: "hidden", borderWidth: 1, borderColor: "#6C63FF44" },
+  glowLeft:     { position: "absolute", left: -20, top: -20, width: 100, height: 100, borderRadius: 50, backgroundColor: "#6C63FF", opacity: 0.12 },
+  glowRight:    { position: "absolute", right: -20, bottom: -20, width: 80, height: 80, borderRadius: 40, backgroundColor: "#FF00CC", opacity: 0.12 },
+  fighters:     { alignItems: "center", gap: 4 },
+  fighterEmoji: { fontSize: 34 },
+  vsText:       { fontFamily: "Inter_700Bold", fontSize: 10, color: "#555", letterSpacing: 1 },
+  info:         { flex: 1, gap: 5 },
+  badgeRow:     { flexDirection: "row", alignItems: "center", gap: 8 },
+  newBadge:     { backgroundColor: "#FF00CC", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  newTxt:       { fontFamily: "Inter_700Bold", fontSize: 9, color: "#fff", letterSpacing: 1 },
+  genre:        { fontFamily: "Inter_500Medium", fontSize: 10, color: "#888" },
+  title:        { fontFamily: "Inter_700Bold", fontSize: 22, color: "#fff", letterSpacing: 1, textShadowColor: "#6C63FF", textShadowRadius: 10 },
+  subtitle:     { fontFamily: "Inter_400Regular", fontSize: 11, color: "#888" },
+  playBtn:      { backgroundColor: "#6C63FF", paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10, alignSelf: "flex-start", marginTop: 2 },
+  playTxt:      { fontFamily: "Inter_700Bold", fontSize: 12, color: "#fff", letterSpacing: 0.5 },
+});
 
 // ── Video Feed Strip ──────────────────────────────────────────────────────────
 type ReelPreview = {
@@ -319,6 +380,7 @@ export default function HomeScreen() {
             <>
               {activeCategory === "all" && (
                 <>
+                  <InvisibleWarBanner />
                   <VideoFeedStrip />
                   <ScamOfTheDay />
                   <LiveScamCounter />
