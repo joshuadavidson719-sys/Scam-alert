@@ -169,10 +169,8 @@ export function SmartBanner() {
         {/* Urgency stripe on the left edge */}
         <View style={[styles.stripe, { backgroundColor: config.iconColor }]} />
 
-        {/* Shades icon */}
-        <View style={[styles.iconBox, { alignItems: "center", justifyContent: "center", backgroundColor: config.iconColor + "22" }]}>
-          <Text style={{ fontSize: 24 }}>😎</Text>
-        </View>
+        {/* App icon */}
+        <Image source={APP_ICON} style={styles.iconBox} resizeMode="cover" />
 
         {/* Text */}
         <View style={styles.content}>
