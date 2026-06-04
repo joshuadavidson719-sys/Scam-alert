@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import {
   Share,
   Linking,
   Image,
+  Animated,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -43,7 +44,7 @@ import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { router } from "expo-router";
-import { pickAndUploadImage, pickAndUploadBanner } from "@/lib/uploadImage";
+import { pickAndUploadImage } from "@/lib/uploadImage";
 import { useStreak } from "@/hooks/useStreak";
 import { useAchievements, getRarityColor, ALL_ACHIEVEMENTS } from "@/hooks/useAchievements";
 import { AchievementToast } from "@/components/AchievementToast";
@@ -52,6 +53,96 @@ import { UserActivityCalendar } from "@/components/UserActivityCalendar";
 import * as VideoThumbnails from "expo-video-thumbnails";
 
 const APP_ICON = require("@/assets/images/icon.png");
+
+// ── AI Scene Banner ───────────────────────────────────────────────────────────
+const BANNER_SCENES = [
+  { key: "galaxy",  label: "🌌 Galaxy",  grad: ["#0a0020","#2a0060","#0d0035"] as [string,string,string],  parts: ["⭐","✨","🌟","💫","🪐","🌌","🌠","✦"] },
+  { key: "clouds",  label: "☁️ Clouds",  grad: ["#5bc8f5","#a8dcf0","#dff0ff"] as [string,string,string],  parts: ["☁️","🌤","⛅","❄️","🌬","💨","🌈","🌥"] },
+  { key: "nature",  label: "🌿 Nature",  grad: ["#0f2f0f","#1d5c1d","#2d8a2d"] as [string,string,string],  parts: ["🌿","🌱","🍃","🌺","🌸","🦋","🌻","🍀"] },
+  { key: "river",   label: "🌊 River",   grad: ["#0a1f3a","#1a4a76","#0d5c8c"] as [string,string,string],  parts: ["💧","🌊","🐟","🦆","🐠","🌿","🪸","💦"] },
+  { key: "birds",   label: "🐦 Birds",   grad: ["#b34000","#e07000","#f5a800"] as [string,string,string],  parts: ["🐦","🦅","🦜","🕊","🦢","🌅","🦉","🐧"] },
+  { key: "dogs",    label: "🐕 Dogs",    grad: ["#3b1a00","#7a3b10","#b35a20"] as [string,string,string],  parts: ["🐕","🐶","🦮","🐾","🦴","🎾","🐩","❤️"] },
+  { key: "ocean",   label: "🌊 Ocean",   grad: ["#001e3c","#003d7a","#0066b3"] as [string,string,string],  parts: ["🐋","🐬","🐙","🦈","🐚","🌊","🐠","🦑"] },
+  { key: "sunset",  label: "🌅 Sunset",  grad: ["#7b0000","#d44000","#ff8800"] as [string,string,string],  parts: ["🌅","🌄","☀️","🌇","🌆","🔥","🌤","🌸"] },
+];
+
+const PARTICLE_POSITIONS = [6, 18, 29, 40, 51, 62, 73, 84];
+
+function AiSceneBanner({ scene, onCycleScene }: { scene: string; onCycleScene: () => void }) {
+  const { LinearGradient } = require("expo-linear-gradient");
+  const sceneData = BANNER_SCENES.find((s) => s.key === scene) ?? BANNER_SCENES[0];
+
+  const anims = useRef(
+    Array.from({ length: 8 }, () => ({
+      y: new Animated.Value(0),
+      op: new Animated.Value(0),
+    }))
+  ).current;
+
+  useEffect(() => {
+    const loops = anims.map((a, i) => {
+      a.y.setValue(0);
+      a.op.setValue(0);
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 320),
+          Animated.parallel([
+            Animated.timing(a.y, { toValue: 1, duration: 2800 + i * 180, useNativeDriver: true }),
+            Animated.sequence([
+              Animated.timing(a.op, { toValue: 1, duration: 380, useNativeDriver: true }),
+              Animated.delay(1700 + i * 90),
+              Animated.timing(a.op, { toValue: 0, duration: 480, useNativeDriver: true }),
+            ]),
+          ]),
+          Animated.timing(a.y, { toValue: 0, duration: 0, useNativeDriver: true }),
+        ])
+      );
+    });
+    loops.forEach((l) => l.start());
+    return () => loops.forEach((l) => l.stop());
+  }, [scene]);
+
+  return (
+    <TouchableOpacity onPress={onCycleScene} activeOpacity={0.92} style={bannerSt.wrap}>
+      <LinearGradient colors={sceneData.grad} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+      {anims.map((a, i) => {
+        const translateY = a.y.interpolate({ inputRange: [0, 1], outputRange: [130, -24] });
+        return (
+          <Animated.Text
+            key={i}
+            style={[bannerSt.particle, { left: `${PARTICLE_POSITIONS[i]}%` as any, opacity: a.op, transform: [{ translateY }] }]}
+          >
+            {sceneData.parts[i]}
+          </Animated.Text>
+        );
+      })}
+      <View style={bannerSt.labelBadge}>
+        <Text style={bannerSt.labelTxt}>{sceneData.label}</Text>
+      </View>
+      <View style={bannerSt.tapHint}>
+        <Text style={bannerSt.tapTxt}>✨ Tap to change</Text>
+      </View>
+      <View style={bannerSt.dotsRow}>
+        {BANNER_SCENES.map((s) => (
+          <View key={s.key} style={[bannerSt.dot, s.key === scene ? bannerSt.dotActive : bannerSt.dotInactive]} />
+        ))}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const bannerSt = StyleSheet.create({
+  wrap:        { width: "100%", height: 158, overflow: "hidden" },
+  particle:    { position: "absolute", bottom: 0, fontSize: 22 },
+  labelBadge:  { position: "absolute", bottom: 10, left: 12, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  labelTxt:    { fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#fff" },
+  tapHint:     { position: "absolute", bottom: 10, right: 12, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  tapTxt:      { fontFamily: "Inter_500Medium", fontSize: 10, color: "#fff" },
+  dotsRow:     { position: "absolute", top: 10, left: 0, right: 0, flexDirection: "row", justifyContent: "center", gap: 5 },
+  dot:         { height: 6, borderRadius: 3 },
+  dotActive:   { width: 18, backgroundColor: "#fff" },
+  dotInactive: { width: 6, backgroundColor: "rgba(255,255,255,0.4)" },
+});
 
 // ── ReelThumbnail ────────────────────────────────────────────────────────────
 // Web  → native <video preload="metadata"> shows first frame automatically.
@@ -279,9 +370,15 @@ export default function ProfileScreen() {
   const [localLikes, setLocalLikes] = useState<Record<string, string[]>>({});
   const [localDislikes, setLocalDislikes] = useState<Record<string, string[]>>({});
   const [myStoryCount, setMyStoryCount] = useState(0);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
-  const [showBannerSheet, setShowBannerSheet] = useState(false);
+  const [bannerScene, setBannerScene] = useState("galaxy");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  // Sync banner scene from profile
+  useEffect(() => {
+    if (profile && (profile as any).bannerScene) {
+      setBannerScene((profile as any).bannerScene);
+    }
+  }, [profile]);
 
   // My posts
   useEffect(() => {
@@ -363,38 +460,11 @@ export default function ProfileScreen() {
     });
   }, [activeTab, bookmarks]);
 
-  const handlePickBanner = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: ["Cancel", "Choose from Gallery"], cancelButtonIndex: 0 },
-        async (idx) => { if (idx === 1) await doUploadBanner("gallery"); }
-      );
-    } else {
-      setShowBannerSheet(true);
-    }
-  };
-
-  const doUploadBanner = async (source: "camera" | "gallery") => {
-    if (!user) return;
-    setUploadingBanner(true);
-    setShowBannerSheet(false);
-    try {
-      const url = await pickAndUploadBanner(user.uid, source);
-      if (url) await updateUserProfile({ bannerPhoto: url });
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code ?? "";
-      const msg = (err as Error)?.message ?? "";
-      if (code === "storage/unauthorized" || msg.includes("permission")) {
-        Alert.alert(
-          "Storage Permission Error",
-          "Your Firebase Storage rules are blocking uploads. Go to Firebase Console → Storage → Rules and publish the rules that allow authenticated users to write."
-        );
-      } else {
-        Alert.alert("Upload Failed", msg || "Failed to upload banner. Please try again.");
-      }
-    } finally {
-      setUploadingBanner(false);
-    }
+  const handleCycleScene = () => {
+    const idx = BANNER_SCENES.findIndex((s) => s.key === bannerScene);
+    const next = BANNER_SCENES[(idx + 1) % BANNER_SCENES.length].key;
+    setBannerScene(next);
+    if (user) updateUserProfile({ bannerScene: next }).catch(() => {});
   };
 
   const handleLogout = () => {
@@ -540,20 +610,9 @@ export default function ProfileScreen() {
         ListHeaderComponent={
           <View>
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              {/* ── Profile Banner ───────────────────────────────── */}
-              <View style={styles.bannerWrap}>
-                <TouchableOpacity
-                  onPress={handlePickBanner}
-                  activeOpacity={0.88}
-                  disabled={uploadingBanner}
-                  style={styles.bannerTouchable}
-                >
-                  {profile.bannerPhoto ? (
-                    <Image source={{ uri: profile.bannerPhoto }} style={styles.bannerImg} resizeMode="cover" />
-                  ) : (
-                    <View style={[styles.bannerFallback, { backgroundColor: "#160000" }]} />
-                  )}
-                </TouchableOpacity>
+              {/* ── AI Scene Banner ──────────────────────────────── */}
+              <View style={{ position: "relative" }}>
+                <AiSceneBanner scene={bannerScene} onCycleScene={handleCycleScene} />
                 {/* Action buttons overlaid on banner */}
                 <View style={[styles.headerActions, { paddingTop: topPad + 6 }]}>
                   {profile.isAdmin && (
@@ -579,13 +638,6 @@ export default function ProfileScreen() {
                     <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
                     <Text style={[styles.iconBtnLabel, { color: "#fca5a5" }]}>Log Out</Text>
                   </TouchableOpacity>
-                </View>
-                {/* Change banner hint */}
-                <View style={styles.bannerEditHint}>
-                  {uploadingBanner
-                    ? <ActivityIndicator size="small" color="#fff" />
-                    : <Text style={styles.bannerEditTxt}>📷 Change Banner</Text>
-                  }
                 </View>
               </View>
 
@@ -1154,22 +1206,6 @@ export default function ProfileScreen() {
         />
       )}
 
-      {/* Banner source picker (Android / Web) */}
-      <Modal visible={showBannerSheet} transparent animationType="fade" onRequestClose={() => setShowBannerSheet(false)}>
-        <Pressable style={styles.sheetBackdrop} onPress={() => setShowBannerSheet(false)}>
-          <View style={[styles.sheet, { backgroundColor: colors.card }]}>
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>Change Cover Photo</Text>
-            <TouchableOpacity style={styles.sheetOption} onPress={() => doUploadBanner("gallery")}>
-              <Text style={{ fontSize: 20 }}>🖼️</Text>
-              <Text style={[styles.sheetOptionText, { color: colors.text }]}>Choose from Gallery</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.sheetCancel, { backgroundColor: colors.muted }]} onPress={() => setShowBannerSheet(false)}>
-              <Text style={[styles.sheetCancelText, { color: colors.textSecondary }]}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
-
       {/* Android / Web photo source picker */}
       <Modal visible={showPhotoSheet} transparent animationType="fade" onRequestClose={() => setShowPhotoSheet(false)}>
         <Pressable style={styles.sheetBackdrop} onPress={() => setShowPhotoSheet(false)}>
@@ -1208,27 +1244,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingBottom: 16, borderBottomWidth: 1 },
-  bannerWrap: {
-    width: "100%",
-    height: 150,
-    position: "relative",
-    overflow: "hidden",
-  },
-  bannerTouchable: { width: "100%", height: 150 },
-  bannerImg: { width: "100%", height: 150 },
-  bannerFallback: { width: "100%", height: 150 },
-  bannerEditHint: {
-    position: "absolute",
-    bottom: 8,
-    right: 8,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  bannerEditTxt: { fontFamily: "Inter_500Medium", fontSize: 10, color: "#fff" },
   headerActions: {
     position: "absolute",
     top: 0,
