@@ -51,7 +51,6 @@ import { AchievementToast } from "@/components/AchievementToast";
 import { CustomThemePicker } from "@/components/CustomThemePicker";
 import { UserActivityCalendar } from "@/components/UserActivityCalendar";
 import * as VideoThumbnails from "expo-video-thumbnails";
-import { Feather } from "@expo/vector-icons";
 
 const APP_ICON = require("@/assets/images/icon.png");
 
@@ -314,11 +313,11 @@ function SocialShareModal({
         <View style={[SSM.divider, { backgroundColor: colors.border }]} />
         <View style={SSM.bottomRow}>
           <TouchableOpacity style={[SSM.bottomBtn, { backgroundColor: colors.muted }]} onPress={handleCopyLink}>
-            <Feather name="link" size={16} color={colors.text} />
+            <Image source={APP_ICON} style={SSM.btnIcon} resizeMode="cover" />
             <Text style={[SSM.bottomBtnTxt, { color: colors.text }]}>Copy Link</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[SSM.bottomBtn, { backgroundColor: "#FF3B3B" }]} onPress={handleNativeShare}>
-            <Feather name="share-2" size={16} color="#fff" />
+            <Image source={APP_ICON} style={SSM.btnIcon} resizeMode="cover" />
             <Text style={[SSM.bottomBtnTxt, { color: "#fff" }]}>Share via…</Text>
           </TouchableOpacity>
         </View>
@@ -621,7 +620,7 @@ export default function ProfileScreen() {
                       onPress={() => router.push("/admin" as never)}
                       style={[styles.iconBtn, { backgroundColor: colors.primary + "30", borderColor: colors.primary + "60" }]}
                     >
-                      <Feather name="shield" size={14} color="#fff" />
+                      <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
                       <Text style={[styles.iconBtnLabel, { color: "#fff" }]}>Admin</Text>
                     </TouchableOpacity>
                   )}
@@ -629,14 +628,14 @@ export default function ProfileScreen() {
                     onPress={() => router.push("/legal/privacy" as never)}
                     style={[styles.iconBtn, { backgroundColor: "rgba(0,0,0,0.45)", borderColor: "rgba(255,255,255,0.18)" }]}
                   >
-                    <Feather name="lock" size={14} color="#fff" />
+                    <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
                     <Text style={[styles.iconBtnLabel, { color: "#fff" }]}>Privacy</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={handleLogout}
                     style={[styles.iconBtn, { backgroundColor: "rgba(239,68,68,0.3)", borderColor: "rgba(239,68,68,0.5)" }]}
                   >
-                    <Feather name="log-out" size={14} color="#fca5a5" />
+                    <Image source={APP_ICON} style={styles.iconBtnImg} resizeMode="cover" />
                     <Text style={[styles.iconBtnLabel, { color: "#fca5a5" }]}>Log Out</Text>
                   </TouchableOpacity>
                 </View>
@@ -660,7 +659,7 @@ export default function ProfileScreen() {
                       {uploadingPhoto ? (
                         <ActivityIndicator size="small" color="#fff" />
                       ) : (
-                        <Feather name="camera" size={12} color="#fff" />
+                        <Image source={APP_ICON} style={{ width: 16, height: 16, borderRadius: 4 }} resizeMode="cover" />
                       )}
                     </View>
                   </TouchableOpacity>
@@ -832,7 +831,7 @@ export default function ProfileScreen() {
                     Share scam warnings as short videos
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -859,7 +858,7 @@ export default function ProfileScreen() {
                     Facebook, TikTok, Instagram, Reddit & more
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -873,7 +872,7 @@ export default function ProfileScreen() {
                     See what people you follow are posting
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -887,7 +886,7 @@ export default function ProfileScreen() {
                     4 games — run, tap, swipe & race to beat friends
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -901,7 +900,7 @@ export default function ProfileScreen() {
                     AI image & animation generator
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -915,7 +914,7 @@ export default function ProfileScreen() {
                     Multi-track mixer · EQ · Effects · Export
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -929,32 +928,32 @@ export default function ProfileScreen() {
                     Design posts, graphics & alerts
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
                 onPress={() => router.push("/edit-profile" as never)}
               >
-                <Feather name="user" size={18} color={colors.textSecondary} />
+                <Image source={APP_ICON} style={styles.quickLinkIcon} resizeMode="cover" />
                 <Text style={[styles.quickLinkText, { color: colors.text }]}>Edit Profile</Text>
-                <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
                 onPress={() => router.push("/settings" as never)}
               >
-                <Feather name="settings" size={18} color={colors.textSecondary} />
+                <Image source={APP_ICON} style={styles.quickLinkIcon} resizeMode="cover" />
                 <Text style={[styles.quickLinkText, { color: colors.text }]}>Settings</Text>
-                <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.quickLinkChevron} resizeMode="cover" />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]}
                 onPress={() => setShowThemePicker(true)}
               >
-                <Feather name="layers" size={18} color={colors.textSecondary} />
+                <Image source={APP_ICON} style={styles.quickLinkIcon} resizeMode="cover" />
                 <Text style={[styles.quickLinkText, { color: colors.text }]}>Theme</Text>
                 <View style={[styles.themePill, { backgroundColor: colors.primary + "20" }]}>
                   <Text style={[styles.themePillText, { color: colors.primary }]}>
@@ -986,7 +985,7 @@ export default function ProfileScreen() {
                   style={[styles.toolCard, { backgroundColor: item.color + "15", borderColor: item.color + "30" }]}
                   onPress={() => router.push(item.route as never)}
                 >
-                  <Feather name={item.icon as any} size={18} color={item.color} />
+                  <Image source={APP_ICON} style={styles.toolIcon} resizeMode="cover" />
                   <Text style={[styles.toolLabel, { color: colors.text }]}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -1004,7 +1003,11 @@ export default function ProfileScreen() {
                   style={[styles.tabBtn, activeTab === tab.key && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
                   onPress={() => setActiveTab(tab.key)}
                 >
-                  <Feather name={tab.icon as any} size={16} color={activeTab === tab.key ? colors.primary : colors.textMuted} />
+                  <Image
+                    source={APP_ICON}
+                    style={[styles.tabIcon, { opacity: activeTab === tab.key ? 1 : 0.4 }]}
+                    resizeMode="cover"
+                  />
                   <Text style={[styles.tabLabel, { color: activeTab === tab.key ? colors.primary : colors.textMuted }]}>
                     {tab.label}
                   </Text>
@@ -1026,7 +1029,7 @@ export default function ProfileScreen() {
                   <Text style={[styles.reelsCtaTxt, { color: colors.text }]}>
                     {reels.length === 0 ? "Post your first reel" : "Post another reel"}
                   </Text>
-                  <Feather name="chevron-right" size={16} color="#EC4899" />
+                  <Image source={APP_ICON} style={styles.reelCtaIcon} resizeMode="cover" />
                   <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: "#EC4899" }}>Post Reel</Text>
                 </TouchableOpacity>
 
@@ -1056,7 +1059,7 @@ export default function ProfileScreen() {
                           >
                             <ReelThumbnail videoUrl={reel.videoUrl} style={StyleSheet.absoluteFill} />
                             <View style={styles.reelPlayOverlay}>
-                              <Feather name="play" size={14} color="#fff" />
+                              <Image source={APP_ICON} style={styles.reelPlayIcon} resizeMode="cover" />
                               <Text style={styles.reelPlayLabel}>Play</Text>
                             </View>
                             {reel.caption ? (
@@ -1065,7 +1068,7 @@ export default function ProfileScreen() {
                               </View>
                             ) : null}
                             <View style={[styles.reelStats, { backgroundColor: "rgba(0,0,0,0.55)" }]}>
-                              <Feather name="eye" size={12} color="rgba(255,255,255,0.85)" />
+                              <Image source={APP_ICON} style={styles.reelStatIcon} resizeMode="cover" />
                               <Text style={styles.reelStatTxt}>{reel.views.toLocaleString()} views</Text>
                             </View>
                           </TouchableOpacity>
@@ -1078,7 +1081,7 @@ export default function ProfileScreen() {
                               onPress={() => handleReelLike(reel)}
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Feather name="heart" size={16} color={liked ? "#FF3B3B" : colors.textMuted} />
+                              <Image source={APP_ICON} style={styles.reelActionIcon} resizeMode="cover" />
                               <Text style={[styles.reelActionCount, { color: liked ? "#FF3B3B" : colors.textMuted }]}>Like</Text>
                               <Text style={[styles.reelActionCount, { color: liked ? "#FF3B3B" : colors.textMuted }]}>{likes.length}</Text>
                             </TouchableOpacity>
@@ -1089,7 +1092,7 @@ export default function ProfileScreen() {
                               onPress={() => handleReelDislike(reel)}
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Feather name="thumbs-down" size={16} color={disliked ? "#F59E0B" : colors.textMuted} />
+                              <Image source={APP_ICON} style={styles.reelActionIcon} resizeMode="cover" />
                               <Text style={[styles.reelActionCount, { color: disliked ? "#F59E0B" : colors.textMuted }]}>Dislike</Text>
                               <Text style={[styles.reelActionCount, { color: disliked ? "#F59E0B" : colors.textMuted }]}>{dislikes.length}</Text>
                             </TouchableOpacity>
@@ -1100,7 +1103,7 @@ export default function ProfileScreen() {
                               onPress={() => handleReelRemix(reel)}
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Feather name="refresh-cw" size={16} color="#EC4899" />
+                              <Image source={APP_ICON} style={styles.reelActionIcon} resizeMode="cover" />
                               <Text style={[styles.reelActionCount, { color: "#EC4899" }]}>Remix</Text>
                             </TouchableOpacity>
 
@@ -1110,7 +1113,7 @@ export default function ProfileScreen() {
                               onPress={() => handleReelSave(reel)}
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Feather name="bookmark" size={16} color={saved ? colors.primary : colors.textMuted} />
+                              <Image source={APP_ICON} style={styles.reelActionIcon} resizeMode="cover" />
                               <Text style={[styles.reelActionCount, { color: saved ? colors.primary : colors.textMuted }]}>{saved ? "Saved" : "Save"}</Text>
                             </TouchableOpacity>
 
@@ -1146,7 +1149,7 @@ export default function ProfileScreen() {
                               }
                               hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                             >
-                              <Feather name="flag" size={16} color="#EF4444" />
+                              <Image source={APP_ICON} style={styles.reelActionIcon} resizeMode="cover" />
                               <Text style={[styles.reelActionCount, { color: "#EF4444" }]}>Report</Text>
                             </TouchableOpacity>
                           </View>

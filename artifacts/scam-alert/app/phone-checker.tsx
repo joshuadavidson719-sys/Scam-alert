@@ -7,14 +7,14 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface PhoneResult {
   isSuspicious: boolean;
@@ -74,7 +74,7 @@ export default function PhoneCheckerScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Feather name="arrow-left" size={20} color={colors.text} />
+          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
           <Text style={[{ fontFamily: "Inter_600SemiBold", fontSize: 13 }, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Phone Checker</Text>
@@ -125,7 +125,7 @@ export default function PhoneCheckerScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Feather name="search" size={18} color="#fff" />
+              <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
               <Text style={styles.checkBtnText}>Analyze Number</Text>
             </>
           )}

@@ -30,7 +30,7 @@ import { useColors } from "@/hooks/useColors";
 import { UserAvatar } from "@/components/UserAvatar";
 import { formatTimeAgo } from "@/lib/utils";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface GroupMessage {
   id: string;
@@ -130,7 +130,7 @@ export default function GroupChatScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={[styles.groupIcon, { backgroundColor: colors.primary + "20" }]}>

@@ -8,7 +8,7 @@ import {
   Linking,
   ActivityIndicator,
   ScrollView,
-
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -16,7 +16,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface LinkResult {
   isSuspicious: boolean;
@@ -94,7 +94,7 @@ export default function QRScannerScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Feather name="arrow-left" size={22} color={colors.text} />
+            <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
           </TouchableOpacity>
           <Text style={[styles.navTitle, { color: colors.text }]}>QR Scanner</Text>
           <View style={{ width: 24 }} />
@@ -122,7 +122,7 @@ export default function QRScannerScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>QR Scanner</Text>
         <View style={{ width: 24 }} />

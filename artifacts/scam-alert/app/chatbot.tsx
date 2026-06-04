@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -17,7 +17,7 @@ import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface Message {
   id: string;
@@ -100,12 +100,12 @@ export default function ChatbotScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Feather name="arrow-left" size={20} color={colors.text} />
+          <Image source={APP_ICON} style={styles.backIcon} resizeMode="cover" />
           <Text style={[styles.backLabel, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={[styles.botIcon, { backgroundColor: colors.primary + "20" }]}>
-            <Feather name="shield" size={20} color={colors.primary} />
+            <Image source={APP_ICON} style={styles.botIconImg} resizeMode="cover" />
           </View>
           <View>
             <Text style={[styles.botName, { color: colors.text }]}>ScamBot</Text>
@@ -142,7 +142,7 @@ export default function ChatbotScreen() {
           <View style={[styles.msgRow, item.role === "user" ? styles.userRow : styles.assistantRow]}>
             {item.role === "assistant" && (
               <View style={[styles.botAvatar, { backgroundColor: colors.primary }]}>
-                <Feather name="shield" size={16} color="#fff" />
+                <Image source={APP_ICON} style={styles.botAvatarImg} resizeMode="cover" />
               </View>
             )}
             <View
@@ -194,7 +194,7 @@ export default function ChatbotScreen() {
           onPress={() => send(input)}
           disabled={!input.trim() || loading}
         >
-          <Feather name="send" size={18} color="#fff" />
+          <Image source={APP_ICON} style={styles.sendIcon} resizeMode="cover" />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

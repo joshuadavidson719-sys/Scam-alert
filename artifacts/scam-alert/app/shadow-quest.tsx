@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Animated,
+  ScrollView, Animated, Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -14,7 +14,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { playSound, startMusic, stopMusic } from "@/lib/soundEngine";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const MONSTERS = [
@@ -324,7 +324,7 @@ export default function ShadowQuest() {
     return (
       <View style={[Q.screen, { paddingTop: insets.top }]}>
         <TouchableOpacity onPress={() => router.back()} style={Q.back}>
-          <Feather name="arrow-left" size={22} color="#fff" />
+          <Image source={APP_ICON} style={Q.backIcon} resizeMode="cover" />
         </TouchableOpacity>
         <View style={Q.menuCenter}>
           <Text style={{ fontSize: 72 }}>🧙</Text>

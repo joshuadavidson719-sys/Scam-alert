@@ -36,7 +36,7 @@ import { ReportModal } from "@/components/ReportModal";
 import { UserActivityCalendar } from "@/components/UserActivityCalendar";
 import { generateId } from "@/lib/utils";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 const SCREEN_W = Dimensions.get("window").width;
 const REEL_COL = 3;
 const REEL_W = (SCREEN_W - 32 - 8) / REEL_COL;
@@ -184,7 +184,7 @@ export default function UserProfileScreen() {
           <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: "transparent" }]}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
               <View style={styles.backBtnBg}>
-                <Feather name="arrow-left" size={18} color="#fff" />
+                <Image source={APP_ICON} style={styles.backIcon} resizeMode="cover" />
                 <Text style={[styles.backTxt, { color: "#fff" }]}>Back</Text>
               </View>
             </TouchableOpacity>
@@ -244,7 +244,7 @@ export default function UserProfileScreen() {
                 style={[styles.msgBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                 onPress={handleMessage}
               >
-                <Feather name="message-square" size={16} color={colors.text} />
+                <Image source={APP_ICON} style={{ width: 16, height: 16, borderRadius: 4 }} resizeMode="cover" />
                 <Text style={[styles.msgBtnText, { color: colors.text }]}>Message</Text>
               </TouchableOpacity>
             </View>
@@ -262,7 +262,11 @@ export default function UserProfileScreen() {
               style={[styles.tabBtn, activeTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
               onPress={() => setActiveTab(tab)}
             >
-              <Feather name={tab === "posts" ? "file-text" : "video"} size={16} color={activeTab === tab ? colors.primary : colors.textMuted} />
+              <Image
+                source={APP_ICON}
+                style={[styles.tabIcon, { opacity: activeTab === tab ? 1 : 0.35 }]}
+                resizeMode="cover"
+              />
               <Text style={[styles.tabLabel, { color: activeTab === tab ? colors.primary : colors.textMuted }]}>
                 {tab === "posts" ? `Posts (${posts.length})` : `Reels (${reels.length})`}
               </Text>
@@ -275,7 +279,7 @@ export default function UserProfileScreen() {
           <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
             {posts.length === 0 ? (
               <View style={styles.emptyBox}>
-                <Feather name="inbox" size={44} color={colors.textMuted} style={{ opacity: 0.4 }} />
+                <Image source={APP_ICON} style={{ width: 48, height: 48, borderRadius: 14, opacity: 0.3 }} resizeMode="cover" />
                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No posts yet</Text>
               </View>
             ) : (
@@ -314,13 +318,13 @@ export default function UserProfileScreen() {
                     {/* Play button */}
                     <View style={styles.reelPlay}>
                       <View style={styles.reelPlayCircle}>
-                        <Feather name="play" size={16} color="#fff" />
+                        <Image source={APP_ICON} style={styles.reelPlayIcon} resizeMode="cover" />
                       </View>
                     </View>
 
                     {/* Stats bar */}
                     <View style={styles.reelStatBar}>
-                      <Feather name="eye" size={11} color="rgba(255,255,255,0.8)" />
+                      <Image source={APP_ICON} style={styles.reelStatIcon} resizeMode="cover" />
                       <Text style={styles.reelStatTxt}>{reel.views?.toLocaleString() ?? 0}</Text>
                       <Text style={styles.reelStatDot}>·</Text>
                       <Text style={styles.reelStatTxt}>❤️ {reel.likes?.length ?? 0}</Text>

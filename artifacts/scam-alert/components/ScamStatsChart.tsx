@@ -6,9 +6,8 @@ import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { CATEGORIES } from "@/context/AuthContext";
 import type { CategoryId } from "@/context/AuthContext";
-import { Feather } from "@expo/vector-icons";
 
-
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface CategoryCount {
   id: CategoryId;
@@ -87,7 +86,7 @@ export function ScamStatsChart() {
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.titleRow}>
         <View style={[styles.titleIcon, { backgroundColor: colors.primary + "20" }]}>
-          <Feather name="trending-up" size={18} color={colors.primary} />
+          <Image source={APP_ICON} style={styles.titleIconImg} resizeMode="cover" />
         </View>
         <View>
           <Text style={[styles.title, { color: colors.text }]}>Trending Topics</Text>
@@ -103,7 +102,7 @@ export function ScamStatsChart() {
           return (
             <View key={item.id} style={styles.barRow}>
               <View style={styles.barLabel}>
-                <Feather name="tag" size={12} color={colors.textMuted} />
+                <Image source={APP_ICON} style={styles.barIcon} resizeMode="cover" />
                 <Text style={[styles.catLabel, { color: colors.textSecondary }]} numberOfLines={1}>
                   {item.label}
                 </Text>

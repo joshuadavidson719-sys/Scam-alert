@@ -37,7 +37,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { formatTimeAgo } from "@/lib/utils";
 import { VoiceNoteRecorder, VoiceNotePlayer } from "@/components/VoiceNote";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 
 interface Message {
   id: string;
@@ -179,7 +179,7 @@ export default function ChatScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Feather name="arrow-left" size={20} color={colors.text} />
+          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} resizeMode="cover" />
           <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 13, color: colors.text }}>Back</Text>
         </TouchableOpacity>
         <View style={styles.navUser}>
@@ -276,7 +276,7 @@ export default function ChatScreen() {
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowVoice(true); }}
               style={[styles.micBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             >
-              <Feather name="mic" size={18} color={colors.textMuted} />
+              <Image source={APP_ICON} style={{ width: 18, height: 18, borderRadius: 5 }} resizeMode="cover" />
             </TouchableOpacity>
             <TextInput
               style={[
@@ -298,7 +298,7 @@ export default function ChatScreen() {
               onPress={handleSend}
               disabled={!text.trim() || sending}
             >
-              <Feather name="send" size={18} color="#fff" />
+              <Image source={APP_ICON} style={{ width: 18, height: 18, borderRadius: 5 }} resizeMode="cover" />
             </TouchableOpacity>
           </>
         )}

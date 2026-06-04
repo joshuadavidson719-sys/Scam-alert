@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Dimensions, Animated, ScrollView,
+  Dimensions, Animated, Image, ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,7 +15,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { playSound, startMusic, stopMusic } from "@/lib/soundEngine";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 const { width: SW, height: SH } = Dimensions.get("window");
 
 // ── Playable Heroes ───────────────────────────────────────────────────────────
@@ -522,7 +522,7 @@ export default function AngelVsSpirits() {
     return (
       <LinearGradient colors={["#000000","#100020","#000000"]} style={[F.screen, { paddingTop: insets.top }]}>
         <TouchableOpacity onPress={() => router.back()} style={F.back}>
-          <Feather name="arrow-left" size={22} color="#fff" />
+          <Image source={APP_ICON} style={F.backIcon} resizeMode="cover" />
         </TouchableOpacity>
         <ScrollView contentContainerStyle={{ gap: 0 }} showsVerticalScrollIndicator={false}>
           <View style={F.introTitle}>

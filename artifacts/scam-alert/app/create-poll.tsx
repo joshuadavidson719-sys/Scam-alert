@@ -10,7 +10,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,7 +20,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 
 export default function CreatePollScreen() {
   const colors = useColors();
@@ -169,7 +169,7 @@ export default function CreatePollScreen() {
               onPress={addOption}
               style={[styles.addOptionBtn, { borderColor: colors.border }]}
             >
-              <Feather name="plus" size={18} color={colors.primary} />
+              <Image source={APP_ICON} style={styles.addIcon} resizeMode="cover" />
               <Text style={[styles.addOptionText, { color: colors.primary }]}>Add Option</Text>
             </TouchableOpacity>
           )}

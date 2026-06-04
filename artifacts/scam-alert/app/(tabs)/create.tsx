@@ -27,11 +27,10 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth, CATEGORIES, type CategoryId } from "@/context/AuthContext";
 import { CategoryPill } from "@/components/CategoryPill";
 import { router, useLocalSearchParams } from "expo-router";
-import { Feather } from "@expo/vector-icons";
 import { awardPoints, POINTS } from "@/hooks/usePoints";
 import { useAchievements } from "@/hooks/useAchievements";
 
-
+const APP_ICON = require("@/assets/images/icon.png");
 
 export default function CreateScreen() {
   const colors = useColors();
@@ -246,23 +245,23 @@ export default function CreateScreen() {
         activeOpacity={0.8}
       >
         <View style={[styles.pollIcon, { backgroundColor: "#3B82F620" }]}>
-          <Feather name="bar-chart-2" size={20} color="#3B82F6" />
+          <Image source={APP_ICON} style={styles.pollIconImg} resizeMode="cover" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.pollShortcutTitle, { color: colors.text }]}>Create Community Poll</Text>
           <Text style={[styles.pollShortcutSub, { color: colors.textMuted }]}>Ask the community anything</Text>
         </View>
-        <Feather name="chevron-right" size={16} color={colors.textMuted} />
+        <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
       </TouchableOpacity>
 
       {isPrefilled && (
         <View style={[styles.prefillBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}>
-          <Feather name="info" size={14} color={colors.primary} />
+          <Image source={APP_ICON} style={styles.bannerIcon} resizeMode="cover" />
           <Text style={[styles.prefillBannerText, { color: colors.primary }]}>
             Pre-filled from AI Scam Checker — edit before posting
           </Text>
           <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => setIsPrefilled(false)}>
-            <Feather name="x" size={14} color={colors.primary} />
+            <Image source={APP_ICON} style={styles.bannerIcon} resizeMode="cover" />
           </TouchableOpacity>
         </View>
       )}
@@ -359,12 +358,12 @@ export default function CreateScreen() {
           )}
           {!imageUploading && uploadedImageUrl && (
             <View style={styles.uploadedBadge}>
-              <Feather name="check-circle" size={13} color="#22C55E" />
+              <Image source={APP_ICON} style={styles.badgeIcon} resizeMode="cover" />
               <Text style={styles.uploadedText}>Uploaded</Text>
             </View>
           )}
           <TouchableOpacity style={styles.removeImageBtn} onPress={showImagePicker}>
-            <Feather name="x" size={13} color={colors.textMuted} />
+            <Image source={APP_ICON} style={styles.badgeIcon} resizeMode="cover" />
           </TouchableOpacity>
         </View>
       ) : (
@@ -372,7 +371,7 @@ export default function CreateScreen() {
           style={[styles.imagePickerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={showImagePicker}
         >
-          <Feather name="camera" size={30} color={colors.textMuted} />
+          <Image source={APP_ICON} style={styles.addPhotoIcon} resizeMode="cover" />
           <View>
             <Text style={[styles.imagePickerTitle, { color: colors.text }]}>Add Photo</Text>
             <Text style={[styles.imagePickerSub, { color: colors.textMuted }]}>
@@ -383,7 +382,7 @@ export default function CreateScreen() {
       )}
 
       <View style={[styles.disclaimerBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "44" }]}>
-        <Feather name="alert-circle" size={14} color={colors.warning} />
+        <Image source={APP_ICON} style={styles.bannerIcon} resizeMode="cover" />
         <Text style={[styles.disclaimerText, { color: colors.textSecondary }]}>
           All content is user-submitted and for awareness purposes only. Ensure your post follows our Community Guidelines.
         </Text>

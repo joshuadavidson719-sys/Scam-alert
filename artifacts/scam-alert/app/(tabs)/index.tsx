@@ -40,7 +40,6 @@ import { ScamRadar } from "@/components/ScamRadar";
 import { DailyBriefingModal } from "@/components/DailyBriefingModal";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { Feather } from "@expo/vector-icons";
 
 // ── Video Feed Strip ──────────────────────────────────────────────────────────
 type ReelPreview = {
@@ -118,7 +117,7 @@ function VideoFeedStrip() {
               {/* Play overlay */}
               <View style={vStyles.playOverlay}>
                 <View style={vStyles.playCircle}>
-                  <Feather name="play" size={14} color="#fff" />
+                  <Image source={APP_ICON} style={vStyles.playIcon} resizeMode="cover" />
                 </View>
                 <Text style={vStyles.playLabel}>Play</Text>
               </View>
@@ -244,21 +243,21 @@ export default function HomeScreen() {
               onPress={() => router.push("/stories" as never)}
               style={[styles.iconBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
             >
-              <Feather name="clock" size={14} color={colors.textSecondary} />
+              <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
               <Text style={[styles.iconBtnLabel, { color: colors.textSecondary }]}>Stories</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/chatbot" as never)}
               style={[styles.iconBtn, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
             >
-              <Feather name="message-square" size={14} color={colors.textSecondary} />
+              <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
               <Text style={[styles.iconBtnLabel, { color: colors.textSecondary }]}>AI Chat</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/scam-checker" as never)}
               style={[styles.iconBtn, { backgroundColor: colors.primary + "20", borderWidth: 1, borderColor: colors.primary + "40" }]}
             >
-              <Feather name="shield" size={14} color={colors.primary} />
+              <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
               <Text style={[styles.iconBtnLabel, { color: colors.primary }]}>Checker</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -301,7 +300,7 @@ export default function HomeScreen() {
         </View>
       ) : posts.length === 0 ? (
         <View style={styles.centered}>
-          <Feather name="edit-3" size={44} color={colors.textMuted} />
+          <Image source={APP_ICON} style={styles.emptyIcon} resizeMode="cover" />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No posts yet</Text>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             Be the first to post a scam alert!

@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,7 +23,7 @@ import { useAuth, type UserProfile } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { UserAvatar } from "@/components/UserAvatar";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 
 type FeedItem = {
   id: string;
@@ -207,7 +207,7 @@ export default function ActivityFeedScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Feather name="arrow-left" size={20} color={colors.text} />
+          <Image source={APP_ICON} style={styles.backIcon} resizeMode="cover" />
           <Text style={[styles.backTxt, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Activity Feed</Text>

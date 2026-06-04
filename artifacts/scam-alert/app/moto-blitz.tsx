@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Dimensions, Animated,
+  Dimensions, Animated, Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 import { playSound, startMusic, stopMusic } from "@/lib/soundEngine";
 
-import { Feather } from "@expo/vector-icons";
+const APP_ICON = require("@/assets/images/icon.png");
 const { width: SW, height: SH } = Dimensions.get("window");
 
 const LANES      = 3;
@@ -235,7 +235,7 @@ export default function MotoBlitz() {
     return (
       <View style={[G.screen, { backgroundColor: "#0D0D1A", paddingTop: insets.top }]}>
         <TouchableOpacity onPress={() => router.back()} style={G.back}>
-          <Feather name="arrow-left" size={22} color="#fff" />
+          <Image source={APP_ICON} style={G.backIcon} resizeMode="cover" />
         </TouchableOpacity>
         <View style={G.menuCenter}>
           <Text style={{ fontSize: 72 }}>🏍️</Text>
