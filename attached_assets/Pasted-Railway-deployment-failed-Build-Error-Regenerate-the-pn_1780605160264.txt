@@ -1,0 +1,38 @@
+Railway deployment failed — Build Error
+
+Regenerate the pnpm lockfile by running "pnpm install --no-frozen-lockfile" locally and committing the updated pnpm-lock.yaml. The build failed because the "overrides" configuration in pnpm-workspace.yaml does not match what is recorded in pnpm-lock.yaml, and pnpm's frozen lockfile mode rejects this mismatch. The triggering commit only added a screenshot image, so this mismatch existed before this deployment.
+
+Repository: https://github.com/joshuadavidson719-sys/Scam-alert
+Branch: main · Commit: 96c4ca6 — Add screenshot to illustrate how to access Replit secrets
+
+Add a screenshot to the project assets to visually guide users on locating the secrets section within the Replit environment.
+
+Replit-Commit-Author: Agent
+Replit-Commit-Session-Id: bb3df770-f2fb-4728-8a0f-f25f25c6de2b
+Replit-Commit-Checkpoint-Type: full_checkpoint
+Replit-Commit-Event-Id: 9526a148-2ac8-4c3e-9161-eb828b52cd2e
+Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/82a61531-23e6-49e1-b98a-87f320e44ac8/bb3df770-f2fb-4728-8a0f-f25f25c6de2b/LA67Tup
+Replit-Helium-Checkpoint-Created: true
+Deployment ID: 7ba235d0-9532-4ce2-83c6-3be96e91389b
+Service ID: 089a8ddb-cf13-49d7-84e2-42cef711241f
+Environment ID: 46d63ffe-9c26-496b-8b98-fdad5bbf3ef9
+
+---
+
+## Problem
+The @workspace/api-server service (RAILPACK builder) fails at the BUILD stage. The build runs `pnpm install --frozen-lockfile --prefer-offline` which exits with:
+
+```
+ERR_PNPM_LOCKFILE_CONFIG_MISMATCH  Cannot proceed with the frozen installation. The current "overrides" configuration doesn't match the value found in the lockfile
+```
+
+SNAPSHOT_CODE completed successfully. No config file (railway.json/railway.toml) is present — all settings come from the dashboard. The start command is `pnpm --filter @workspace/api-server start`.
+
+## Diagnosis
+The pnpm-workspace.yaml file contains an overrides section with 80+ entries that exclude platform-specific optional dependencies for esbuild, lightningcss, tailwindcss/oxide, rollup, and expo/ngrok-bin, plus an esbuild version pin and a tsx override. These overrides were modified without regenerating pnpm-lock.yaml. When pnpm runs with --frozen-lockfile, it compares the current workspace config against the lockfile and rejects the mismatch. The triggering commit only added a screenshot image — this mismatch existed before this deployment.
+
+## Fix
+1. **File:** `pnpm-lock.yaml` (repo root)
+2. **Current state:** The lockfile's recorded overrides do not match the overrides section in pnpm-workspace.yaml
+3. **Required action:** Run `pnpm install --no-frozen-lockfile` locally in the repo root to regenerate pnpm-lock.yaml, then commit and push the updated file
+4. **Why this fixes it:** The regenerated lockfile will include the current overrides configuration, allowing `pnpm install --frozen-lockfile` to succeed during the Railway build
