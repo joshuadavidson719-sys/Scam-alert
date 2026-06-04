@@ -1,0 +1,42 @@
+Railway deployment failed — Build Error
+
+Regenerate the pnpm lockfile by running "pnpm install --no-frozen-lockfile" locally and committing the updated pnpm-lock.yaml. The build fails because the "overrides" configuration in pnpm-workspace.yaml does not match what is recorded in pnpm-lock.yaml, and pnpm's frozen lockfile mode rejects this mismatch. This same error has occurred across at least 4 consecutive deployments and is not related to the most recent commit.
+
+Repository: https://github.com/joshuadavidson719-sys/Scam-alert
+Branch: main · Commit: 6836276 — Add a script to push code changes to GitHub
+
+Create a bash script that adds a GitHub remote and pushes the main branch, utilizing the provided push token.
+
+Replit-Commit-Author: Agent
+Replit-Commit-Session-Id: bb3df770-f2fb-4728-8a0f-f25f25c6de2b
+Replit-Commit-Checkpoint-Type: full_checkpoint
+Replit-Commit-Event-Id: 304bd515-075c-4b1d-8938-9842476f349e
+Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/82a61531-23e6-49e1-b98a-87f320e44ac8/bb3df770-f2fb-4728-8a0f-f25f25c6de2b/PyJjInY
+Replit-Helium-Checkpoint-Created: true
+Deployment ID: 00c34ec8-3e54-4ee4-91ae-b7082796b948
+Service ID: 089a8ddb-cf13-49d7-84e2-42cef711241f
+Environment ID: 46d63ffe-9c26-496b-8b98-fdad5bbf3ef9
+
+---
+
+## Problem
+This is a pnpm workspace monorepo (13 projects) using the RAILPACK builder. The build fails at the dependency install step with:
+```
+ERR_PNPM_LOCKFILE_CONFIG_MISMATCH  Cannot proceed with the frozen installation. The current "overrides" configuration doesn't match the value found in the lockfile
+```
+SNAPSHOT_CODE succeeded. BUILD_IMAGE failed. The start command (`pnpm --filter @workspace/api-server start`) is set via the dashboard. No config file is in use.
+
+## Diagnosis
+The `pnpm-workspace.yaml` file contains an `overrides` section that excludes non-linux-x64 platform-specific packages (for esbuild, lightningcss, @tailwindcss/oxide, rollup, @expo/ngrok-bin) and overrides the esbuild version to `0.27.3`. These overrides were added or modified after the last time `pnpm-lock.yaml` was generated. When Railway runs `pnpm install --frozen-lockfile`, pnpm detects that the overrides in the workspace config do not match what is recorded in the lockfile and refuses to proceed. The triggering commit only added `push.sh` and made no changes to any dependency or workspace config files, confirming this is a pre-existing mismatch that has caused at least 4 consecutive deployment failures.
+
+## Fix
+1. Open a terminal in the project root (locally or in the Replit shell).
+2. Run: `pnpm install --no-frozen-lockfile`
+3. This regenerates `pnpm-lock.yaml` to reflect the current `overrides` configuration in `pnpm-workspace.yaml`.
+4. Commit and push the updated lockfile:
+```
+git add pnpm-lock.yaml
+git commit -m "Regenerate lockfile to match workspace overrides"
+git push origin main
+```
+This resolves the issue because the lockfile will then match the overrides configuration, and `pnpm install --frozen-lockfile` will succeed on the next Railway build.
