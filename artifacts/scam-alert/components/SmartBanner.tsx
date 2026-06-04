@@ -12,7 +12,7 @@ import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 
-const APP_ICON = require("@/assets/images/icon.png");
+
 
 interface BannerConfig {
   icon: keyof typeof Feather.glyphMap;
@@ -169,8 +169,8 @@ export function SmartBanner() {
         {/* Urgency stripe on the left edge */}
         <View style={[styles.stripe, { backgroundColor: config.iconColor }]} />
 
-        {/* App icon */}
-        <Image source={APP_ICON} style={styles.iconBox} resizeMode="cover" />
+        {/* Shield icon */}
+        <Feather name="shield" size={22} color={config.iconColor} />
 
         {/* Text */}
         <View style={styles.content}>

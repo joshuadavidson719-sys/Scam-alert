@@ -11,7 +11,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 const PROHIBITED = [
   {
@@ -69,7 +69,7 @@ export default function GuidelinesScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <Image source={APP_ICON} style={styles.closeIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Community Guidelines</Text>
         <View style={{ width: 24 }} />

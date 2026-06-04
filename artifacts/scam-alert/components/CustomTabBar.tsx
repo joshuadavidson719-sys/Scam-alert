@@ -13,15 +13,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/context/ThemeContext";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
-const TAB_CONFIG: Record<string, { label: string }> = {
-  index:         { label: "Home"     },
-  explore:       { label: "Explore"  },
-  create:        { label: "Post"     },
-  notifications: { label: "Alerts"  },
-  messages:      { label: "Messages" },
-  profile:       { label: "Profile"  },
+const TAB_CONFIG: Record<string, { label: string; icon: keyof typeof Feather.glyphMap }> = {
+  index:         { label: "Home",     icon: "home"           },
+  explore:       { label: "Explore",  icon: "search"         },
+  create:        { label: "Post",     icon: "plus-circle"    },
+  notifications: { label: "Alerts",  icon: "bell"           },
+  messages:      { label: "Messages", icon: "message-circle" },
+  profile:       { label: "Profile",  icon: "user"           },
 };
 
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -66,15 +66,12 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
               onLongPress={() => navigation.emit({ type: "tabLongPress", target: route.key })}
               activeOpacity={0.7}
             >
-              {/* App icon above each tab */}
+              {/* Tab icon */}
               <View style={styles.iconWrap}>
-                <Image
-                  source={APP_ICON}
-                  style={[
-                    styles.tabIcon,
-                    { opacity: isFocused ? 1 : 0.45 },
-                  ]}
-                  resizeMode="cover"
+                <Feather
+                  name={config?.icon ?? "circle"}
+                  size={22}
+                  color={isFocused ? colors.primary : colors.textMuted}
                 />
                 {badge !== undefined && badge !== null && (
                   <View style={styles.badge}>

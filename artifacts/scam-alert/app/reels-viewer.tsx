@@ -2,14 +2,14 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   Dimensions, ActivityIndicator, TextInput, Modal,
-  KeyboardAvoidingView, Platform, Alert, Share, Image,
+  KeyboardAvoidingView, Platform, Alert, Share,
 } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Audio } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -243,7 +243,7 @@ function ReelItem({
         {/* Pause indicator */}
         {paused && (
           <View style={S.pauseIcon}>
-            <Image source={APP_ICON} style={S.pauseAppIcon} resizeMode="cover" />
+            <Feather name="pause" size={28} color="#fff" />
             <Text style={S.pauseLabel}>Paused</Text>
           </View>
         )}
@@ -287,34 +287,34 @@ function ReelItem({
       <View style={S.rightActions}>
         {/* Like */}
         <TouchableOpacity style={S.actionBtn} onPress={() => onLike(reel.id, liked)}>
-          <Image source={APP_ICON} style={[S.actionIcon, liked && { tintColor: "#FF3B3B" }]} resizeMode="cover" />
+          <Feather name="heart" size={26} color={liked ? "#FF3B3B" : "#fff"} />
           <Text style={S.actionCount}>{reel.likes.length}</Text>
           <Text style={S.actionLabel}>Like</Text>
         </TouchableOpacity>
 
         {/* Comments */}
         <TouchableOpacity style={S.actionBtn} onPress={() => onOpenComments(reel)}>
-          <Image source={APP_ICON} style={S.actionIcon} resizeMode="cover" />
+          <Feather name="message-circle" size={26} color="#fff" />
           <Text style={S.actionLabel}>Comment</Text>
         </TouchableOpacity>
 
         {/* Views */}
         <View style={S.actionBtn}>
-          <Image source={APP_ICON} style={S.actionIcon} resizeMode="cover" />
+          <Feather name="eye" size={26} color="#fff" />
           <Text style={S.actionCount}>{reel.views.toLocaleString()}</Text>
           <Text style={S.actionLabel}>Views</Text>
         </View>
 
         {/* Share */}
         <TouchableOpacity style={S.actionBtn} onPress={handleShare}>
-          <Image source={APP_ICON} style={S.actionIcon} resizeMode="cover" />
+          <Feather name="share-2" size={26} color="#fff" />
           <Text style={S.actionLabel}>Share</Text>
         </TouchableOpacity>
 
         {/* Music toggle */}
         {hasMusic && (
           <TouchableOpacity style={S.actionBtn} onPress={handleTap}>
-            <Image source={APP_ICON} style={S.actionIcon} resizeMode="cover" />
+            <Feather name="music" size={26} color="#EC4899" />
             <Text style={[S.actionLabel, { color: "#EC4899" }]}>{paused ? "Mute" : "Music"}</Text>
           </TouchableOpacity>
         )}
@@ -322,7 +322,7 @@ function ReelItem({
         {/* Delete (owner only) */}
         {isOwner && (
           <TouchableOpacity style={S.actionBtn} onPress={handleDelete}>
-            <Image source={APP_ICON} style={S.actionIcon} resizeMode="cover" />
+            <Feather name="trash-2" size={26} color="#FF3B3B" />
             <Text style={[S.actionLabel, { color: "#FF3B3B" }]}>Delete</Text>
           </TouchableOpacity>
         )}
@@ -426,7 +426,7 @@ function CommentsModal({
             >
               {posting
                 ? <ActivityIndicator size="small" color="#fff" />
-                : <Image source={APP_ICON} style={S.sendIcon} resizeMode="cover" />
+                : <Feather name="send" size={18} color="#fff" />
               }
             </TouchableOpacity>
           </View>
@@ -554,12 +554,12 @@ export default function ReelsViewer() {
       <View style={[S.screen, { justifyContent: "center", alignItems: "center", gap: 16 }]}>
         <LinearGradient colors={["#1a0000", "#2d0a0a", "#000"]} style={StyleSheet.absoluteFill} />
         <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: "#FF3B3B", alignItems: "center", justifyContent: "center" }}>
-          <Image source={APP_ICON} style={S.loadingIcon} resizeMode="cover" />
+          <Feather name="video" size={32} color="#fff" />
         </View>
         <ActivityIndicator size="large" color="#FF3B3B" />
         <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 16, color: "#fff" }}>Loading Reels…</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ position: "absolute", top: insets.top + 8, left: 16, flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <Image source={APP_ICON} style={S.backIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={20} color="#fff" />
           <Text style={S.backLabel}>Back</Text>
         </TouchableOpacity>
       </View>
@@ -570,7 +570,7 @@ export default function ReelsViewer() {
     return (
       <View style={[S.screen, { justifyContent: "center", alignItems: "center", paddingTop: insets.top }]}>
         <TouchableOpacity style={[S.backBtn, { flexDirection: "row", alignItems: "center", gap: 4 }]} onPress={() => router.back()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <Image source={APP_ICON} style={S.backIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={20} color="#fff" />
           <Text style={S.backLabel}>Back</Text>
         </TouchableOpacity>
         <Text style={{ fontSize: 48 }}>🎬</Text>
@@ -582,7 +582,7 @@ export default function ReelsViewer() {
           style={[S.uploadEmpty, { marginTop: 24 }]}
           onPress={() => router.push("/reels-upload" as never)}
         >
-          <Image source={APP_ICON} style={S.uploadEmptyIcon} resizeMode="cover" />
+          <Feather name="upload-cloud" size={18} color="#fff" />
           <Text style={{ fontFamily: "Inter_700Bold", fontSize: 14, color: "#fff" }}>Post a Reel</Text>
         </TouchableOpacity>
       </View>
@@ -593,12 +593,12 @@ export default function ReelsViewer() {
     <View style={S.screen}>
       <View style={[S.topBar, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <Image source={APP_ICON} style={S.backIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={20} color="#fff" />
           <Text style={S.backLabel}>Back</Text>
         </TouchableOpacity>
         <Text style={S.topTitle}>Reels</Text>
         <TouchableOpacity onPress={() => router.push("/reels-upload" as never)} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <Image source={APP_ICON} style={S.backIcon} resizeMode="cover" />
+          <Feather name="plus-circle" size={20} color="#fff" />
           <Text style={S.backLabel}>Post Reel</Text>
         </TouchableOpacity>
       </View>

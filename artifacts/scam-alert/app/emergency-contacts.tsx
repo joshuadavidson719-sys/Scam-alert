@@ -7,14 +7,14 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
-  Image,
+
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 interface Contact {
   name: string;
@@ -147,7 +147,7 @@ export default function EmergencyContactsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={20} color={colors.text} />
           <Text style={[{ fontFamily: "Inter_600SemiBold", fontSize: 13 }, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Emergency Contacts</Text>
@@ -174,7 +174,7 @@ export default function EmergencyContactsScreen() {
                   activeOpacity={0.7}
                 >
                   <View style={[styles.iconBox, { backgroundColor: c.color + "18" }]}>
-                    <Image source={APP_ICON} style={styles.contactIcon} resizeMode="cover" />
+                    <Feather name="phone" size={20} color={c.color} />
                   </View>
                   <View style={styles.contactInfo}>
                     <Text style={[styles.contactName, { color: colors.text }]}>{c.name}</Text>
@@ -194,7 +194,7 @@ export default function EmergencyContactsScreen() {
                       )}
                     </View>
                   </View>
-                  <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
+                  <Feather name="chevron-right" size={18} color={colors.textMuted} />
                 </TouchableOpacity>
               ))}
             </View>

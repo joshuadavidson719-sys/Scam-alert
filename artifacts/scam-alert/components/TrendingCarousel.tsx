@@ -13,8 +13,9 @@ import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useTrendingPosts } from "@/hooks/useTrendingPosts";
 import { CategoryPill } from "./CategoryPill";
+import { Feather } from "@expo/vector-icons";
 
-const APP_ICON = require("@/assets/images/icon.png");
+
 
 const CATEGORY_COLORS: Record<string, string> = {
   "scam-alert": "#FF3B3B",
@@ -51,7 +52,7 @@ export function TrendingCarousel() {
           style={[styles.refreshBtn, { backgroundColor: colors.muted }]}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Image source={APP_ICON} style={styles.refreshIcon} resizeMode="cover" />
+          <Feather name="refresh-cw" size={14} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -126,19 +127,19 @@ export function TrendingCarousel() {
                 {/* Stats row */}
                 <View style={styles.statsRow}>
                   <View style={styles.stat}>
-                    <Image source={APP_ICON} style={styles.statIcon} resizeMode="cover" />
+                    <Feather name="heart" size={11} color={colors.textMuted} />
                     <Text style={[styles.statText, { color: colors.textMuted }]}>
                       {post.likes?.length ?? 0}
                     </Text>
                   </View>
                   <View style={styles.stat}>
-                    <Image source={APP_ICON} style={styles.statIcon} resizeMode="cover" />
+                    <Feather name="message-circle" size={11} color={colors.textMuted} />
                     <Text style={[styles.statText, { color: colors.textMuted }]}>
                       {post.commentCount ?? 0}
                     </Text>
                   </View>
                   <View style={styles.stat}>
-                    <Image source={APP_ICON} style={styles.statIcon} resizeMode="cover" />
+                    <Feather name="share-2" size={11} color={colors.textMuted} />
                     <Text style={[styles.statText, { color: colors.textMuted }]}>
                       {post.shareCount ?? 0}
                     </Text>

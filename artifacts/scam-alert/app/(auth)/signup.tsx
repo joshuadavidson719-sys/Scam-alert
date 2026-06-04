@@ -18,7 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useGitHubAuth } from "@/hooks/useGitHubAuth";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 export default function SignupScreen() {
   const colors = useColors();
@@ -90,7 +90,7 @@ export default function SignupScreen() {
           style={styles.backBtn}
           onPress={() => router.back()}
         >
-          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
 
         <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>

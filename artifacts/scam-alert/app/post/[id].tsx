@@ -24,7 +24,7 @@ import { ScamVoteBar } from "@/components/ScamVoteBar";
 import { formatTimeAgo } from "@/lib/utils";
 import type { PostData } from "@/components/PostCard";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -92,7 +92,7 @@ export default function PostDetail() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={20} color={colors.text} />
           <Text style={[{ fontFamily: "Inter_600SemiBold", fontSize: 13 }, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Post</Text>
@@ -101,7 +101,7 @@ export default function PostDetail() {
             Share.share({ message: `🚨 ${post.title}\n\n${post.description}\n\nShared from Scam Alert` })
           }
         >
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Feather name="share-2" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 

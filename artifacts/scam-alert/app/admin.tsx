@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Image,
+
   TextInput,
   ScrollView,
 } from "react-native";
@@ -30,7 +30,7 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { formatTimeAgo } from "@/lib/utils";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 type AdminTab = "reports" | "users";
 
@@ -345,10 +345,10 @@ export default function AdminScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Admin Panel</Text>
-        <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+        <View style={{ width: 22 }} />
       </View>
 
       {/* Top tabs */}

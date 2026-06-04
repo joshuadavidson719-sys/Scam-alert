@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, ScrollView, FlatList, Platform, Image,
+  Alert, ActivityIndicator, ScrollView, FlatList, Platform,
 } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Audio } from "expo-av";
@@ -10,7 +10,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { db, storage } from "@/lib/firebase";
@@ -65,7 +65,7 @@ function VideoPreview({ uri, style }: { uri: string; style: object }) {
       {blocked && (
         <View style={[StyleSheet.absoluteFill, styles.tapOverlay]}>
           <View style={styles.tapCircle}>
-            <Image source={APP_ICON} style={styles.tapPlayIcon} resizeMode="cover" />
+            <Feather name="play" size={28} color="#fff" />
           </View>
           <Text style={styles.tapLabel}>Tap to play</Text>
         </View>
@@ -344,7 +344,7 @@ export default function ReelsUpload() {
       {/* Header */}
       <View style={[S.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={goBack} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <Image source={APP_ICON} style={S.headerIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={20} color={colors.textSecondary} />
           <Text style={[S.headerIconLabel, { color: colors.textSecondary }]}>{step === "pick" ? "Close" : "Back"}</Text>
         </TouchableOpacity>
         <Text style={[S.headerTitle, { color: colors.text }]}>{stepLabel}</Text>
@@ -397,11 +397,11 @@ export default function ReelsUpload() {
               </Text>
               <View style={S.pickBtns}>
                 <TouchableOpacity style={[S.pickBtn, { backgroundColor: colors.primary, flex: 1 }]} onPress={pickVideo}>
-                  <Image source={APP_ICON} style={S.pickBtnIcon} resizeMode="cover" />
+                  <Feather name="film" size={18} color="#fff" />
                   <Text style={S.pickBtnTxt}>Choose Video</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[S.pickBtn, { backgroundColor: "#7C3AED", flex: 1 }]} onPress={recordVideo}>
-                  <Image source={APP_ICON} style={S.pickBtnIcon} resizeMode="cover" />
+                  <Feather name="video" size={18} color="#fff" />
                   <Text style={S.pickBtnTxt}>Record Video</Text>
                 </TouchableOpacity>
               </View>
@@ -437,7 +437,7 @@ export default function ReelsUpload() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <Text style={[S.musicTitle, { color: colors.text }]}>🎵 Background Music</Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#16a34a18", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Image source={APP_ICON} style={S.badgeIcon} resizeMode="cover" />
+                <Feather name="check-circle" size={13} color="#16a34a" />
                 <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 11, color: "#16a34a" }}>Royalty-free</Text>
               </View>
             </View>
@@ -479,7 +479,7 @@ export default function ReelsUpload() {
                       {loadingPreview && previewingId === null ? (
                         <ActivityIndicator size="small" color="#fff" />
                       ) : (
-                        <Image source={APP_ICON} style={S.previewPlayIcon} resizeMode="cover" />
+                        <Feather name={isPreviewing ? "pause" : "play"} size={14} color="#fff" />
                       )}
                     </TouchableOpacity>
                   )}
@@ -487,7 +487,7 @@ export default function ReelsUpload() {
                   {/* Selected check */}
                   {isSelected && (
                     <View style={[S.checkBadge, { backgroundColor: colors.primary }]}>
-                      <Image source={APP_ICON} style={S.checkBadgeIcon} resizeMode="cover" />
+                      <Feather name="check" size={12} color="#fff" />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -501,7 +501,7 @@ export default function ReelsUpload() {
               <Text style={S.nextBtnTxt}>
                 {selectedMusic.id === "none" ? "Continue without music" : `Use "${selectedMusic.name}"`}
               </Text>
-              <Image source={APP_ICON} style={S.nextBtnIcon} resizeMode="cover" />
+              <Feather name="arrow-right" size={16} color="#fff" />
             </TouchableOpacity>
           </View>
         )}
@@ -521,7 +521,7 @@ export default function ReelsUpload() {
                   </View>
                 )}
                 <TouchableOpacity style={S.changeVideo} onPress={() => setStep("music")}>
-                  <Image source={APP_ICON} style={S.changeMusicIcon} resizeMode="cover" />
+                  <Feather name="music" size={14} color={colors.textSecondary} />
                   <Text style={S.changeVideoTxt}>Change Music</Text>
                 </TouchableOpacity>
               </View>
@@ -560,7 +560,7 @@ export default function ReelsUpload() {
                 onPress={handlePost}
                 activeOpacity={0.85}
               >
-                <Image source={APP_ICON} style={S.postBtnIcon} resizeMode="cover" />
+                <Feather name="upload-cloud" size={18} color="#fff" />
                 <Text style={S.postBtnFullTxt}>Post Reel</Text>
               </TouchableOpacity>
             )}

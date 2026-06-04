@@ -20,8 +20,7 @@ import { CustomThemePicker } from "@/components/CustomThemePicker";
 import { deleteUser } from "firebase/auth";
 import { doc, deleteDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -84,7 +83,7 @@ export default function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={20} color={colors.text} />
           <Text style={[{ fontFamily: "Inter_600SemiBold", fontSize: 13 }, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Settings</Text>
@@ -99,18 +98,18 @@ export default function SettingsScreen() {
             style={styles.row}
             onPress={() => router.push("/edit-profile" as never)}
           >
-            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
+            <Feather name="user" size={18} color={colors.textMuted} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Edit Profile</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>
                 {profile?.username ?? "—"}
               </Text>
             </View>
-            <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
+            <Feather name="chevron-right" size={16} color={colors.textMuted} />
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={styles.row}>
-            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
+            <Feather name="mail" size={18} color={colors.textMuted} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Email</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>
@@ -124,12 +123,12 @@ export default function SettingsScreen() {
         <Text style={[styles.section, { color: colors.textMuted }]}>Appearance</Text>
         <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity style={styles.row} onPress={() => { Haptics.selectionAsync(); setShowThemePicker(true); }}>
-            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
+            <Feather name="layers" size={18} color={colors.textMuted} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Theme</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>{themeLabel}</Text>
             </View>
-            <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
+            <Feather name="chevron-right" size={16} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 
@@ -144,7 +143,7 @@ export default function SettingsScreen() {
           ].map((item, i, arr) => (
             <React.Fragment key={item.label}>
               <View style={styles.row}>
-                <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
+                <Feather name="bell" size={18} color={colors.textMuted} />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowTitle, { color: colors.text }]}>{item.label}</Text>
                   <Text style={[styles.rowSub, { color: colors.textMuted }]}>{item.sub}</Text>
@@ -181,12 +180,12 @@ export default function SettingsScreen() {
                 style={styles.row}
                 onPress={() => router.push(item.route as never)}
               >
-                <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
+                <Feather name="shield" size={18} color={colors.textMuted} />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowTitle, { color: colors.text }]}>{item.label}</Text>
                   <Text style={[styles.rowSub, { color: colors.textMuted }]}>{item.sub}</Text>
                 </View>
-                <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
+                <Feather name="chevron-right" size={16} color={colors.textMuted} />
               </TouchableOpacity>
               {i < arr.length - 1 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
             </React.Fragment>
@@ -197,7 +196,7 @@ export default function SettingsScreen() {
         <Text style={[styles.section, { color: colors.textMuted }]}>About</Text>
         <View style={[styles.group, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.row}>
-            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
+            <Feather name="info" size={18} color={colors.textMuted} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Version</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>1.0.0</Text>
@@ -205,21 +204,21 @@ export default function SettingsScreen() {
           </View>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <TouchableOpacity style={styles.row} onPress={() => router.push("/community-guidelines" as never)}>
-            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
+            <Feather name="book-open" size={18} color={colors.textMuted} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Community Guidelines</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>Our 8 community rules</Text>
             </View>
-            <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
+            <Feather name="chevron-right" size={16} color={colors.textMuted} />
           </TouchableOpacity>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <TouchableOpacity style={styles.row} onPress={() => router.push("/tos" as never)}>
-            <Image source={APP_ICON} style={styles.rowIcon} resizeMode="cover" />
+            <Feather name="file-text" size={18} color={colors.textMuted} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.rowTitle, { color: colors.text }]}>Terms, Privacy & DMCA</Text>
               <Text style={[styles.rowSub, { color: colors.textMuted }]}>Legal · Copyright · Data policy</Text>
             </View>
-            <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
+            <Feather name="chevron-right" size={16} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 
@@ -234,7 +233,7 @@ export default function SettingsScreen() {
                   <Text style={[styles.rowTitle, { color: "#7C3AED" }]}>Admin Panel</Text>
                   <Text style={[styles.rowSub, { color: colors.textMuted }]}>Manage reports, block or delete users</Text>
                 </View>
-                <Image source={APP_ICON} style={styles.chevron} resizeMode="cover" />
+                <Feather name="chevron-right" size={16} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
           </>

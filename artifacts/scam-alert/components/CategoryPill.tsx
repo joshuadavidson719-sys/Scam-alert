@@ -9,8 +9,7 @@ import {
 import { useColors } from "@/hooks/useColors";
 import type { CategoryId } from "@/context/AuthContext";
 import { CATEGORIES } from "@/context/AuthContext";
-
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 interface Props {
   categoryId: CategoryId | "all";
@@ -47,11 +46,7 @@ export function CategoryPill({
         },
       ]}
     >
-      <Image
-        source={APP_ICON}
-        style={{ width: iconSize, height: iconSize, borderRadius: 3 }}
-        resizeMode="cover"
-      />
+      <Feather name="tag" size={iconSize} color={isSelected ? "#fff" : colors.textMuted} />
       <Text
         style={[
           styles.label,

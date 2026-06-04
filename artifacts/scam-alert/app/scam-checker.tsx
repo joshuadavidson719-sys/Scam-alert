@@ -8,14 +8,14 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
-  Image,
+
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 interface AnalysisResult {
   isScam: boolean;
@@ -117,7 +117,7 @@ export default function ScamCheckerScreen() {
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Image source={APP_ICON} style={styles.backIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={20} color={colors.text} />
           <Text style={[styles.backLabel, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>AI Scam Checker</Text>
@@ -131,7 +131,7 @@ export default function ScamCheckerScreen() {
         ]}
       >
         <View style={[styles.heroIcon, { backgroundColor: colors.primary }]}>
-          <Image source={APP_ICON} style={styles.heroIconImg} resizeMode="cover" />
+          <Feather name="shield" size={28} color="#fff" />
         </View>
         <Text style={[styles.heroTitle, { color: colors.text }]}>
           Detect Scams Instantly
@@ -174,7 +174,7 @@ export default function ScamCheckerScreen() {
           <ActivityIndicator color="#fff" />
         ) : (
           <>
-            <Image source={APP_ICON} style={styles.analyzeBtnIcon} resizeMode="cover" />
+            <Feather name="search" size={18} color="#fff" />
             <Text style={styles.analyzeBtnText}>Analyze Message</Text>
           </>
         )}
@@ -209,7 +209,7 @@ export default function ScamCheckerScreen() {
                 { backgroundColor: result.isScam ? colors.destructive : colors.success },
               ]}
             >
-              <Image source={APP_ICON} style={styles.resultIconImg} resizeMode="cover" />
+              <Feather name={result.isScam ? "alert-circle" : "check-circle"} size={24} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
               <Text
@@ -294,7 +294,7 @@ export default function ScamCheckerScreen() {
                   } as never);
                 }}
               >
-                <Image source={APP_ICON} style={styles.actionBtnIcon} resizeMode="cover" />
+                <Feather name="bell" size={16} color="#fff" />
                 <Text style={styles.postAlertText}>Post an Alert</Text>
               </TouchableOpacity>
 

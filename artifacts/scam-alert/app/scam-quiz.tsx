@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Animated,
-  Image,
+
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -19,7 +19,7 @@ import { Confetti } from "@/components/Confetti";
 import { AchievementToast } from "@/components/AchievementToast";
 import { useAchievements } from "@/hooks/useAchievements";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 interface Question {
   q: string;
@@ -149,7 +149,7 @@ export default function ScamQuizScreen() {
         <AchievementToast achievement={newlyUnlocked} onHide={clearNewlyUnlocked} />
         <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+            <Feather name="arrow-left" size={22} color={colors.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Quiz Results</Text>
           <View style={{ width: 22 }} />
@@ -174,7 +174,7 @@ export default function ScamQuizScreen() {
           </View>
 
           <TouchableOpacity style={[styles.restartBtn, { backgroundColor: colors.primary }]} onPress={restart}>
-            <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
+            <Feather name="refresh-cw" size={16} color="#fff" />
             <Text style={styles.restartBtnText}>Try Again</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.backBtn, { borderColor: colors.border }]} onPress={() => router.back()}>
@@ -189,7 +189,7 @@ export default function ScamQuizScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Scam Awareness Quiz</Text>
         <Text style={[styles.progress, { color: colors.textMuted }]}>{current + 1}/{totalQ}</Text>
@@ -243,7 +243,7 @@ export default function ScamQuizScreen() {
         {selected !== null && (
           <TouchableOpacity style={[styles.nextBtn, { backgroundColor: colors.primary }]} onPress={next}>
             <Text style={styles.nextBtnText}>{current < totalQ - 1 ? "Next Question" : "See Results"}</Text>
-            <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
+            <Feather name="arrow-right" size={16} color="#fff" />
           </TouchableOpacity>
         )}
       </ScrollView>

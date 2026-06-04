@@ -9,7 +9,7 @@ import {
   Easing,
   Alert,
   Platform,
-  Image,
+
   TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,7 +17,7 @@ import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TRACKS = [
@@ -282,7 +282,7 @@ export default function RecordingStudioScreen() {
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top + 8, borderBottomColor: "#1E1E1E" }]}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Image source={APP_ICON} style={s.backIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={22} color="#fff" />
         </TouchableOpacity>
 
         <View style={s.headerCenter}>

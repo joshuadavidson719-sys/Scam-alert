@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Image,
+
   Animated,
   ActivityIndicator,
   Platform,
@@ -22,7 +22,7 @@ import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
 import { router } from "expo-router";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 const DOMAIN = process.env.EXPO_PUBLIC_DOMAIN ?? "";
 const BASE = DOMAIN ? `https://${DOMAIN}` : "";
@@ -423,7 +423,7 @@ export default function SwiftopAIScreen() {
             <Text style={styles.headerTitle}>Swiftop AI</Text>
             <Text style={styles.headerSub}>Cinematic image & animation generator</Text>
           </View>
-          <Image source={APP_ICON} style={styles.headerIcon} resizeMode="cover" />
+          <Feather name="zap" size={22} color="#A78BFA" />
         </View>
 
         <ScrollView

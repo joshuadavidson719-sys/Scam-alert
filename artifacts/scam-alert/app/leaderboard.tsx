@@ -6,7 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
+
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
@@ -17,7 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import { getBadgeForPoints } from "@/hooks/usePoints";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 interface LeaderUser {
   uid: string;
@@ -73,7 +73,7 @@ export default function LeaderboardScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Leaderboard</Text>
         <View style={{ width: 24 }} />

@@ -25,9 +25,10 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import { router } from "expo-router";
+import { Feather } from "@expo/vector-icons";
 import { formatTimeAgo } from "@/lib/utils";
 
-const APP_ICON = require("@/assets/images/icon.png");
+
 
 interface Chat {
   id: string;
@@ -102,7 +103,7 @@ export default function MessagesScreen() {
                 style={[styles.newMsgBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
                 onPress={() => router.push("/new-group" as never)}
               >
-                <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
+                <Feather name="users" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
               <Text style={[styles.btnLabel, { color: colors.textSecondary }]}>Group</Text>
             </View>
@@ -111,7 +112,7 @@ export default function MessagesScreen() {
                 style={[styles.newMsgBtn, { backgroundColor: colors.primary }]}
                 onPress={() => router.push("/new-message" as never)}
               >
-                <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
+                <Feather name="edit" size={18} color="#fff" />
               </TouchableOpacity>
               <Text style={[styles.btnLabel, { color: colors.textSecondary }]}>New Chat</Text>
             </View>
@@ -123,7 +124,7 @@ export default function MessagesScreen() {
             { borderColor: colors.border, backgroundColor: colors.card },
           ]}
         >
-          <Image source={APP_ICON} style={styles.searchIcon} resizeMode="cover" />
+          <Feather name="search" size={16} color={colors.textMuted} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search conversations..."
@@ -145,7 +146,7 @@ export default function MessagesScreen() {
         </View>
       ) : filtered.length === 0 ? (
         <View style={styles.centered}>
-          <Image source={APP_ICON} style={styles.emptyIcon} resizeMode="cover" />
+          <Feather name="message-circle" size={44} color={colors.textMuted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
             No conversations yet
           </Text>
@@ -156,7 +157,7 @@ export default function MessagesScreen() {
             style={[styles.newChatBtn, { backgroundColor: colors.primary }]}
             onPress={() => router.push("/new-message" as never)}
           >
-            <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
+            <Feather name="edit" size={18} color="#fff" />
             <Text style={styles.newChatBtnText}>New Message</Text>
           </TouchableOpacity>
         </View>

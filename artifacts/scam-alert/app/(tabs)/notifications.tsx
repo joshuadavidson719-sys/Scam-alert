@@ -21,13 +21,14 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { router } from "expo-router";
+import { Feather } from "@expo/vector-icons";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import { formatTimeAgo } from "@/lib/utils";
 
-const APP_ICON = require("@/assets/images/icon.png");
+
 
 // ── Types ────────────────────────────────────────────────
 type NType = "like" | "comment" | "share" | "follow" | "report" | "system";
@@ -97,7 +98,7 @@ function NotificationRow({
       ) : (
         <View style={[styles.iconCircle, { backgroundColor: cfg.color + "20" }]}>
           <Text style={styles.iconEmoji}>{cfg.emoji}</Text>
-          <Image source={APP_ICON} style={styles.iconImg} resizeMode="cover" />
+          <Feather name="bell" size={12} color={cfg.color} />
         </View>
       )}
 
@@ -121,7 +122,7 @@ function NotificationRow({
 
       {/* Chevron for navigable items */}
       {(item.postId || item.actorId) && (
-        <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
+        <Feather name="chevron-right" size={16} color={colors.textMuted} />
       )}
     </TouchableOpacity>
   );
@@ -225,7 +226,7 @@ export default function NotificationsScreen() {
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 12, borderBottomColor: colors.border }]}>
-        <Image source={APP_ICON} style={styles.headerIcon} resizeMode="cover" />
+        <Feather name="bell" size={22} color={colors.text} />
         <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
       </View>
 
@@ -237,7 +238,7 @@ export default function NotificationsScreen() {
         <View style={styles.centered}>
           <View style={[styles.emptyIconWrap, { backgroundColor: colors.muted }]}>
             <Text style={styles.emptyEmoji}>🔕</Text>
-            <Image source={APP_ICON} style={styles.emptyImg} resizeMode="cover" />
+            <Feather name="bell-off" size={40} color={colors.textMuted} />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
             No notifications yet

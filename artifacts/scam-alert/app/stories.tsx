@@ -37,7 +37,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { UserAvatar } from "@/components/UserAvatar";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 const { width: SCREEN_W } = Dimensions.get("window");
 const STORY_DURATION = 5000;
 
@@ -287,7 +287,7 @@ export default function StoriesScreen() {
           style={[styles.closeBtn, { top: insets.top + 8 }]}
           onPress={() => { setMode("browse"); setActiveGroup(null); }}
         >
-          <Image source={APP_ICON} style={styles.closeBtnIcon} resizeMode="cover" />
+          <Feather name="x" size={22} color="#fff" />
         </TouchableOpacity>
 
         {/* Story content */}
@@ -361,7 +361,7 @@ export default function StoriesScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => setMode("browse")} style={styles.headerBackBtn}>
-            <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
+            <Feather name="arrow-left" size={20} color={colors.text} />
             <Text style={[styles.headerBtnLabel, { color: colors.text }]}>Cancel</Text>
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>New Story</Text>
@@ -421,7 +421,7 @@ export default function StoriesScreen() {
                 <Image source={{ uri: pickedImage }} style={styles.pickedImage} resizeMode="cover" />
               ) : (
                 <>
-                  <Image source={APP_ICON} style={styles.imagePickerIcon} resizeMode="cover" />
+                  <Feather name="image" size={32} color={colors.textSecondary} />
                   <Text style={{ fontSize: 32 }}>🖼️</Text>
                   <Text style={[styles.imagePickerText, { color: colors.textSecondary }]}>Tap to choose a photo</Text>
                 </>
@@ -437,12 +437,12 @@ export default function StoriesScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
-          <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={20} color={colors.text} />
           <Text style={[styles.headerBtnLabel, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Stories</Text>
         <TouchableOpacity onPress={() => setMode("create")} style={styles.headerBackBtn}>
-          <Image source={APP_ICON} style={styles.headerBtnIcon} resizeMode="cover" />
+          <Feather name="plus" size={20} color={colors.primary} />
           <Text style={[styles.headerBtnLabel, { color: colors.primary }]}>New</Text>
         </TouchableOpacity>
       </View>
@@ -453,12 +453,12 @@ export default function StoriesScreen() {
         </View>
       ) : groups.length === 0 ? (
         <View style={styles.centered}>
-          <Image source={APP_ICON} style={styles.emptyStateIcon} resizeMode="cover" />
+          <Feather name="camera" size={32} color={colors.textSecondary} />
           <Text style={{ fontSize: 36 }}>📷</Text>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No stories yet</Text>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Be the first to share a 24-hour story</Text>
           <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.primary }]} onPress={() => setMode("create")}>
-            <Image source={APP_ICON} style={styles.createBtnIcon} resizeMode="cover" />
+            <Feather name="plus-circle" size={18} color="#fff" />
             <Text style={styles.createBtnText}>Create Story</Text>
           </TouchableOpacity>
         </View>
@@ -470,7 +470,7 @@ export default function StoriesScreen() {
             onPress={() => setMode("create")}
           >
             <View style={[styles.addStoryIcon, { backgroundColor: colors.primary + "20" }]}>
-              <Image source={APP_ICON} style={styles.addStoryIconImg} resizeMode="cover" />
+              <Feather name="plus" size={22} color={colors.primary} />
             </View>
             <Text style={[styles.addStoryText, { color: colors.text }]}>Add Story</Text>
             <Text style={[styles.addStoryHint, { color: colors.textMuted }]}>Disappears in 24h</Text>

@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  Image,
+
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -20,7 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { UserAvatar } from "@/components/UserAvatar";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 interface UserResult {
   id: string;
@@ -107,7 +107,7 @@ export default function NewGroupScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => step === "name" ? setStep("select") : router.back()}>
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           {step === "select" ? "New Group" : "Group Details"}
@@ -136,13 +136,13 @@ export default function NewGroupScreen() {
                 <TouchableOpacity key={u.id} style={styles.selectedChip} onPress={() => toggleSelect(u)}>
                   <UserAvatar uri={u.profilePhoto} name={u.username} size={28} />
                   <Text style={[styles.chipName, { color: colors.text }]}>{u.username}</Text>
-                  <Image source={APP_ICON} style={styles.chipIcon} resizeMode="cover" />
+                  <Feather name="x" size={12} color={colors.textMuted} />
                 </TouchableOpacity>
               ))}
             </View>
           )}
           <View style={[styles.searchBar, { borderColor: colors.border, backgroundColor: colors.card, margin: 16 }]}>
-            <Image source={APP_ICON} style={styles.searchIcon} resizeMode="cover" />
+            <Feather name="search" size={16} color={colors.textMuted} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
               placeholder="Search users..."
@@ -169,7 +169,7 @@ export default function NewGroupScreen() {
                     <Text style={[styles.userNiche, { color: colors.textMuted }]}>{item.niche}</Text>
                   </View>
                   <View style={[styles.checkbox, { borderColor: colors.border }, isSelected(item.id) && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
-                    {isSelected(item.id) && <Image source={APP_ICON} style={styles.checkIcon} resizeMode="cover" />}
+                    {isSelected(item.id) && <Feather name="check" size={14} color="#fff" />}
                   </View>
                 </TouchableOpacity>
               )}

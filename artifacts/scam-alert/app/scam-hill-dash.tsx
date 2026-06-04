@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Image,
+  View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit } from "firebase/firestore";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 
@@ -195,7 +195,7 @@ export default function ScamHillDash() {
     <View style={[H.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={H.nav}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:10,bottom:10,left:10,right:10 }}>
-          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[H.navTitle, { color: colors.text }]}>Scam Hill Dash</Text>
         <View style={{ width: 22 }} />

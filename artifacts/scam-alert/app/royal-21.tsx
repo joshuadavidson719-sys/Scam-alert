@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Animated, Image,
+  ScrollView, Animated,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -14,7 +14,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { playSound, startMusic, stopMusic } from "@/lib/soundEngine";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 // ── Deck ───────────────────────────────────────────────────────────────────
 const SUITS  = ["♠", "♥", "♦", "♣"] as const;
@@ -226,7 +226,7 @@ export default function Royal21() {
       {/* Header */}
       <View style={C.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Image source={APP_ICON} style={C.backIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={22} color="#fff" />
         </TouchableOpacity>
         <View style={{ alignItems: "center" }}>
           <Text style={C.title}>Royal 21 ♠</Text>

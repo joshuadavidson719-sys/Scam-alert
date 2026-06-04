@@ -9,7 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
-  Image,
+
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -21,7 +21,7 @@ import { useAuth, NICHES } from "@/context/AuthContext";
 import { useFollowSuggestions, type SuggestedUser } from "@/hooks/useFollowSuggestions";
 import { UserAvatar } from "@/components/UserAvatar";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 const NICHE_COLORS: Record<string, string> = {
   Cybersecurity: "#FF3B3B",
@@ -172,7 +172,7 @@ export default function PeopleToFollowScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>People to Follow</Text>
         <TouchableOpacity
@@ -180,14 +180,14 @@ export default function PeopleToFollowScreen() {
           style={[styles.refreshBtn, { backgroundColor: colors.muted }]}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Image source={APP_ICON} style={styles.refreshIcon} resizeMode="cover" />
+          <Feather name="refresh-cw" size={16} color={colors.text} />
         </TouchableOpacity>
       </View>
 
       {/* Search bar */}
       <View style={[styles.searchWrap, { borderBottomColor: colors.border }]}>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Image source={APP_ICON} style={styles.searchIcon} resizeMode="cover" />
+          <Feather name="search" size={16} color={colors.textMuted} />
           <TextInput
             ref={inputRef}
             style={[styles.searchInput, { color: colors.text }]}

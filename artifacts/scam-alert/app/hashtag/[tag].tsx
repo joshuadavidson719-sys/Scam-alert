@@ -18,7 +18,7 @@ import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 export default function HashtagScreen() {
   const { tag } = useLocalSearchParams<{ tag: string }>();
@@ -52,7 +52,7 @@ export default function HashtagScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={[styles.hashSymbol, { color: colors.primary }]}>#</Text>

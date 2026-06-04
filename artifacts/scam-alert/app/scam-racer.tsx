@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions,
-  Animated, ScrollView, ActivityIndicator, Image,
+  Animated, ScrollView, ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 import { UserAvatar } from "@/components/UserAvatar";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 
@@ -511,7 +511,7 @@ export default function ScamRacer() {
       <View style={[S.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <View style={S.nav}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
+            <Feather name="arrow-left" size={22} color={colors.text} />
           </TouchableOpacity>
           <Text style={[S.navTitle, { color: colors.text }]}>Scam Racer</Text>
           <View style={{ width: 22 }} />

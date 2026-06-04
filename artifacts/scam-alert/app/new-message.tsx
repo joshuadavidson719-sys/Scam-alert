@@ -18,7 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import type { UserProfile } from "@/context/AuthContext";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 export default function NewMessageScreen() {
   const colors = useColors();
@@ -82,7 +82,7 @@ export default function NewMessageScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>New Message</Text>
         <View style={{ width: 24 }} />
@@ -90,7 +90,7 @@ export default function NewMessageScreen() {
 
       <View style={[styles.searchWrap, { borderBottomColor: colors.border }]}>
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Image source={APP_ICON} style={styles.searchIcon} resizeMode="cover" />
+          <Feather name="search" size={16} color={colors.textMuted} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search users..."
@@ -101,7 +101,7 @@ export default function NewMessageScreen() {
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch("")}>
-              <Image source={APP_ICON} style={styles.clearIcon} resizeMode="cover" />
+              <Feather name="x" size={16} color={colors.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -113,7 +113,7 @@ export default function NewMessageScreen() {
         </View>
       ) : filtered.length === 0 ? (
         <View style={styles.centered}>
-          <Image source={APP_ICON} style={styles.emptyIcon} resizeMode="cover" />
+          <Feather name="users" size={48} color={colors.textMuted} style={{ opacity: 0.4 }} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             {search ? "No users found" : "No users yet"}
           </Text>
@@ -141,7 +141,7 @@ export default function NewMessageScreen() {
                 <ActivityIndicator color={colors.primary} size="small" />
               ) : (
                 <View style={[styles.msgIcon, { backgroundColor: colors.primary + "15" }]}>
-                  <Image source={APP_ICON} style={styles.msgIconImg} resizeMode="cover" />
+                  <Feather name="send" size={16} color={colors.primary} />
                 </View>
               )}
             </TouchableOpacity>

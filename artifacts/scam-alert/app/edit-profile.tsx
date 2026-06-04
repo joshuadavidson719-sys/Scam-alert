@@ -23,7 +23,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { storage } from "@/lib/firebase";
 import { pickAndUploadBanner } from "@/lib/uploadImage";
 
-const APP_ICON = require("@/assets/images/icon.png");
+
 
 export default function EditProfileScreen() {
   const colors = useColors();

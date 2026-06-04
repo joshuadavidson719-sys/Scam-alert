@@ -31,7 +31,9 @@ import { ScamStatsChart } from "@/components/ScamStatsChart";
 import { formatTimeAgo } from "@/lib/utils";
 import type { PostData } from "@/components/PostCard";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
+
+
 
 interface UserResult {
   uid: string;
@@ -308,7 +310,7 @@ export default function ExploreScreen() {
           <Text style={[styles.userHandle, { color: colors.textMuted }]}>@{user.username}</Text>
         ) : null}
       </View>
-      <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
+      <Feather name="chevron-right" size={16} color={colors.textMuted} />
     </TouchableOpacity>
   );
 
@@ -334,7 +336,7 @@ export default function ExploreScreen() {
             </Text>
           </View>
         </View>
-        <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
+        <Feather name="chevron-right" size={16} color={colors.textMuted} />
       </TouchableOpacity>
     );
   };
@@ -349,7 +351,7 @@ export default function ExploreScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Explore</Text>
         {/* Search bar */}
         <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Image source={APP_ICON} style={[styles.searchIcon, { marginLeft: 2 }]} resizeMode="cover" />
+          <Feather name="search" size={16} color={colors.textMuted} style={{ marginLeft: 2 }} />
           <TextInput
             ref={inputRef}
             style={[styles.searchInput, { color: colors.text }]}
@@ -365,7 +367,7 @@ export default function ExploreScreen() {
           {searching && <ActivityIndicator size="small" color={colors.primary} />}
           {search.length > 0 && !searching && (
             <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Image source={APP_ICON} style={styles.searchIcon} resizeMode="cover" />
+              <Feather name="x" size={16} color={colors.textMuted} />
             </TouchableOpacity>
           )}
           {isActive && !search && (
@@ -385,7 +387,7 @@ export default function ExploreScreen() {
             <View>
               {noResults ? (
                 <View style={styles.emptyState}>
-                  <Image source={APP_ICON} style={styles.emptyIcon} resizeMode="cover" />
+                  <Feather name="search" size={44} color={colors.textMuted} />
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>No results found</Text>
                   <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                     Try a different keyword or browse by category
@@ -436,7 +438,7 @@ export default function ExploreScreen() {
                 activeOpacity={0.85}
               >
                 <View style={[styles.aiIconBox, { backgroundColor: colors.primary }]}>
-                  <Image source={APP_ICON} style={styles.aiBoxIcon} resizeMode="cover" />
+                  <Feather name="cpu" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.aiTitle, { color: colors.text }]}>AI Scam Checker</Text>
@@ -445,7 +447,7 @@ export default function ExploreScreen() {
                   </Text>
                 </View>
                 <View style={[styles.aiArrow, { backgroundColor: colors.primary }]}>
-                  <Image source={APP_ICON} style={styles.aiArrowIcon} resizeMode="cover" />
+                  <Feather name="arrow-right" size={16} color="#fff" />
                 </View>
               </TouchableOpacity>
               {/* Scam statistics chart */}

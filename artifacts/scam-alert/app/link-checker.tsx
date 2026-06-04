@@ -8,14 +8,14 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
-  Image,
+
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 
-const APP_ICON = require("@/assets/images/icon.png");
+import { Feather } from "@expo/vector-icons";
 
 interface LinkResult {
   isSuspicious: boolean;
@@ -74,7 +74,7 @@ export default function LinkCheckerScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.navBar, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
+          <Feather name="arrow-left" size={20} color={colors.text} />
           <Text style={[{ fontFamily: "Inter_600SemiBold", fontSize: 13 }, { color: colors.text }]}>Back</Text>
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Link Checker</Text>
@@ -127,7 +127,7 @@ export default function LinkCheckerScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Image source={APP_ICON} style={styles.btnIcon} resizeMode="cover" />
+              <Feather name="search" size={18} color="#fff" />
               <Text style={styles.checkBtnText}>Analyze Link</Text>
             </>
           )}
