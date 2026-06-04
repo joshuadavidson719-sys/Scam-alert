@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Image,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
@@ -69,7 +68,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
               {/* Tab icon */}
               <View style={styles.iconWrap}>
                 <Feather
-                  name={config?.icon ?? "circle"}
+                  name={cfg.icon}
                   size={22}
                   color={isFocused ? colors.primary : colors.textMuted}
                 />
