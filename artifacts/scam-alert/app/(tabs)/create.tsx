@@ -10,33 +10,27 @@ import {
   Platform,
   Alert,
   Image,
-  ActionSheetIOS,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-
-import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import {
   collection,
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { uploadMedia, isFirebaseConfigured as _isFBConfigured } from "@/lib/storage";
 import { useColors } from "@/hooks/useColors";
 import { useAuth, CATEGORIES, type CategoryId } from "@/context/AuthContext";
 import { CategoryPill } from "@/components/CategoryPill";
 import { router, useLocalSearchParams } from "expo-router";
-import { awardPoints, POINTS } from "@/hooks/usePoints";
-import { useAchievements } from "@/hooks/useAchievements";
-
-const APP_ICON = require("@/assets/images/icon.png");
 
 export default function CreateScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
-  const { unlock } = useAchievements(user?.uid);
 
   const params = useLocalSearchParams<{
     prefillTitle?: string;
@@ -49,12 +43,11 @@ export default function CreateScreen() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>("scam-alert");
   const [loading, setLoading] = useState(false);
   const [isPrefilled, setIsPrefilled] = useState(false);
-  const [hashtags, setHashtags] = useState("");
 
-  // Image state
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [mediaUri, setMediaUri] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
 
   const titleInputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
@@ -76,81 +69,36 @@ export default function CreateScreen() {
     }, 350);
   }, [params.prefillTitle, params.prefillDescription, params.prefillCategory]);
 
-  const pickImage = async (source: "camera" | "gallery") => {
-    let result;
-    if (source === "camera") {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert("Permission needed", "Camera permission is required.");
-        return;
-      }
-      result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.7,
-        base64: true,
-      });
-    } else {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert("Permission needed", "Photo library permission is required.");
-        return;
-      }
-      result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.7,
-        base64: true,
-      });
-    }
-
-    if (!result.canceled && result.assets[0]?.base64) {
-      const uri = result.assets[0].uri;
-      setImageUri(uri);
-      setImageUploading(true);
-      try {
-        const storageRef = ref(storage, `posts/${user?.uid}_${Date.now()}.jpg`);
-        await uploadString(storageRef, result.assets[0].base64!, "base64", { contentType: "image/jpeg" });
-        const url = await getDownloadURL(storageRef);
-        setUploadedImageUrl(url);
-      } catch {
-        Alert.alert("Upload failed", "Could not upload image. It won't be attached to the post.");
-        setImageUri(null);
-        setUploadedImageUrl(null);
-      } finally {
-        setImageUploading(false);
-      }
-    }
-  };
-
-  const showImagePicker = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", "Take Photo", "Choose from Library", "Remove Image"],
-          cancelButtonIndex: 0,
-          destructiveButtonIndex: imageUri ? 3 : undefined,
-        },
-        (i) => {
-          if (i === 1) pickImage("camera");
-          else if (i === 2) pickImage("gallery");
-          else if (i === 3) { setImageUri(null); setUploadedImageUrl(null); }
-        }
-      );
-    } else {
-      const options: { text: string; onPress?: () => void; style?: "cancel" | "destructive" }[] = [
-        { text: "Cancel", style: "cancel" },
-        { text: "Take Photo", onPress: () => pickImage("camera") },
-        { text: "Photo Library", onPress: () => pickImage("gallery") },
-      ];
-      if (imageUri) {
-        options.push({ text: "Remove Image", style: "destructive", onPress: () => { setImageUri(null); setUploadedImageUrl(null); } });
-      }
-      Alert.alert("Add Image", "Select source", options);
-    }
-  };
-
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  const handlePickMedia = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission Required", "Please allow access to your photo library to attach media.");
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images", "videos"],
+        allowsEditing: true,
+        quality: 0.85,
+        videoMaxDuration: 120,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setMediaUri(asset.uri);
+        setMediaType(asset.type === "video" ? "video" : "image");
+      }
+    } catch {
+      Alert.alert("Error", "Could not open media library. Please try again.");
+    }
+  };
+
+  const handleRemoveMedia = () => {
+    setMediaUri(null);
+    setMediaType(null);
+    setUploadProgress(0);
+  };
 
   const handlePost = async () => {
     if (!title.trim()) {
@@ -162,48 +110,53 @@ export default function CreateScreen() {
       return;
     }
     if (!user || !profile) return;
-    if (imageUploading) {
-      Alert.alert("Please wait", "Image is still uploading...");
-      return;
-    }
 
     setLoading(true);
+    let uploadedImageUrl: string | null = null;
+    let uploadedVideoUrl: string | null = null;
+
     try {
-      const images = uploadedImageUrl ? [uploadedImageUrl] : [];
-      // Parse hashtags from dedicated field + auto-detect in title/description
-      const rawTags = hashtags.split(/[\s,]+/).map((t) => t.replace(/^#/, "").toLowerCase().trim()).filter(Boolean);
-      const autoTags = [...title, " ", description].join("").match(/#(\w+)/g)?.map((t) => t.slice(1).toLowerCase()) ?? [];
-      const allTags = Array.from(new Set([...rawTags, ...autoTags])).slice(0, 10);
+      if (mediaUri && _isFBConfigured) {
+        setUploading(true);
+        const ext = mediaUri.split(".").pop() ?? (mediaType === "video" ? "mp4" : "jpg");
+        const path = `post-media/${user.uid}/${Date.now()}.${ext}`;
+        const downloadUrl = await uploadMedia(mediaUri, path, setUploadProgress);
+        if (mediaType === "video") {
+          uploadedVideoUrl = downloadUrl;
+        } else {
+          uploadedImageUrl = downloadUrl;
+        }
+        setUploading(false);
+      }
+
       await addDoc(collection(db, "posts"), {
         authorId: user.uid,
         authorName: profile.username,
         authorAvatar: profile.profilePhoto ?? null,
         title: title.trim(),
         description: description.trim(),
-        images,
+        images: uploadedImageUrl ? [uploadedImageUrl] : [],
+        videoUrl: uploadedVideoUrl ?? null,
         category: selectedCategory,
-        hashtags: allTags,
         likes: [],
-        reactions: {},
         commentCount: 0,
         shareCount: 0,
         reports: [],
         createdAt: serverTimestamp(),
       });
-      // Award points for creating a post
-      await awardPoints(user.uid, POINTS.POST_CREATED);
-      unlock("first_post");
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTitle("");
       setDescription("");
-      setHashtags("");
-      setImageUri(null);
-      setUploadedImageUrl(null);
+      setMediaUri(null);
+      setMediaType(null);
+      setUploadProgress(0);
       setSelectedCategory("scam-alert");
       appliedKeyRef.current = null;
       setIsPrefilled(false);
       router.replace("/(tabs)/" as never);
     } catch {
+      setUploading(false);
       Alert.alert("Error", "Failed to create post. Please try again.");
     } finally {
       setLoading(false);
@@ -221,16 +174,16 @@ export default function CreateScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.headerRow}>
-        <Text style={[styles.pageTitle, { color: colors.text }]}>New Post</Text>
+        <Text style={[styles.title, { color: colors.text }]}>New Post</Text>
         <TouchableOpacity
           style={[
             styles.postBtn,
             { backgroundColor: title && description ? colors.primary : colors.muted },
           ]}
           onPress={handlePost}
-          disabled={loading || !title || !description || imageUploading}
+          disabled={loading || uploading || !title || !description}
         >
-          {loading ? (
+          {loading || uploading ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
             <Text style={styles.postBtnText}>Post</Text>
@@ -238,36 +191,27 @@ export default function CreateScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Poll shortcut */}
-      <TouchableOpacity
-        style={[styles.pollShortcut, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/create-poll" as never); }}
-        activeOpacity={0.8}
-      >
-        <View style={[styles.pollIcon, { backgroundColor: "#3B82F620" }]}>
-          <Image source={APP_ICON} style={styles.pollIconImg} resizeMode="cover" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.pollShortcutTitle, { color: colors.text }]}>Create Community Poll</Text>
-          <Text style={[styles.pollShortcutSub, { color: colors.textMuted }]}>Ask the community anything</Text>
-        </View>
-        <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
-      </TouchableOpacity>
-
       {isPrefilled && (
         <View style={[styles.prefillBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}>
-          <Image source={APP_ICON} style={styles.bannerIcon} resizeMode="cover" />
+          <Feather name="cpu" size={13} color={colors.primary} />
           <Text style={[styles.prefillBannerText, { color: colors.primary }]}>
             Pre-filled from AI Scam Checker — edit before posting
           </Text>
-          <TouchableOpacity hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => setIsPrefilled(false)}>
-            <Image source={APP_ICON} style={styles.bannerIcon} resizeMode="cover" />
+          <TouchableOpacity
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={() => setIsPrefilled(false)}
+          >
+            <Feather name="x" size={14} color={colors.primary} />
           </TouchableOpacity>
         </View>
       )}
 
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Category</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoryRow}
+      >
         {CATEGORIES.map((cat) => (
           <CategoryPill
             key={cat.id}
@@ -304,7 +248,9 @@ export default function CreateScreen() {
         maxLength={100}
         multiline
       />
-      <Text style={[styles.charCount, { color: colors.textMuted }]}>{title.length}/100</Text>
+      <Text style={[styles.charCount, { color: colors.textMuted }]}>
+        {title.length}/100
+      </Text>
 
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Description *</Text>
       <TextInput
@@ -333,56 +279,56 @@ export default function CreateScreen() {
         textAlignVertical="top"
       />
 
-      <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Hashtags (optional)</Text>
-      <TextInput
-        style={[styles.titleInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card, minHeight: 44 }]}
-        placeholder="#phishing #cryptoscam #warning"
-        placeholderTextColor={colors.textMuted}
-        value={hashtags}
-        onChangeText={setHashtags}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-      <Text style={[styles.charCount, { color: colors.textMuted }]}>Separate with spaces or commas · max 10 tags</Text>
+      <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+        Photo / Video (optional)
+      </Text>
 
-      <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Image (optional)</Text>
-
-      {imageUri ? (
-        <View style={styles.imagePreviewWrap}>
-          <Image source={{ uri: imageUri }} style={styles.imagePreview} resizeMode="cover" />
-          {imageUploading && (
-            <View style={styles.uploadingOverlay}>
+      {mediaUri ? (
+        <View style={[styles.mediaPreview, { borderColor: colors.border }]}>
+          {mediaType === "video" ? (
+            <View style={[styles.videoThumb, { backgroundColor: colors.card }]}>
+              <Feather name="video" size={32} color={colors.primary} />
+              <Text style={[styles.videoThumbText, { color: colors.text }]}>
+                Video selected
+              </Text>
+            </View>
+          ) : (
+            <Image source={{ uri: mediaUri }} style={styles.imageThumb} resizeMode="cover" />
+          )}
+          {uploading && (
+            <View style={styles.uploadOverlay}>
               <ActivityIndicator color="#fff" />
-              <Text style={styles.uploadingText}>Uploading...</Text>
+              <Text style={styles.uploadText}>
+                Uploading {Math.round(uploadProgress * 100)}%
+              </Text>
             </View>
           )}
-          {!imageUploading && uploadedImageUrl && (
-            <View style={styles.uploadedBadge}>
-              <Image source={APP_ICON} style={styles.badgeIcon} resizeMode="cover" />
-              <Text style={styles.uploadedText}>Uploaded</Text>
-            </View>
-          )}
-          <TouchableOpacity style={styles.removeImageBtn} onPress={showImagePicker}>
-            <Image source={APP_ICON} style={styles.badgeIcon} resizeMode="cover" />
+          <TouchableOpacity
+            style={[styles.removeMediaBtn, { backgroundColor: colors.destructive }]}
+            onPress={handleRemoveMedia}
+          >
+            <Feather name="x" size={14} color="#fff" />
           </TouchableOpacity>
         </View>
       ) : (
         <TouchableOpacity
-          style={[styles.imagePickerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={showImagePicker}
+          style={[styles.pickMediaBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+          onPress={handlePickMedia}
         >
-          <Image source={APP_ICON} style={styles.addPhotoIcon} resizeMode="cover" />
-          <View>
-            <Text style={[styles.imagePickerTitle, { color: colors.text }]}>Add Photo</Text>
-            <Text style={[styles.imagePickerSub, { color: colors.textMuted }]}>
-              Camera or photo library
-            </Text>
-          </View>
+          <Feather name="paperclip" size={18} color={colors.textSecondary} />
+          <Text style={[styles.pickMediaText, { color: colors.textSecondary }]}>
+            Select photo or video from gallery
+          </Text>
         </TouchableOpacity>
       )}
 
-      <View style={[styles.disclaimerBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "44" }]}>
-        <Image source={APP_ICON} style={styles.bannerIcon} resizeMode="cover" />
+      <View
+        style={[
+          styles.disclaimerBox,
+          { backgroundColor: colors.warning + "15", borderColor: colors.warning + "44" },
+        ]}
+      >
+        <Feather name="info" size={14} color={colors.warning} />
         <Text style={[styles.disclaimerText, { color: colors.textSecondary }]}>
           All content is user-submitted and for awareness purposes only. Ensure your post follows our Community Guidelines.
         </Text>
@@ -399,26 +345,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
   },
-  pageTitle: { fontFamily: "Inter_700Bold", fontSize: 24 },
-  postBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
-  postBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 15 },
-  pollShortcut: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 20,
+  title: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 24,
   },
-  pollIcon: { width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  pollIconImg: { width: 20, height: 20, borderRadius: 5 },
-  chevronIcon: { width: 16, height: 16, borderRadius: 4 },
-  bannerIcon:  { width: 14, height: 14, borderRadius: 3 },
-  badgeIcon:   { width: 14, height: 14, borderRadius: 3 },
-  addPhotoIcon:{ width: 24, height: 24, borderRadius: 6 },
-  pollShortcutTitle: { fontFamily: "Inter_600SemiBold", fontSize: 14, marginBottom: 2 },
-  pollShortcutSub: { fontFamily: "Inter_400Regular", fontSize: 12 },
+  postBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  postBtnText: {
+    color: "#fff",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
+  },
   glowInput: { borderWidth: 1.5 },
   prefillBanner: {
     flexDirection: "row",
@@ -429,7 +369,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 4,
   },
-  prefillBannerText: { flex: 1, fontFamily: "Inter_500Medium", fontSize: 12, lineHeight: 17 },
+  prefillBannerText: {
+    flex: 1,
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+    lineHeight: 17,
+  },
   sectionLabel: {
     fontFamily: "Inter_500Medium",
     fontSize: 13,
@@ -438,7 +383,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 16,
   },
-  categoryRow: { paddingBottom: 4, paddingRight: 16 },
+  categoryRow: {
+    paddingBottom: 4,
+    paddingRight: 16,
+  },
   titleInput: {
     borderWidth: 1,
     borderRadius: 12,
@@ -448,7 +396,12 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     minHeight: 60,
   },
-  charCount: { fontFamily: "Inter_400Regular", fontSize: 11, textAlign: "right", marginTop: 4 },
+  charCount: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    textAlign: "right",
+    marginTop: 4,
+  },
   descInput: {
     borderWidth: 1,
     borderRadius: 12,
@@ -458,49 +411,61 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     minHeight: 160,
   },
-  imagePickerBtn: {
+  pickMediaBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    borderWidth: 1.5,
+    gap: 12,
+    borderWidth: 1,
     borderRadius: 12,
     borderStyle: "dashed",
     paddingHorizontal: 16,
     paddingVertical: 18,
   },
-  imagePickerTitle: { fontFamily: "Inter_600SemiBold", fontSize: 15 },
-  imagePickerSub: { fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 },
-  imagePreviewWrap: { borderRadius: 12, overflow: "hidden", position: "relative" },
-  imagePreview: { width: "100%", height: 220 },
-  uploadingOverlay: {
+  pickMediaText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 14,
+    flex: 1,
+  },
+  mediaPreview: {
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+    position: "relative",
+  },
+  imageThumb: {
+    width: "100%",
+    height: 180,
+  },
+  videoThumb: {
+    width: "100%",
+    height: 120,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  videoThumbText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 14,
+  },
+  uploadOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.55)",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
   },
-  uploadingText: { color: "#fff", fontFamily: "Inter_500Medium", fontSize: 13 },
-  uploadedBadge: {
-    position: "absolute",
-    bottom: 10,
-    left: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
+  uploadText: {
+    color: "#fff",
+    fontFamily: "Inter_500Medium",
+    fontSize: 13,
   },
-  uploadedText: { color: "#10B981", fontFamily: "Inter_500Medium", fontSize: 12 },
-  removeImageBtn: {
+  removeMediaBtn: {
     position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    top: 8,
+    right: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -513,5 +478,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 24,
   },
-  disclaimerText: { fontFamily: "Inter_400Regular", fontSize: 12, lineHeight: 18, flex: 1 },
+  disclaimerText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
+  },
 });
