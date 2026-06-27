@@ -72,8 +72,9 @@ export default function CreateScreen() {
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
-  const handleWebFileChange = useCallback((e: Event) => {
-    const input = e.target as HTMLInputElement;
+  const handleWebFileChange = useCallback((e: any) => {
+  const input = e.target as any;
+    
     const file = input.files?.[0];
     if (!file) return;
     const uri = URL.createObjectURL(file);
