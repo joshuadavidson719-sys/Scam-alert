@@ -8,10 +8,20 @@ import {
   ActivityIndicator,
   Image,
   Share,
+  Alert,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { Feather } from "@expo/vector-icons";
+import {
+  doc,
+  onSnapshot,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  deleteDoc,
+} from "firebase/firestore";
 import * as Haptics from "expo-haptics";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
@@ -20,17 +30,41 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { CategoryPill } from "@/components/CategoryPill";
-import { ScamVoteBar } from "@/components/ScamVoteBar";
 import { formatTimeAgo } from "@/lib/utils";
+import { isVideoUri } from "@/lib/storage";
 import type { PostData } from "@/components/PostCard";
 
-const APP_ICON = require("@/assets/images/icon.png");
+function VideoPlayer({ uri }: { uri: string }) {
+  if (Platform.OS === "web") {
+    return (
+      // @ts-ignore
+      <video
+        src={uri}
+        controls
+        playsInline
+        style={{
+          width: "100%",
+          maxHeight: 360,
+          borderRadius: 12,
+          backgroundColor: "#000",
+          display: "block",
+        }}
+      />
+    );
+  }
+  return (
+    <View style={styles.videoPlaceholder}>
+      <Feather name="video" size={40} color="#fff" />
+      <Text style={styles.videoPlaceholderText}>Video</Text>
+    </View>
+  );
+}
 
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [post, setPost] = useState<PostData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showComments, setShowComments] = useState(false);
@@ -46,6 +80,8 @@ export default function PostDetail() {
         setPost(data);
         setLiked(!!user && data.likes.includes(user.uid));
         setLikeCount(data.likes.length);
+      } else {
+        router.back();
       }
       setLoading(false);
     });
@@ -67,6 +103,30 @@ export default function PostDetail() {
     }
   };
 
+  const handleDelete = () => {
+    if (!post) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      "Delete Post",
+      "Are you sure you want to delete this post? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, "posts", post.id));
+              router.back();
+            } catch {
+              Alert.alert("Error", "Could not delete post. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -83,6 +143,13 @@ export default function PostDetail() {
     );
   }
 
+  const isAuthor = user?.uid === post.authorId;
+  const isAdmin = profile?.isAdmin === true;
+  const canDelete = isAuthor || isAdmin;
+
+  const mediaUri = post.videoUrl || (post.images.length > 0 ? post.images[0] : null);
+  const isVideo = mediaUri ? (post.videoUrl ? true : isVideoUri(mediaUri)) : false;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View
@@ -91,18 +158,25 @@ export default function PostDetail() {
           { paddingTop: insets.top + 8, borderBottomColor: colors.border },
         ]}
       >
-        <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
-          <Text style={[{ fontFamily: "Inter_600SemiBold", fontSize: 13 }, { color: colors.text }]}>Back</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Post</Text>
-        <TouchableOpacity
-          onPress={() =>
-            Share.share({ message: `🚨 ${post.title}\n\n${post.description}\n\nShared from Scam Alert` })
-          }
-        >
-          <Image source={APP_ICON} style={styles.navIcon} resizeMode="cover" />
-        </TouchableOpacity>
+        <View style={styles.navRight}>
+          {canDelete && (
+            <TouchableOpacity onPress={handleDelete} style={styles.navBtn}>
+              <Feather name="trash-2" size={20} color={colors.destructive} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={() =>
+              Share.share({ message: `🚨 ${post.title}\n\n${post.description}\n\nShared from Scam Alert` })
+            }
+            style={styles.navBtn}
+          >
+            <Feather name="share-2" size={22} color={colors.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}>
@@ -125,33 +199,39 @@ export default function PostDetail() {
           {post.description}
         </Text>
 
-        {post.images.length > 0 && (
-          <Image
-            source={{ uri: post.images[0] }}
-            style={[styles.image, { backgroundColor: colors.muted }]}
-            resizeMode="cover"
-          />
+        {mediaUri && (
+          isVideo ? (
+            <VideoPlayer uri={mediaUri} />
+          ) : (
+            <Image
+              source={{ uri: mediaUri }}
+              style={[styles.image, { backgroundColor: colors.muted }]}
+              resizeMode="cover"
+            />
+          )
         )}
-
-        <ScamVoteBar
-          postId={post.id}
-          scamVotes={post.scamVotes}
-          notScamVotes={post.notScamVotes}
-          compact={false}
-        />
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         <View style={styles.actions}>
           <TouchableOpacity style={styles.action} onPress={handleLike}>
-            <Text style={{ fontSize: 20 }}>{liked ? "❤️" : "🤍"}</Text>
-            <Text style={[styles.actionText, { color: liked ? colors.primary : colors.textSecondary }]}>
+            <Feather
+              name="heart"
+              size={20}
+              color={liked ? colors.primary : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.actionText,
+                { color: liked ? colors.primary : colors.textSecondary },
+              ]}
+            >
               {likeCount} {likeCount === 1 ? "Like" : "Likes"}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.action} onPress={() => setShowComments(true)}>
-            <Text style={{ fontSize: 20 }}>💬</Text>
+            <Feather name="message-circle" size={20} color={colors.textSecondary} />
             <Text style={[styles.actionText, { color: colors.textSecondary }]}>
               {post.commentCount} {post.commentCount === 1 ? "Comment" : "Comments"}
             </Text>
@@ -164,13 +244,13 @@ export default function PostDetail() {
               setShowReport(true);
             }}
           >
-            <Text style={{ fontSize: 20 }}>🚩</Text>
+            <Feather name="flag" size={20} color={colors.textMuted} />
             <Text style={[styles.actionText, { color: colors.textMuted }]}>Report</Text>
           </TouchableOpacity>
         </View>
 
         <View style={[styles.disclaimerBox, { backgroundColor: colors.warning + "10", borderColor: colors.border }]}>
-          <Text style={{ fontSize: 14 }}>ℹ️</Text>
+          <Feather name="info" size={14} color={colors.textMuted} />
           <Text style={[styles.disclaimerText, { color: colors.textMuted }]}>
             All content is user-submitted and for awareness purposes only.
           </Text>
@@ -207,8 +287,15 @@ const styles = StyleSheet.create({
   navTitle: {
     fontFamily: "Inter_600SemiBold",
     fontSize: 17,
+    flex: 1,
+    textAlign: "center",
   },
-  navIcon: { width: 22, height: 22, borderRadius: 6 },
+  navRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  navBtn: { padding: 4 },
   content: {
     padding: 16,
     gap: 12,
@@ -242,6 +329,21 @@ const styles = StyleSheet.create({
     height: 240,
     borderRadius: 12,
     marginTop: 4,
+  },
+  videoPlaceholder: {
+    width: "100%",
+    height: 240,
+    borderRadius: 12,
+    backgroundColor: "#111",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 4,
+  },
+  videoPlaceholderText: {
+    color: "#fff",
+    fontFamily: "Inter_400Regular",
+    fontSize: 14,
   },
   divider: {
     height: 1,
