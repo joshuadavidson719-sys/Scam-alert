@@ -1,22 +1,7 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import { initializeAuth, getAuth, getReactNativePersistence, type Auth } from "firebase/auth";
+import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
-import { Platform, LogBox } from "react-native";
-import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
-
-// Silence Firebase Firestore permission-denied overlay in Expo Go dev mode.
-// These are handled gracefully via error callbacks — no need to show the overlay.
-LogBox.ignoreLogs([
-  "Missing or insufficient permissions",
-  "@firebase/firestore",
-  "permission-denied",
-  "AsyncStorage has been extracted",
-  "shadow* style props are deprecated",
-  "textShadow* style props are deprecated",
-  "setLayoutAnimationEnabledExperimental",
-  "[expo-av]",
-]);
 
 export const isFirebaseConfigured = !!(
   process.env.EXPO_PUBLIC_FIREBASE_API_KEY &&
@@ -37,24 +22,17 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-const isNewApp = getApps().length === 0;
-app = isNewApp ? initializeApp(firebaseConfig) : getApps()[0];
-
-// Set up persistent auth for native (stays logged in between sessions)
-if (Platform.OS !== "web" && isNewApp) {
-  try {
-    auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-    });
-  } catch {
-    auth = getAuth(app);
-  }
-} else {
+try {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+} catch {
+  app = getApps()[0] ?? initializeApp(firebaseConfig, "fallback");
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
 }
-
-db = getFirestore(app);
-storage = getStorage(app);
 
 export { auth, db, storage };
 export default app;
