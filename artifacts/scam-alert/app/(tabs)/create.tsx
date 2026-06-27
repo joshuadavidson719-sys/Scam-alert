@@ -15,20 +15,27 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../../lib/firebase";
-import { uploadMedia, isFirebaseConfigured as _isFBConfigured } from "../../lib/storage";
-import { useColors } from "../../hooks/useColors";
-import { useAuth, CATEGORIES, type CategoryId } from "../../context/AuthContext";
-import { CategoryPill } from "../../components/CategoryPill";
-import { router, useLocalSearchParams } from "expo-router";
-
-export default function CreateScreen() {
-  const colors = useColors();
+if (mediaUri && _isFBConfigured) {
+  setUploading(true);
+  const ext = mediaUri.split(".").pop() ?? (mediaType === "video" ? "mp4" : "jpg");
+  const path = `post-media/${user.uid}/${Date.now()}.${ext}`;
+  const downloadUrl = await new Promise<string>((resolve, reject) => {
+    fetch(mediaUri).then((r) => r.blob()).then((blob) => {
+      const task = uploadBytesResumable(ref(storage, path), blob);
+      task.on("state_changed",
+        (snap) => { if (snap.totalBytes > 0) setUploadProgress(snap.bytesTransferred / snap.totalBytes); },
+        reject,
+        async () => resolve(await getDownloadURL(task.snapshot.ref))
+      );
+    }).catch(reject);
+  });
+  if (mediaType === "video") {
+    uploadedVideoUrl = downloadUrl;
+  } else {
+    uploadedImageUrl = downloadUrl;
+  }
+  setUploading(false);
+}
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
 
