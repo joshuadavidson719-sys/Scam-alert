@@ -24,7 +24,7 @@ function VideoPreview({ uri, style }: { uri: string; style: object }) {
 
   const player = useVideoPlayer({ uri }, (p) => {
     p.loop = true;
-    p.muted = true; // must be muted for browser autoplay
+    p.muted = p.muted = false; // must be muted for browser autoplay
   });
 
   const tryPlay = useCallback(() => {
