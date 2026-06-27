@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -52,6 +52,7 @@ export default function CreateScreen() {
   const titleInputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
   const appliedKeyRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const titleParam = params.prefillTitle;
@@ -71,7 +72,37 @@ export default function CreateScreen() {
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
+  const handleWebFileChange = useCallback((e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const uri = URL.createObjectURL(file);
+    const isVid = file.type.startsWith("video/");
+    setMediaUri(uri);
+    setMediaType(isVid ? "video" : "image");
+    input.value = "";
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*,video/*";
+    input.style.display = "none";
+    input.addEventListener("change", handleWebFileChange);
+    document.body.appendChild(input);
+    fileInputRef.current = input;
+    return () => {
+      input.removeEventListener("change", handleWebFileChange);
+      document.body.removeChild(input);
+    };
+  }, [handleWebFileChange]);
+
   const handlePickMedia = async () => {
+    if (Platform.OS === "web") {
+      fileInputRef.current?.click();
+      return;
+    }
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
@@ -155,7 +186,7 @@ export default function CreateScreen() {
       appliedKeyRef.current = null;
       setIsPrefilled(false);
       router.replace("/(tabs)/" as never);
-    } catch {
+    } catch (err) {
       setUploading(false);
       Alert.alert("Error", "Failed to create post. Please try again.");
     } finally {
