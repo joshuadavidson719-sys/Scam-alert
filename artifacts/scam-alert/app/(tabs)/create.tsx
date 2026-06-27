@@ -52,7 +52,7 @@ export default function CreateScreen() {
   const titleInputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
   const appliedKeyRef = useRef<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<any>(null);
 
   useEffect(() => {
     const titleParam = params.prefillTitle;
