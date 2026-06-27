@@ -20,11 +20,11 @@ import {
   addDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { uploadMedia, isFirebaseConfigured as _isFBConfigured } from "@/lib/storage";
-import { useColors } from "@/hooks/useColors";
-import { useAuth, CATEGORIES, type CategoryId } from "@/context/AuthContext";
-import { CategoryPill } from "@/components/CategoryPill";
+import { db } from "../../lib/firebase";
+import { uploadMedia, isFirebaseConfigured as _isFBConfigured } from "../../lib/storage";
+import { useColors } from "../../hooks/useColors";
+import { useAuth, CATEGORIES, type CategoryId } from "../../context/AuthContext";
+import { CategoryPill } from "../../components/CategoryPill";
 import { router, useLocalSearchParams } from "expo-router";
 
 export default function CreateScreen() {
