@@ -21,55 +21,11 @@ type Step = "pick" | "music" | "caption";
 // Handles browser autoplay-block gracefully with a visible "Tap to play" overlay.
 function VideoPreview({ uri, style }: { uri: string; style: object }) {
   const [blocked, setBlocked] = useState(false);
-
-  const player = useVideoPlayer({ uri }, (p) => {
-    p.loop = true;
-    p.muted = p.muted = false; // must be muted for browser autoplay
-  });
-
-  const tryPlay = useCallback(() => {
-    setBlocked(false);
-    try {
-      const result: unknown = player.play();
-      if (result instanceof Promise) {
-        (result as Promise<void>).catch(() => setBlocked(true));
-      }
-    } catch {
-      setBlocked(true);
-    }
-  }, [player]);
-
-  useEffect(() => {
-    // Listen for player errors (covers native autoplay failures)
-    const sub = player.addListener("statusChange", ({ error }: any) => {
-      if (error) setBlocked(true);
-    });
-    // On web, play() returns a Promise that rejects if autoplay is blocked
-    tryPlay();
-    return () => sub.remove();
-  }, []);
-
+  ...
   return (
-    <TouchableOpacity
-      activeOpacity={blocked ? 0.8 : 1}
-      style={style as any}
-      onPress={blocked ? tryPlay : undefined}
-    >
-      <VideoView
-        player={player}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        nativeControls={false}
-        allowsPictureInPicture={false}
-      />
-      {blocked && (
-        <View style={[StyleSheet.absoluteFill, styles.tapOverlay]}>
-          <View style={styles.tapCircle}>
-            <Image source={APP_ICON} style={styles.tapPlayIcon} resizeMode="cover" />
-          </View>
-          <Text style={styles.tapLabel}>Tap to play</Text>
-        </View>
-      )}
+    <TouchableOpacity ...>
+      <VideoView .../>
+      {blocked && (...)}
     </TouchableOpacity>
   );
 }
