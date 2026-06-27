@@ -15,27 +15,20 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-if (mediaUri && _isFBConfigured) {
-  setUploading(true);
-  const ext = mediaUri.split(".").pop() ?? (mediaType === "video" ? "mp4" : "jpg");
-  const path = `post-media/${user.uid}/${Date.now()}.${ext}`;
-  const downloadUrl = await new Promise<string>((resolve, reject) => {
-    fetch(mediaUri).then((r) => r.blob()).then((blob) => {
-      const task = uploadBytesResumable(ref(storage, path), blob);
-      task.on("state_changed",
-        (snap) => { if (snap.totalBytes > 0) setUploadProgress(snap.bytesTransferred / snap.totalBytes); },
-        reject,
-        async () => resolve(await getDownloadURL(task.snapshot.ref))
-      );
-    }).catch(reject);
-  });
-  if (mediaType === "video") {
-    uploadedVideoUrl = downloadUrl;
-  } else {
-    uploadedImageUrl = downloadUrl;
-  }
-  setUploading(false);
-}
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { db, storage, isFirebaseConfigured as _isFBConfigured } from "../../lib/firebase";
+import { useColors } from "../../hooks/useColors";
+import { useAuth, CATEGORIES, type CategoryId } from "../../context/AuthContext";
+import { CategoryPill } from "../../components/CategoryPill";
+import { router, useLocalSearchParams } from "expo-router";
+
+export default function CreateScreen() {
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
 
@@ -80,8 +73,7 @@ if (mediaUri && _isFBConfigured) {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const handleWebFileChange = useCallback((e: any) => {
-  const input = e.target as any;
-    
+    const input = e.target as any;
     const file = input.files?.[0];
     if (!file) return;
     const uri = URL.createObjectURL(file);
@@ -159,7 +151,16 @@ if (mediaUri && _isFBConfigured) {
         setUploading(true);
         const ext = mediaUri.split(".").pop() ?? (mediaType === "video" ? "mp4" : "jpg");
         const path = `post-media/${user.uid}/${Date.now()}.${ext}`;
-        const downloadUrl = await uploadMedia(mediaUri, path, setUploadProgress);
+        const downloadUrl = await new Promise<string>((resolve, reject) => {
+          fetch(mediaUri).then((r) => r.blob()).then((blob) => {
+            const task = uploadBytesResumable(ref(storage, path), blob);
+            task.on("state_changed",
+              (snap) => { if (snap.totalBytes > 0) setUploadProgress(snap.bytesTransferred / snap.totalBytes); },
+              reject,
+              async () => resolve(await getDownloadURL(task.snapshot.ref))
+            );
+          }).catch(reject);
+        });
         if (mediaType === "video") {
           uploadedVideoUrl = downloadUrl;
         } else {
