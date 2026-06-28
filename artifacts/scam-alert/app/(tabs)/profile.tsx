@@ -22,8 +22,8 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { uploadMedia, isFirebaseConfigured as _isFBConfigured } from "@/lib/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { db, storage, isFirebaseConfigured as _isFBConfigured } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -102,7 +102,14 @@ export default function ProfileScreen() {
         try {
           if (_isFBConfigured) {
             const path = `profile-photos/${user.uid}`;
-            const downloadUrl = await uploadMedia(uri, path);
+const blob = await (await fetch(uri)).blob();
+const downloadUrl = await new Promise<string>((resolve, reject) => {
+  const task = uploadBytesResumable(ref(storage, path), blob);
+  task.on("state_changed", null, reject, async () =>
+    resolve(await getDownloadURL(task.snapshot.ref))
+  );
+});
+  
             await updateUserProfile({ profilePhoto: downloadUrl });
             await updateDoc(doc(db, "users", user.uid), { profilePhoto: downloadUrl });
           } else {
