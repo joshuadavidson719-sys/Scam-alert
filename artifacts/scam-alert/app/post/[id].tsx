@@ -31,7 +31,7 @@ import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { CategoryPill } from "@/components/CategoryPill";
 import { formatTimeAgo } from "@/lib/utils";
-import { isVideoUri } from "@/lib/storage";
+const isVideoUri = (uri: string) => /\.(mp4|mov|webm|ogg|avi|mkv|m4v|3gp)$/i.test(uri.split("?")[0]);
 import type { PostData } from "@/components/PostCard";
 
 function VideoPlayer({ uri }: { uri: string }) {
