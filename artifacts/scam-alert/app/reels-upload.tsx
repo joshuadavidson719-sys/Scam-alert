@@ -21,11 +21,27 @@ type Step = "pick" | "music" | "caption";
 // Handles browser autoplay-block gracefully with a visible "Tap to play" overlay.
 function VideoPreview({ uri, style }: { uri: string; style: object }) {
   const [blocked, setBlocked] = useState(false);
-  ...
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.muted = false;
+    try { p.play(); } catch { setBlocked(true); }
+  });
+
   return (
-    <TouchableOpacity ...>
-      <VideoView .../>
-      {blocked && (...)}
+    <TouchableOpacity
+      activeOpacity={1}
+      onPress={() => { player.play(); setBlocked(false); }}
+      style={style as any}
+    >
+      <VideoView player={player} style={style as any} contentFit="cover" nativeControls={false} />
+      {blocked && (
+        <View style={[StyleSheet.absoluteFill, styles.tapOverlay]}>
+          <View style={styles.tapCircle}>
+            <Text style={{ color: "#fff", fontSize: 24 }}>▶</Text>
+          </View>
+          <Text style={styles.tapLabel}>Tap to play</Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
