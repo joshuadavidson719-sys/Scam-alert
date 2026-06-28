@@ -1,22 +1,19 @@
-import { useTheme } from "@/context/ThemeContext";
-import colors from "@/constants/colors";
 import { useColorScheme } from "react-native";
-
-type ColorKey = keyof typeof colors;
+import colors from "@/constants/colors";
+import { useTheme } from "@/context/ThemeContext";
 
 export function useColors() {
-  const { mode } = useTheme();
-  const systemScheme = useColorScheme();
-
-  let palette: (typeof colors)[ColorKey];
-
-  if (mode === "system") {
-    palette = systemScheme === "dark" ? colors.dark : colors.light;
-  } else if (mode in colors) {
-    palette = colors[mode as ColorKey];
-  } else {
-    palette = colors.dark;
-  }
-
-  return palette;
+  const scheme = useColorScheme();
+  const { accentColor } = useTheme();
+  const palette =
+    scheme === "dark" && "dark" in colors
+      ? (colors as Record<string, typeof colors.light>).dark
+      : colors.light;
+  return {
+    ...palette,
+    primary: accentColor,
+    tint: accentColor,
+    accentForeground: accentColor,
+    radius: colors.radius,
+  };
 }
