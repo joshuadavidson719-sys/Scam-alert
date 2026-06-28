@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
-
+import { checkLink } from "@/lib/gemini";
 const APP_ICON = require("@/assets/images/icon.png");
 
 interface LinkResult {
