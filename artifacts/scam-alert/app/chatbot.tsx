@@ -16,7 +16,7 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
-
+import { chatWithScamBot } from "@/lib/gemini";
 const APP_ICON = require("@/assets/images/icon.png");
 
 interface Message {
@@ -64,18 +64,13 @@ export default function ChatbotScreen() {
     setLoading(true);
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
 
-    try {
-      const history = messages.slice(-10).map((m) => ({ role: m.role, content: m.text }));
-      const res = await fetch(`${BASE}/api/chatbot`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: trimmed, history }),
-      });
-      const json = await res.json();
+        try {
+      const history = messages.slice(-10).map((m) => ({ role: m.role, text: m.text }));
+      const replyText = await chatWithScamBot(history, trimmed);
       const reply: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        text: json.reply ?? "Sorry, I couldn't process that. Please try again.",
+        text: replyText,
         ts: Date.now(),
       };
       setMessages((prev) => [...prev, reply]);
@@ -90,6 +85,7 @@ export default function ChatbotScreen() {
       setLoading(false);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
     }
+    
   };
 
   return (
