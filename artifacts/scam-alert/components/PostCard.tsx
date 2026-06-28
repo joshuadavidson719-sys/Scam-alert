@@ -28,7 +28,7 @@ import { CategoryPill } from "./CategoryPill";
 import type { CategoryId } from "@/context/AuthContext";
 import { formatTimeAgo } from "@/lib/utils";
 import { sendPushNotification } from "@/lib/notifications";
-import { isVideoUri } from "@/lib/storage";
+const isVideoUri = (uri: string) => /\.(mp4|mov|webm|ogg|avi|mkv|m4v|3gp)$/i.test(uri.split("?")[0]);
 
 export interface PostData {
   id: string;
