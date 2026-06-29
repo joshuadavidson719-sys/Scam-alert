@@ -221,6 +221,12 @@ export default function CreateScreen() {
             { backgroundColor: title && description ? colors.primary : colors.muted },
           ]}
           onPress={handlePost}
+                  <TouchableOpacity
+          style={[
+            styles.postBtn,
+            { backgroundColor: title && description ? colors.primary : colors.muted },
+          ]}
+          onPress={handlePost}
           disabled={loading || uploading || !title || !description}
         >
           {loading || uploading ? (
@@ -229,12 +235,6 @@ export default function CreateScreen() {
             <Text style={styles.postBtnText}>Post</Text>
           )}
         </TouchableOpacity>
-      </View>
-
-      {isPrefilled && (
-        <View style={[styles.prefillBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}>
-          <Feather name="cpu" size={13} color={colors.primary} />
-          <Text style={[styles.prefillBannerText, { color: colors.primary }]}>
             Pre-filled from AI Scam Checker — edit before posting
           </Text>
           <TouchableOpacity
