@@ -402,10 +402,11 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     fontSize: 24,
   },
-  postBtn: {
-    paddingHorizontal: 20,
+    postBtn: {
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 12,
+  },
   },
   postBtnText: {
     color: "#fff",
