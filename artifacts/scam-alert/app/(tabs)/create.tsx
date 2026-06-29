@@ -221,10 +221,17 @@ export default function CreateScreen() {
             { backgroundColor: title && description ? colors.primary : colors.muted },
           ]}
           onPress={handlePost}
-                  <TouchableOpacity
+                          <TouchableOpacity
           style={[
             styles.postBtn,
-            { backgroundColor: title && description ? colors.primary : colors.muted },
+            {
+              backgroundColor: title && description ? colors.primary : colors.primary + "55",
+              borderWidth: 2,
+              borderColor: colors.primary,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+            },
           ]}
           onPress={handlePost}
           disabled={loading || uploading || !title || !description}
@@ -232,7 +239,13 @@ export default function CreateScreen() {
           {loading || uploading ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.postBtnText}>Post</Text>
+            <>
+              <Image
+                source={require("../../assets/images/icon.png")}
+                style={{ width: 22, height: 22, borderRadius: 5 }}
+              />
+              <Text style={styles.postBtnText}>Post</Text>
+            </>
           )}
         </TouchableOpacity>
             Pre-filled from AI Scam Checker — edit before posting
