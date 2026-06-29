@@ -25,13 +25,17 @@ import {
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db, storage, isFirebaseConfigured as _isFBConfigured } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
-import { useTheme, ACCENT_COLORS } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
 import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { router } from "expo-router";
+
+const ACCENT_COLORS = [
+  "#FF3B3B", "#3B82F6", "#10B981", "#8B5CF6",
+  "#F97316", "#EC4899", "#06B6D4", "#EAB308",
+];
 
 const GAMES = [
   { label: "Galaxy Strike", route: "/galaxy-strike", icon: "zap" },
@@ -40,7 +44,6 @@ const GAMES = [
 
 export default function ProfileScreen() {
   const colors = useColors();
-  const { accentColor, setAccentColor } = useTheme();
   const insets = useSafeAreaInsets();
   const { user, profile, logout, updateUserProfile } = useAuth();
   const [posts, setPosts] = useState<PostData[]>([]);
@@ -48,9 +51,14 @@ export default function ProfileScreen() {
   const [commentPost, setCommentPost] = useState<PostData | null>(null);
   const [reportPostId, setReportPostId] = useState<string | null>(null);
   const [editingBio, setEditingBio] = useState(false);
-  const [bioText, setBioText] = useState(profile?.bio ?? "");
+  const [bioText, setBioText] = useState("");
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [accentColor, setAccentColor] = useState("#FF3B3B");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  useEffect(() => {
+    if (profile?.bio) setBioText(profile.bio);
+  }, [profile]);
 
   useEffect(() => {
     if (!user) return;
@@ -59,14 +67,18 @@ export default function ProfileScreen() {
       where("authorId", "==", user.uid),
       orderBy("createdAt", "desc")
     );
-    const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map((d) => ({
-        ...(d.data() as Omit<PostData, "id">),
-        id: d.id,
-      }));
-      setPosts(data);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const data = snap.docs.map((d) => ({
+          ...(d.data() as Omit<PostData, "id">),
+          id: d.id,
+        }));
+        setPosts(data);
+        setLoading(false);
+      },
+      () => { setLoading(false); }
+    );
     return unsub;
   }, [user]);
 
@@ -118,8 +130,6 @@ export default function ProfileScreen() {
             });
             await updateUserProfile({ profilePhoto: downloadUrl });
             await updateDoc(doc(db, "users", user.uid), { profilePhoto: downloadUrl });
-          } else {
-            Alert.alert("Storage Not Configured", "Please add EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET to your environment variables.");
           }
         } catch {
           Alert.alert("Upload Failed", "Could not upload photo. Please try again.");
@@ -132,7 +142,8 @@ export default function ProfileScreen() {
     }
   };
 
-  if (!profile) return null;
+  if (!user) return null;
+  if (!profile) return <View style={[styles.container, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.primary} style={{ marginTop: 100 }} /></View>;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -165,6 +176,7 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
                 <Text style={[styles.username, { color: colors.text }]}>{profile.username}</Text>
                 <Text style={[styles.niche, { color: colors.primary }]}>{profile.niche || "Scam Alert Community"}</Text>
+
                 {editingBio ? (
                   <View style={styles.bioEdit}>
                     <TextInput
@@ -187,7 +199,7 @@ export default function ProfileScreen() {
                     </View>
                   </View>
                 ) : (
-                  <TouchableOpacity onPress={() => { setBioText(profile.bio); setEditingBio(true); }}>
+                  <TouchableOpacity onPress={() => { setBioText(profile.bio ?? ""); setEditingBio(true); }}>
                     <Text style={[styles.bio, { color: colors.textSecondary }]}>{profile.bio || "Tap to add a bio..."}</Text>
                   </TouchableOpacity>
                 )}
@@ -216,11 +228,11 @@ export default function ProfileScreen() {
               <View style={styles.colorRow}>
                 {ACCENT_COLORS.map((c) => (
                   <TouchableOpacity
-                    key={c.value}
-                    onPress={() => setAccentColor(c.value)}
-                    style={[styles.colorSwatch, { backgroundColor: c.value }, accentColor === c.value && styles.colorSwatchSelected]}
+                    key={c}
+                    onPress={() => setAccentColor(c)}
+                    style={[styles.colorSwatch, { backgroundColor: c }, accentColor === c && styles.colorSwatchSelected]}
                   >
-                    {accentColor === c.value && <Feather name="check" size={14} color="#fff" />}
+                    {accentColor === c && <Feather name="check" size={14} color="#fff" />}
                   </TouchableOpacity>
                 ))}
               </View>
