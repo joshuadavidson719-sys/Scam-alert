@@ -219,9 +219,9 @@ export default function CreateScreen() {
           style={[
             styles.postBtn,
             { backgroundColor: title && description ? colors.primary : colors.muted },
-          ]}
-          onPress={handlePost}
-                                  <TouchableOpacity
+                <View style={styles.headerRow}>
+        <Text style={[styles.title, { color: colors.text }]}>New Post</Text>
+        <TouchableOpacity
           style={[
             styles.postBtn,
             {
@@ -236,6 +236,12 @@ export default function CreateScreen() {
           disabled={loading || uploading || !title || !description}
         >
           {loading || uploading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.postBtnText}>Post</Text>
+          )}
+        </TouchableOpacity>
+      </View>
             <ActivityIndicator color="#fff" size="small" />
           ) : (
             <>
