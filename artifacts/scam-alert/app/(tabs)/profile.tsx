@@ -419,5 +419,17 @@ const styles = StyleSheet.create({
   tab: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 12, gap: 4 },
   tabLabel: { fontFamily: "Inter_500Medium", fontSize: 11 },
   emptyPosts: { alignItems: "center", paddingVertical: 40, gap: 12 },
-  emptyText: { fontFamily: "Inter_400Regular", fontSize: 14 },
+  emptyText: { fontFamily: "Inter_400Regular", fontSize: 14 },  uploadReelBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginTop: 8,
+  },
+  uploadReelText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
+  },
 });
