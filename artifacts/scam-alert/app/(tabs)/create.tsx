@@ -221,13 +221,12 @@ export default function CreateScreen() {
             { backgroundColor: title && description ? colors.primary : colors.muted },
           ]}
           onPress={handlePost}
-                          <TouchableOpacity
+                                  <TouchableOpacity
           style={[
             styles.postBtn,
             {
-              backgroundColor: title && description ? colors.primary : colors.primary + "55",
-              borderWidth: 2,
-              borderColor: colors.primary,
+              backgroundColor: colors.primary,
+              opacity: title && description ? 1 : 0.45,
               flexDirection: "row",
               alignItems: "center",
               gap: 6,
@@ -235,6 +234,19 @@ export default function CreateScreen() {
           ]}
           onPress={handlePost}
           disabled={loading || uploading || !title || !description}
+        >
+          {loading || uploading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <Image
+                source={require("../../assets/images/icon.png")}
+                style={{ width: 20, height: 20, borderRadius: 4 }}
+              />
+              <Text style={styles.postBtnText}>Post</Text>
+            </>
+          )}
+        </TouchableOpacity>
         >
           {loading || uploading ? (
             <ActivityIndicator color="#fff" size="small" />
