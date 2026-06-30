@@ -218,18 +218,9 @@ export default function CreateScreen() {
         <TouchableOpacity
           style={[
             styles.postBtn,
-            { backgroundColor: title && description ? colors.primary : colors.muted },
-                <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: colors.text }]}>New Post</Text>
-        <TouchableOpacity
-          style={[
-            styles.postBtn,
             {
               backgroundColor: colors.primary,
               opacity: title && description ? 1 : 0.45,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 6,
             },
           ]}
           onPress={handlePost}
@@ -238,34 +229,15 @@ export default function CreateScreen() {
           {loading || uploading ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.postBtnText}>Post</Text>
+            <Text style={styles.postBtnText}>POST</Text>
           )}
         </TouchableOpacity>
       </View>
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <>
-              <Image
-                source={require("../../assets/images/icon.png")}
-                style={{ width: 20, height: 20, borderRadius: 4 }}
-              />
-              <Text style={styles.postBtnText}>Post</Text>
-            </>
-          )}
-        </TouchableOpacity>
-        >
-          {loading || uploading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <>
-              <Image
-                source={require("../../assets/images/icon.png")}
-                style={{ width: 22, height: 22, borderRadius: 5 }}
-              />
-              <Text style={styles.postBtnText}>Post</Text>
-            </>
-          )}
-        </TouchableOpacity>
+
+      {isPrefilled && (
+        <View style={[styles.prefillBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}>
+          <Feather name="cpu" size={13} color={colors.primary} />
+          <Text style={[styles.prefillBannerText, { color: colors.primary }]}>
             Pre-filled from AI Scam Checker — edit before posting
           </Text>
           <TouchableOpacity
@@ -420,17 +392,15 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     fontSize: 24,
   },
-    postBtn: {
-    paddingHorizontal: 16,
+  postBtn: {
+    paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 10,
   },
-  },
-    postBtnText: {
+  postBtnText: {
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
-    fontSize: 16,
-  },
+    fontSize: 15,
   },
   glowInput: { borderWidth: 1.5 },
   prefillBanner: {
