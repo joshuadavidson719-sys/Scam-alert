@@ -201,6 +201,13 @@ export default function UserProfileScreen() {
                         backgroundColor: following ? colors.card : colors.primary,
                         borderColor: following ? colors.border : colors.primary,
                         opacity: followLoading ? 0.6 : 1,
+                                        <TouchableOpacity
+                    style={[
+                      styles.followBtn,
+                      {
+                        backgroundColor: following ? colors.card : "#FF3B3B",
+                        borderColor: following ? colors.border : "#FF3B3B",
+                        opacity: followLoading ? 0.6 : 1,
                       },
                     ]}
                     onPress={handleFollow}
@@ -215,17 +222,10 @@ export default function UserProfileScreen() {
                           { color: following ? colors.text : "#fff" },
                         ]}
                       >
-                        {following ? "Following" : "Follow"}
+                        {following ? "✓ Following" : "Follow"}
                       </Text>
                     )}
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.msgBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
-                    onPress={handleMessage}
-                  >
-                    <Feather name="message-circle" size={16} color={colors.text} />
-                    <Text style={[styles.msgBtnText, { color: colors.text }]}>Message</Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> 
                 </View>
               )}
             </View>
