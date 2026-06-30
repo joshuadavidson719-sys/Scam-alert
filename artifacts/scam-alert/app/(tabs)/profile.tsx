@@ -337,12 +337,21 @@ export default function ProfileScreen() {
       </View>
 
       {loading && <ActivityIndicator color={themeColor} style={{ margin: 20 }} />}
-      {!loading && filteredPosts.length === 0 && (
+            {!loading && filteredPosts.length === 0 && (
         <View style={styles.emptyPosts}>
           <Feather name={activeTab === "reels" ? "film" : activeTab === "media" ? "image" : "file-text"} size={36} color={colors.textMuted} />
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             {activeTab === "reels" ? "No reels yet" : activeTab === "media" ? "No photos or videos yet" : "No posts yet"}
           </Text>
+          {activeTab === "reels" && (
+            <TouchableOpacity
+              style={[styles.uploadReelBtn, { backgroundColor: themeColor }]}
+              onPress={() => router.push("/(tabs)/create" as never)}
+            >
+              <Feather name="upload" size={18} color={isDark(themeColor) ? "#fff" : "#000"} />
+              <Text style={[styles.uploadReelText, { color: isDark(themeColor) ? "#fff" : "#000" }]}>Upload a Reel</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
