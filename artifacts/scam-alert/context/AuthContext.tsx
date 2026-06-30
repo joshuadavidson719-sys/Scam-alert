@@ -11,19 +11,14 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile as firebaseUpdateProfile,
-  GithubAuthProvider,
-  GoogleAuthProvider,
-  signInWithCredential,
-  signInWithPopup,
   type User,
 } from "firebase/auth";
 import {
   doc,
   setDoc,
-  getDoc,
+  onSnapshot,
   updateDoc,
   serverTimestamp,
-  increment,
 } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured } from "@/lib/firebase";
 import {
@@ -35,13 +30,11 @@ export interface UserProfile {
   email: string;
   username: string;
   profilePhoto: string | null;
-  bannerPhoto?: string | null;
   niche: string;
   bio: string;
   followers: string[];
   following: string[];
   isAdmin: boolean;
-  isBanned: boolean;
   createdAt: number;
   expoPushToken?: string;
 }
@@ -85,8 +78,6 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
-  signInWithGitHub: (accessToken: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -95,32 +86,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const fetchProfile = useCallback(async (uid: string) => {
-    // Sequential retry loop — keeps the promise alive so callers can await the
-    // full result before deciding what to render (no premature setLoading(false)).
-    const maxAttempts = 4;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      if (attempt > 0) {
-        await new Promise<void>((res) => setTimeout(res, 1000 * attempt));
-      }
-      try {
-        const snap = await getDoc(doc(db, "users", uid));
-        if (snap.exists()) {
-          setProfile(snap.data() as UserProfile);
-        }
-        return; // success
-      } catch (err: unknown) {
-        const code = (err as { code?: string })?.code ?? "";
-        const isLast = attempt === maxAttempts - 1;
-        if (code !== "permission-denied" || isLast) {
-          setProfile(null);
-          return;
-        }
-        // permission-denied — auth token may not be ready yet, retry
-      }
-    }
-  }, []);
 
   const savePushToken = useCallback(async (uid: string) => {
     try {
@@ -134,41 +99,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+    let profileUnsub: (() => void) | null = null;
+
+    const authUnsub = onAuthStateChanged(auth, (firebaseUser) => {
+      if (profileUnsub) {
+        profileUnsub();
+        profileUnsub = null;
+      }
+
       setUser(firebaseUser);
+
       if (firebaseUser) {
-        await fetchProfile(firebaseUser.uid);
+        profileUnsub = onSnapshot(
+          doc(db, "users", firebaseUser.uid),
+          (snap) => {
+            if (snap.exists()) {
+              setProfile(snap.data() as UserProfile);
+            }
+            setLoading(false);
+          },
+          () => { setLoading(false); }
+        );
         savePushToken(firebaseUser.uid);
       } else {
         setProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
-    return unsub;
-  }, [fetchProfile, savePushToken]);
+
+    return () => {
+      authUnsub();
+      if (profileUnsub) profileUnsub();
+    };
+  }, [savePushToken]);
 
   const login = async (email: string, password: string) => {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    try {
-      const snap = await getDoc(doc(db, "users", cred.user.uid));
-      if (snap.exists() && (snap.data() as UserProfile).isBanned) {
-        await signOut(auth);
-        throw new Error("Your account has been suspended. Please contact support.");
-      }
-      await fetchProfile(cred.user.uid);
-    } catch (firestoreErr: unknown) {
-      const code = (firestoreErr as { code?: string })?.code ?? "";
-      const msg = (firestoreErr as Error)?.message ?? "";
-      // If Firestore rules haven't been configured yet, still let the user in
-      // but surface a clear message for suspension errors
-      if (msg.includes("suspended")) {
-        throw firestoreErr;
-      }
-      if (code !== "permission-denied" && !msg.includes("permission")) {
-        throw firestoreErr;
-      }
-      // permission-denied on profile read: auth succeeded, profile will retry via onAuthStateChanged
-    }
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signup = async (
@@ -188,7 +154,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       followers: [],
       following: [],
       isAdmin: false,
-      isBanned: false,
       createdAt: Date.now(),
     };
     await setDoc(doc(db, "users", cred.user.uid), {
@@ -205,85 +170,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
     if (!user) return;
-    // If niche is changing, update live counts in Firestore
-    if (data.niche !== undefined && data.niche !== profile?.niche) {
-      const oldNiche = profile?.niche;
-      const newNiche = data.niche;
-      try {
-        if (oldNiche) {
-          await setDoc(doc(db, "nicheCounts", oldNiche), { count: increment(-1) }, { merge: true });
-        }
-        if (newNiche) {
-          await setDoc(doc(db, "nicheCounts", newNiche), { count: increment(1) }, { merge: true });
-        }
-      } catch {
-        // non-fatal — counts are best-effort
-      }
-    }
     await updateDoc(doc(db, "users", user.uid), data as Record<string, unknown>);
     setProfile((prev) => (prev ? { ...prev, ...data } : prev));
   };
 
   const refreshProfile = async () => {
-    if (user) await fetchProfile(user.uid);
-  };
-
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    const cred = await signInWithPopup(auth, provider);
-    const snap = await getDoc(doc(db, "users", cred.user.uid));
-    if (!snap.exists()) {
-      const newProfile: UserProfile = {
-        uid: cred.user.uid,
-        email: cred.user.email ?? "",
-        username:
-          cred.user.displayName ?? `user_${cred.user.uid.slice(0, 6)}`,
-        profilePhoto: cred.user.photoURL ?? null,
-        niche: "",
-        bio: "",
-        followers: [],
-        following: [],
-        isAdmin: false,
-        isBanned: false,
-        createdAt: Date.now(),
-      };
-      await setDoc(doc(db, "users", cred.user.uid), {
-        ...newProfile,
-        createdAt: serverTimestamp(),
-      });
-      setProfile(newProfile);
-    } else {
-      setProfile(snap.data() as UserProfile);
-    }
-  };
-
-  const signInWithGitHub = async (accessToken: string) => {
-    const credential = GithubAuthProvider.credential(accessToken);
-    const cred = await signInWithCredential(auth, credential);
-    const snap = await getDoc(doc(db, "users", cred.user.uid));
-    if (!snap.exists()) {
-      const newProfile: UserProfile = {
-        uid: cred.user.uid,
-        email: cred.user.email ?? "",
-        username:
-          cred.user.displayName ?? `user_${cred.user.uid.slice(0, 6)}`,
-        profilePhoto: cred.user.photoURL ?? null,
-        niche: "",
-        bio: "",
-        followers: [],
-        following: [],
-        isAdmin: false,
-        isBanned: false,
-        createdAt: Date.now(),
-      };
-      await setDoc(doc(db, "users", cred.user.uid), {
-        ...newProfile,
-        createdAt: serverTimestamp(),
-      });
-      setProfile(newProfile);
-    } else {
-      setProfile(snap.data() as UserProfile);
-    }
+    // Profile is now kept in sync via onSnapshot — no manual refresh needed
   };
 
   return (
@@ -298,8 +190,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         updateUserProfile,
         refreshProfile,
-        signInWithGitHub,
-        signInWithGoogle,
       }}
     >
       {children}
