@@ -420,10 +420,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   },
-  postBtnText: {
+    postBtnText: {
     color: "#fff",
     fontFamily: "Inter_600SemiBold",
-    fontSize: 15,
+    fontSize: 16,
+  },
   },
   glowInput: { borderWidth: 1.5 },
   prefillBanner: {
