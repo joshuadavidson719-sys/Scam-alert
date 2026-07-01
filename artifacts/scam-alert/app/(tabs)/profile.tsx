@@ -311,6 +311,7 @@ export default function ProfileScreen() {
           { label: "Privacy Policy",       route: "/legal/privacy",    icon: "lock" },
           { label: "Community Guidelines", route: "/legal/guidelines", icon: "book" },
           { label: "AI Scam Checker",      route: "/scam-checker",     icon: "shield" },
+      { label: "ScamBot Chat", route: "/scam-bot", icon: "message-circle" },
         ].map((item) => (
           <TouchableOpacity key={item.route} style={[styles.quickLink, { borderColor: colors.border, backgroundColor: colors.card }]} onPress={() => router.push(item.route as never)}>
             <Feather name={item.icon as keyof typeof Feather.glyphMap} size={16} color={themeColor} />
