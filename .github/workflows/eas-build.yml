@@ -28,14 +28,17 @@ jobs:
       - name: Create google-services.json
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > artifacts/scam-alert/google-services.json
 
-      - name: Set EAS project ID
+      - name: Patch app.json
         working-directory: artifacts/scam-alert
         run: |
           python3 -c "
-          import json, sys
+          import json
           with open('app.json') as f:
               data = json.load(f)
-          data['expo'].setdefault('extra', {}).setdefault('eas', {})['projectId'] = 'f2d37f46-6661-493f-a937-844ff302ad07'
+          expo = data['expo']
+          expo.setdefault('extra', {}).setdefault('eas', {})['projectId'] = 'f2d37f46-6661-493f-a937-844ff302ad07'
+          expo.setdefault('android', {})['package'] = 'com.spicetech.scamalert'
+          expo.setdefault('ios', {})['bundleIdentifier'] = 'com.spicetech.scamalert'
           with open('app.json', 'w') as f:
               json.dump(data, f, indent=2)
           "
