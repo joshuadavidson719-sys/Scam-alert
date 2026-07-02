@@ -28,6 +28,18 @@ jobs:
       - name: Create google-services.json
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > artifacts/scam-alert/google-services.json
 
+      - name: Set EAS project ID
+        working-directory: artifacts/scam-alert
+        run: |
+          python3 -c "
+          import json, sys
+          with open('app.json') as f:
+              data = json.load(f)
+          data['expo'].setdefault('extra', {}).setdefault('eas', {})['projectId'] = 'f2d37f46-6661-493f-a937-844ff302ad07'
+          with open('app.json', 'w') as f:
+              json.dump(data, f, indent=2)
+          "
+
       - name: Run EAS Build
         working-directory: artifacts/scam-alert
         env:
