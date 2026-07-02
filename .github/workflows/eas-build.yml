@@ -34,6 +34,6 @@ jobs:
 
       - name: Run EAS Build
         working-directory: artifacts/scam-alert
-                env:
+        env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: eas build --platform android --profile production --non-interactive
