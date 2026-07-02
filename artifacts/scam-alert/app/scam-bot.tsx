@@ -83,11 +83,11 @@ export default function ScamBotScreen() {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMsg]);
-    } catch {
+    } catch (err) {
       const errorMsg: Message = {
         id: `e-${Date.now()}`,
         role: "bot",
-        text: "Sorry, I couldn't connect right now. Please check your internet connection and try again.",
+                text: `Error: ${err instanceof Error ? err.message : String(err)}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMsg]);
