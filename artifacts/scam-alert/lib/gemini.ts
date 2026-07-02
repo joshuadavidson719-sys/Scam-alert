@@ -4,7 +4,7 @@ const GEMINI_API_KEY =
     : "";
 
 const BASE_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 export async function askGemini(prompt: string): Promise<string> {
   const key = GEMINI_API_KEY;
