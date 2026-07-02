@@ -19,18 +19,14 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
       - name: Create google-services.json
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > artifacts/scam-alert/google-services.json
-
-      - name: Build Android
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Run EAS Build
         working-directory: artifacts/scam-alert
