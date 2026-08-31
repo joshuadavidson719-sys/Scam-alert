@@ -41,10 +41,9 @@ jobs:
           expo.setdefault('ios', {})['bundleIdentifier'] = 'com.spicetech.scamalert'
           with open('app.json', 'w') as f:
               json.dump(data, f, indent=2)
-          "
-
-      - name: Run EAS Build
+          "      - name: Run EAS Build
         working-directory: artifacts/scam-alert
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_FIREBASE_CONFIG: ${{ secrets.EXPO_PUBLIC_FIREBASE_CONFIG }}
         run: eas build --platform android --profile production --non-interactive
