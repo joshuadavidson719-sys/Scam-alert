@@ -68,6 +68,7 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
+  profileError: string | null;
   firebaseConfigured: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (
@@ -86,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const savePushToken = useCallback(async (uid: string) => {
     try {
@@ -101,6 +103,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let profileUnsub: (() => void) | null = null;
 
+    if (!isFirebaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     const authUnsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (profileUnsub) {
         profileUnsub();
@@ -108,17 +115,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(firebaseUser);
+      setProfileError(null);
 
       if (firebaseUser) {
+        setLoading(true);
         profileUnsub = onSnapshot(
           doc(db, "users", firebaseUser.uid),
           (snap) => {
             if (snap.exists()) {
               setProfile(snap.data() as UserProfile);
+            } else {
+              setProfile(null);
             }
             setLoading(false);
           },
-          () => { setLoading(false); }
+          () => {
+            setProfile(null);
+            setProfileError(
+              "Your profile could not be loaded. Please check your connection and try again.",
+            );
+            setLoading(false);
+          },
         );
         savePushToken(firebaseUser.uid);
       } else {
@@ -170,7 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
     if (!user) return;
-    await updateDoc(doc(db, "users", user.uid), data as Record<string, unknown>);
+    await setDoc(doc(db, "users", user.uid), data as Record<string, unknown>, { merge: true });
     setProfile((prev) => (prev ? { ...prev, ...data } : prev));
   };
 
@@ -184,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         profile,
         loading,
+        profileError,
         firebaseConfigured: isFirebaseConfigured,
         login,
         signup,

@@ -1,7 +1,9 @@
-import { Platform } from "react-native";
-import { Tabs } from "expo-router";
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
+import { Redirect, Tabs } from "expo-router";
 import React from "react";
 
+import { useAuth } from "@/context/AuthContext";
+import { useColors } from "@/hooks/useColors";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { CustomTabBar } from "@/components/CustomTabBar";
@@ -104,9 +106,61 @@ function ClassicTabLayout() {
 }
 
 export default function TabLayout() {
+  const colors = useColors();
+  const { user, profile, loading, profileError, firebaseConfigured } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={[styles.accessState, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.primary} size="large" />
+      </View>
+    );
+  }
+
+  if (!firebaseConfigured || !user) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  if (profileError && !profile) {
+    return (
+      <View style={[styles.accessState, { backgroundColor: colors.background }]}>
+        <Text style={[styles.accessTitle, { color: colors.text }]}>Profile unavailable</Text>
+        <Text style={[styles.accessMessage, { color: colors.textSecondary }]}>
+          {profileError}
+        </Text>
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return <Redirect href="/(auth)/onboarding" />;
+  }
+
   // iOS-native Liquid Glass tabs — Android always uses classic layout
   if (Platform.OS === "ios") {
     return <IOSNativeTabLayout />;
   }
   return <ClassicTabLayout />;
 }
+
+
+const styles = StyleSheet.create({
+  accessState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 28,
+    gap: 12,
+  },
+  accessTitle: {
+    fontFamily: "Inter_700Bold",
+    fontSize: 21,
+    textAlign: "center",
+  },
+  accessMessage: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+  },
+});
