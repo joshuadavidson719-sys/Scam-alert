@@ -8,19 +8,28 @@ import React, {
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
+  signInWithCredential,
   updateProfile as firebaseUpdateProfile,
   type User,
 } from "firebase/auth";
 import {
   doc,
+  getDoc,
   setDoc,
   onSnapshot,
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured } from "@/lib/firebase";
+import Constants from "expo-constants";
+import { ResponseType } from "expo-auth-session";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+import { Platform } from "react-native";
 import {
   registerForPushNotifications,
 } from "@/lib/notifications";
@@ -71,6 +80,7 @@ interface AuthContextType {
   profileError: string | null;
   firebaseConfigured: boolean;
   login: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<boolean>;
   signup: (
     email: string,
     password: string,
@@ -83,11 +93,43 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+WebBrowser.maybeCompleteAuthSession();
+
+function createAuthError(code: string, message: string) {
+  return Object.assign(new Error(message), { code });
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const googleConfig = Constants.expoConfig?.extra as
+    | {
+        googleAndroidClientId?: string;
+        googleWebClientId?: string;
+      }
+    | undefined;
+  const googleAndroidClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ??
+    googleConfig?.googleAndroidClientId;
+  const googleWebClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ??
+    googleConfig?.googleWebClientId;
+  const activeGoogleClientId =
+    Platform.OS === "android"
+      ? googleAndroidClientId
+      : googleWebClientId;
+  const [nativeGoogleRequest, , promptNativeGoogle] = Google.useAuthRequest({
+    clientId:
+      activeGoogleClientId ??
+      "google-native-auth-not-configured.apps.googleusercontent.com",
+    androidClientId: googleAndroidClientId,
+    webClientId: googleWebClientId,
+    responseType: ResponseType.IdToken,
+    scopes: ["openid", "profile", "email"],
+    selectAccount: true,
+  });
 
   const savePushToken = useCallback(async (uid: string) => {
     try {
@@ -154,6 +196,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
+  const ensureGoogleProfile = async (firebaseUser: User) => {
+    const profileRef = doc(db, "users", firebaseUser.uid);
+    const profileSnap = await getDoc(profileRef);
+
+    if (!profileSnap.exists()) {
+      const newProfile: UserProfile = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email ?? "",
+        username:
+          firebaseUser.displayName?.trim() ||
+          firebaseUser.email?.split("@")[0] ||
+          "New user",
+        profilePhoto: firebaseUser.photoURL ?? null,
+        niche: "",
+        bio: "",
+        followers: [],
+        following: [],
+        isAdmin: false,
+        createdAt: Date.now(),
+      };
+
+      await setDoc(profileRef, {
+        ...newProfile,
+        createdAt: serverTimestamp(),
+      });
+      setProfile(newProfile);
+      return true;
+    }
+
+    return false;
+  };
+
+  const signInWithGoogle = async () => {
+    if (Platform.OS === "web") {
+      const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+      return ensureGoogleProfile(credential.user);
+    }
+
+    if (!googleAndroidClientId || !nativeGoogleRequest) {
+      throw createAuthError(
+        "auth/google-native-not-configured",
+        "This Android build is missing its Google OAuth client configuration.",
+      );
+    }
+
+    const result = await promptNativeGoogle();
+    if (result.type === "cancel" || result.type === "dismiss") {
+      throw createAuthError("auth/popup-closed-by-user", "Google sign-in was cancelled.");
+    }
+    if (result.type !== "success") {
+      throw createAuthError("auth/google-sign-in-failed", "Google sign-in did not complete.");
+    }
+
+    const idToken = result.params.id_token ?? result.authentication?.idToken;
+    const accessToken =
+      result.params.access_token ?? result.authentication?.accessToken;
+    if (!idToken && !accessToken) {
+      throw createAuthError(
+        "auth/missing-google-token",
+        "Google did not return a usable sign-in token.",
+      );
+    }
+
+    const googleCredential = GoogleAuthProvider.credential(idToken, accessToken);
+    const credential = await signInWithCredential(auth, googleCredential);
+    return ensureGoogleProfile(credential.user);
+  };
+
   const signup = async (
     email: string,
     password: string,
@@ -204,6 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profileError,
         firebaseConfigured: isFirebaseConfigured,
         login,
+        signInWithGoogle,
         signup,
         logout,
         updateUserProfile,

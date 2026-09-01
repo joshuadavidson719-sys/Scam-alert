@@ -9,39 +9,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
-import { useGitHubAuth } from "@/hooks/useGitHubAuth";
-import { useGoogleAuth } from "@/hooks/useGoogleAuth";
-
-const APP_ICON = require("@/assets/images/icon.png");
 
 export default function SignupScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { signup } = useAuth();
+  const { signup, signInWithGoogle } = useAuth();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const {
-    trigger: triggerGitHub,
-    loading: githubLoading,
-    error: githubError,
-  } = useGitHubAuth();
-
-  const {
-    trigger: triggerGoogle,
-    loading: googleLoading,
-    error: googleError,
-  } = useGoogleAuth();
 
   const handleSignup = async () => {
     if (!username.trim() || !email.trim() || !password) {
@@ -71,8 +55,36 @@ export default function SignupScreen() {
     }
   };
 
-  const displayError = error || githubError || googleError;
-  const anyLoading = loading || githubLoading || googleLoading;
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const isNewUser = await signInWithGoogle();
+      router.replace((isNewUser ? "/(auth)/onboarding" : "/") as never);
+    } catch (e: unknown) {
+      const code = e && typeof e === "object" && "code" in e ? String(e.code) : "";
+      if (code === "auth/popup-closed-by-user") {
+        setError("Google sign-in was cancelled.");
+      } else if (code === "auth/unauthorized-domain") {
+        const hostname = typeof window !== "undefined" ? window.location.hostname : "this web address";
+        setError(`Add ${hostname} to Firebase Authentication's Authorized domains.`);
+      } else if (code === "auth/popup-blocked") {
+        setError("Your browser blocked the Google sign-in popup. Allow popups and try again.");
+      } else if (code === "auth/operation-not-allowed") {
+        setError("Google sign-in is not enabled in Firebase Authentication.");
+      } else if (code === "permission-denied") {
+        setError("Firebase rules are blocking creation of your user profile.");
+      } else if (code === "auth/google-native-not-configured") {
+        setError("This Android build needs to be rebuilt with its Google sign-in configuration.");
+      } else if (code === "auth/missing-google-token") {
+        setError("Google did not return a sign-in token. Please try again.");
+      } else {
+        setError("Google sign-in failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -90,7 +102,7 @@ export default function SignupScreen() {
           style={styles.backBtn}
           onPress={() => router.back()}
         >
-          <Image source={APP_ICON} style={{ width: 22, height: 22, borderRadius: 6 }} />
+          <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
 
         <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
@@ -98,58 +110,37 @@ export default function SignupScreen() {
           Join the Scam Alert community
         </Text>
 
-        {displayError ? (
+        <>
+          <TouchableOpacity
+            style={[styles.googleBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+            onPress={handleGoogleSignIn}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            <View style={styles.googleMark}>
+              <Text style={styles.googleMarkText}>G</Text>
+            </View>
+            <Text style={[styles.googleBtnText, { color: colors.text }]}>
+              Continue with Google
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.dividerRow}>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textMuted }]}>or</Text>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+          </View>
+        </>
+
+        {error ? (
           <View style={[styles.errorBox, { backgroundColor: colors.destructive + "15", borderColor: colors.destructive + "33" }]}>
-            <Text style={{ fontSize: 14, color: colors.destructive }}>⚠️</Text>
-            <Text style={[styles.errorText, { color: colors.destructive }]}>{displayError}</Text>
+            <Feather name="alert-circle" size={14} color={colors.destructive} />
+            <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
           </View>
         ) : null}
 
         <View style={styles.form}>
-          <TouchableOpacity
-            style={[styles.socialBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
-            onPress={triggerGoogle}
-            disabled={anyLoading}
-            activeOpacity={0.85}
-          >
-            {googleLoading ? (
-              <ActivityIndicator color={colors.text} />
-            ) : (
-              <>
-                <Text style={styles.socialIcon}>🔵</Text>
-                <Text style={[styles.socialBtnText, { color: colors.text }]}>
-                  Sign up with Google
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.socialBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
-            onPress={triggerGitHub}
-            disabled={anyLoading}
-            activeOpacity={0.85}
-          >
-            {githubLoading ? (
-              <ActivityIndicator color={colors.text} />
-            ) : (
-              <>
-                <Text style={styles.socialIcon}>🐙</Text>
-                <Text style={[styles.socialBtnText, { color: colors.text }]}>
-                  Sign up with GitHub
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.dividerRow}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textMuted }]}>or with email</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
-
           <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            <Text style={{ fontSize: 16, color: colors.textMuted }}>👤</Text>
+            <Feather name="user" size={16} color={colors.textMuted} />
             <TextInput
               style={[styles.input, { color: colors.text }]}
               placeholder="Username"
@@ -162,7 +153,7 @@ export default function SignupScreen() {
           </View>
 
           <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            <Text style={{ fontSize: 16, color: colors.textMuted }}>📧</Text>
+            <Feather name="mail" size={16} color={colors.textMuted} />
             <TextInput
               style={[styles.input, { color: colors.text }]}
               placeholder="Email address"
@@ -175,7 +166,7 @@ export default function SignupScreen() {
           </View>
 
           <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            <Text style={{ fontSize: 16, color: colors.textMuted }}>🔒</Text>
+            <Feather name="lock" size={16} color={colors.textMuted} />
             <TextInput
               style={[styles.input, { color: colors.text }]}
               placeholder="Password (min. 6 characters)"
@@ -185,14 +176,18 @@ export default function SignupScreen() {
               secureTextEntry={!showPassword}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Text style={{ fontSize: 16, color: colors.textMuted }}>{showPassword ? "🙈" : "👁️"}</Text>
+              <Feather
+                name={showPassword ? "eye-off" : "eye"}
+                size={16}
+                color={colors.textMuted}
+              />
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity
             style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
             onPress={handleSignup}
-            disabled={loading || githubLoading}
+            disabled={loading}
             activeOpacity={0.85}
           >
             {loading ? (
@@ -214,14 +209,7 @@ export default function SignupScreen() {
         </View>
 
         <Text style={[styles.terms, { color: colors.textMuted }]}>
-          By signing up you agree to our{" "}
-          <Text
-            style={{ color: colors.primary, fontFamily: "Inter_600SemiBold" }}
-            onPress={() => router.push("/tos" as never)}
-          >
-            Terms of Service
-          </Text>
-          {" "}and Community Guidelines. No hate speech, harassment, or illegal activity.
+          By signing up, you agree to our Community Guidelines. No hate speech, harassment, sexual content, violence, or illegal activity.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -264,36 +252,6 @@ const styles = StyleSheet.create({
   form: {
     gap: 12,
   },
-  socialBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  socialIcon: {
-    fontSize: 20,
-  },
-  socialBtnText: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 15,
-  },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginVertical: 4,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
-  },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -307,6 +265,45 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Inter_400Regular",
     fontSize: 15,
+  },
+  googleBtn: {
+    minHeight: 50,
+    borderWidth: 1,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 4,
+  },
+  googleMark: {
+    width: 22,
+    height: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  googleMarkText: {
+    color: "#4285F4",
+    fontFamily: "Inter_700Bold",
+    fontSize: 20,
+  },
+  googleBtnText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 4,
+  },
+  divider: {
+    height: 1,
+    flex: 1,
+  },
+  dividerText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
   },
   primaryBtn: {
     paddingVertical: 15,
