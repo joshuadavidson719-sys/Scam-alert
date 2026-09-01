@@ -1,39 +1,106 @@
 {
   "expo": {
-    "name": "Scam Alert",
+    "name": "ScamAlert App",
     "slug": "scam-alert",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "scam-alert",
+    "scheme": "scamalert",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#00B09B"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.spicetech.scamalert",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow Scam Alert to use your camera.",
+        "NSPhotoLibraryUsageDescription": "Allow Scam Alert to access your photos to attach images and videos to posts."
+      }
     },
-    "android": {},
+    "android": {
+      "package": "com.spicetech.scamalert",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#00B09B"
+      },
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "scam-alert-api-server.vercel.app"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
     "web": {
-      "favicon": "./assets/images/icon.png",
-      "backgroundColor": "#000000"
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       [
         "expo-router",
         {
-          "origin": "https://replit.com/"
+          "origin": "https://scam-alert-api-server.vercel.app"
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Scam Alert to access your photos to attach images and videos to posts.",
+          "cameraPermission": "Allow Scam Alert to use your camera."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#FF3B3B",
+          "sounds": []
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#00B09B",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f2d37f46-6661-493f-a937-844ff302ad07"
+      }
     }
   }
 }
