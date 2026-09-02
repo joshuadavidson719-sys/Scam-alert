@@ -45,9 +45,15 @@ function readGoogleClientIds() {
     return {};
   }
 
-  const googleServices = parseGoogleServices(
-    fs.readFileSync(googleServicesPath, "utf8"),
-  );
+  let googleServices;
+  try {
+    googleServices = parseGoogleServices(
+      fs.readFileSync(googleServicesPath, "utf8"),
+    );
+  } catch {
+    return {};
+  }
+
   fs.writeFileSync(
     googleServicesPath,
     `${JSON.stringify(googleServices, null, 2)}\n`,
@@ -58,7 +64,10 @@ function readGoogleClientIds() {
       client.client_info?.android_client_info?.package_name ===
       "com.spicetech.scamalert",
   );
-  const oauthClients = appClient?.oauth_client || [];
+  const oauthClients =
+    appClient?.oauth_client ||
+    googleServices.client?.flatMap((client) => client.oauth_client || []) ||
+    [];
 
   return {
     googleAndroidClientId: oauthClients.find((client) => client.client_type === 1)?.client_id,
