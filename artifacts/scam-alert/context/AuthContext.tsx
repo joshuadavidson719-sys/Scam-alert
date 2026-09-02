@@ -116,9 +116,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const googleWebClientId =
     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ??
     googleConfig?.googleWebClientId;
+  const nativeGoogleClientId = googleAndroidClientId ?? googleWebClientId;
   const activeGoogleClientId =
     Platform.OS === "android"
-      ? googleAndroidClientId
+      ? nativeGoogleClientId
       : googleWebClientId;
   const [nativeGoogleRequest, , promptNativeGoogle] = Google.useAuthRequest({
     clientId:
@@ -234,7 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return ensureGoogleProfile(credential.user);
     }
 
-    if (!googleAndroidClientId || !nativeGoogleRequest) {
+    if (!nativeGoogleClientId || !nativeGoogleRequest) {
       throw createAuthError(
         "auth/google-native-not-configured",
         "This Android build is missing its Google OAuth client configuration.",
