@@ -52,8 +52,16 @@
               "host": "scam-alert-api-server.vercel.app"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
+      ],
+      "blockedPermissions": [
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE"
       ]
     },
     "web": {
@@ -91,6 +99,14 @@
           "backgroundColor": "#00B09B",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Scam Alert to use your microphone to record voice notes.",
+          "recordAudioAndroid": true,
+          "enableBackgroundRecording": false
         }
       ]
     ],

@@ -69,6 +69,7 @@
     "expo-video": "~3.0.16",
     "firebase": "^12.12.1",
     "openai": "^6.35.0",
-    "react-native-view-shot": "4.0.3"
+    "react-native-view-shot": "4.0.3",
+    "expo-audio": "~1.1.1"
   }
 }
