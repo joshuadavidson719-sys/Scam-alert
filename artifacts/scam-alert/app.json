@@ -69,7 +69,6 @@
       "expo-font",
       "expo-web-browser",
       "expo-asset",
-      "expo-audio",
       "expo-video",
       [
         "expo-image-picker",
