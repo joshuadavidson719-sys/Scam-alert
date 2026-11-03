@@ -6,15 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
 } from "react-native";
-
+import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
 import { useTrendingPosts } from "@/hooks/useTrendingPosts";
 import { CategoryPill } from "./CategoryPill";
-
-const APP_ICON = require("@/assets/images/icon.png");
 
 const CATEGORY_COLORS: Record<string, string> = {
   "scam-alert": "#FF3B3B",
@@ -51,7 +48,7 @@ export function TrendingCarousel() {
           style={[styles.refreshBtn, { backgroundColor: colors.muted }]}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Image source={APP_ICON} style={styles.refreshIcon} resizeMode="cover" />
+          <Feather name="refresh-cw" size={13} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -104,7 +101,7 @@ export function TrendingCarousel() {
                       #{index + 1}
                     </Text>
                   </View>
-                  <CategoryPill category={post.category} />
+                  <CategoryPill categoryId={post.category} />
                 </View>
 
                 {/* Title */}
@@ -126,19 +123,19 @@ export function TrendingCarousel() {
                 {/* Stats row */}
                 <View style={styles.statsRow}>
                   <View style={styles.stat}>
-                    <Image source={APP_ICON} style={styles.statIcon} resizeMode="cover" />
+                    <Feather name="heart" size={11} color={colors.primary} />
                     <Text style={[styles.statText, { color: colors.textMuted }]}>
                       {post.likes?.length ?? 0}
                     </Text>
                   </View>
                   <View style={styles.stat}>
-                    <Image source={APP_ICON} style={styles.statIcon} resizeMode="cover" />
+                    <Feather name="message-circle" size={11} color={colors.info} />
                     <Text style={[styles.statText, { color: colors.textMuted }]}>
                       {post.commentCount ?? 0}
                     </Text>
                   </View>
                   <View style={styles.stat}>
-                    <Image source={APP_ICON} style={styles.statIcon} resizeMode="cover" />
+                    <Feather name="share-2" size={11} color={colors.success} />
                     <Text style={[styles.statText, { color: colors.textMuted }]}>
                       {post.shareCount ?? 0}
                     </Text>
@@ -190,8 +187,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  refreshIcon: { width: 13, height: 13, borderRadius: 3 },
-  statIcon:    { width: 11, height: 11, borderRadius: 2 },
   loadingRow: {
     height: 60,
     alignItems: "center",

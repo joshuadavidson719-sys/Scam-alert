@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import {
   collection,
   query,
@@ -24,8 +23,7 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { db, storage, isFirebaseConfigured as _isFBConfigured } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -33,6 +31,8 @@ import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
 import { router } from "expo-router";
+import { ScamHotlineDirectory } from "@/components/ScamHotlineDirectory";
+import { chooseAndUploadProfilePhoto, discardUploadedProfilePhoto } from "@/lib/profile-photo";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -80,6 +80,7 @@ export default function ProfileScreen() {
   const [editingBio, setEditingBio] = useState(false);
   const [bioText, setBioText] = useState("");
   const [photoUploading, setPhotoUploading] = useState(false);
+  const photoBusy = useRef(false);
   const [themeColor, setThemeColor] = useState("#FF3B3B");
   const [activeTab, setActiveTab] = useState<TabId>("posts");
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -139,43 +140,23 @@ export default function ProfileScreen() {
   };
 
   const handlePickProfilePhoto = async () => {
+    if (photoBusy.current) return;
+    photoBusy.current = true;
+    setPhotoUploading(true);
+    let uploaded: string | null = null;
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Required", "Please allow access to your photo library.");
-        return;
+      uploaded = await chooseAndUploadProfilePhoto();
+      if (uploaded) await updateUserProfile({ profilePhoto: uploaded });
+    } catch (failure) {
+      if (uploaded) {
+        try { await discardUploadedProfilePhoto(uploaded); } catch { /* unused upload cleanup */ }
       }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-      if (!result.canceled && result.assets.length > 0) {
-        const uri = result.assets[0].uri;
-        if (!user) return;
-        setPhotoUploading(true);
-        try {
-          if (_isFBConfigured) {
-            const path = `profile-photos/${user.uid}`;
-            const blob = await (await fetch(uri)).blob();
-            const downloadUrl = await new Promise<string>((resolve, reject) => {
-              const task = uploadBytesResumable(ref(storage, path), blob);
-              task.on("state_changed", null, reject, async () =>
-                resolve(await getDownloadURL(task.snapshot.ref))
-              );
-            });
-            await updateUserProfile({ profilePhoto: downloadUrl });
-            await updateDoc(doc(db, "users", user.uid), { profilePhoto: downloadUrl });
-          }
-        } catch {
-          Alert.alert("Upload Failed", "Could not upload photo. Please try again.");
-        } finally {
-          setPhotoUploading(false);
-        }
-      }
-    } catch {
-      Alert.alert("Error", "Could not open photo library. Please try again.");
+      const message = failure instanceof Error ? failure.message : "Could not save your photo. Your previous photo is unchanged.";
+      if (Platform.OS === "web") window.alert(message);
+      else Alert.alert("Photo not saved", message);
+    } finally {
+      photoBusy.current = false;
+      setPhotoUploading(false);
     }
   };
 
@@ -306,6 +287,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* Quick links */}
+      <ScamHotlineDirectory />
       <View style={styles.quickLinks}>
         {[
           { label: "Privacy Policy",       route: "/legal/privacy",    icon: "lock" },

@@ -70,6 +70,8 @@
     "firebase": "^12.12.1",
     "openai": "^6.35.0",
     "react-native-view-shot": "4.0.3",
-    "expo-audio": "~1.1.1"
+    "expo-audio": "~1.1.1",
+    "expo-crypto": "~15.0.9",
+    "react-native-purchases": "^11.0.0"
   }
 }

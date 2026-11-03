@@ -5,13 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
-
-const APP_ICON = require("@/assets/images/icon.png");
 
 const SECTIONS = [
   {
@@ -23,6 +21,16 @@ const SECTIONS = [
     title: "How We Use Your Information",
     content:
       "We use the information we collect to provide, maintain, and improve our services, to personalize your experience, to communicate with you about our services, and to ensure the safety and security of our platform.",
+  },
+  {
+    title: "AI Tools and Premium Purchases",
+    content:
+      "When you use text AI tools, Groq processes the text, links, or phone numbers you submit. OpenAI processes image prompts and generated image frames for Premium generation. Do not submit passwords, banking credentials, or sensitive personal information. We store generation prompts and results privately so you can recover interrupted requests, and record subscription identifiers and credit usage to apply your monthly allowance. RevenueCat verifies subscriptions and Google Play handles Android payments; we do not receive or store your payment-card details. Generated results are not published to other users unless you share them. You can request deletion using the contact details in this policy.",
+  },
+  {
+    title: "Profile Photos",
+    content:
+      "Choosing a profile photo uploads the image to our app storage and saves its reference in your Firebase profile. Your profile image is visible to other users and can be accessed through its image link. Do not use a sensitive or private image. You can keep using a preset avatar instead.",
   },
   {
     title: "Information Sharing",
@@ -74,7 +82,7 @@ export default function PrivacyPolicyScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()}>
-          <Image source={APP_ICON} style={styles.closeIcon} resizeMode="cover" />
+          <Feather name="x" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Privacy Policy</Text>
         <View style={{ width: 24 }} />
@@ -107,7 +115,7 @@ export default function PrivacyPolicyScreen() {
             { backgroundColor: colors.warning + "15", borderColor: colors.warning + "44" },
           ]}
         >
-          <Text style={{ fontSize: 16 }}>ℹ️</Text>
+          <Feather name="info" size={16} color={colors.warning} />
           <Text style={[styles.disclaimerText, { color: colors.textSecondary }]}>
             All content on Scam Alert is user-submitted and for awareness purposes only. Scam Alert is not liable for the accuracy of user-submitted content.
           </Text>
@@ -127,7 +135,6 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
-  closeIcon: { width: 24, height: 24, borderRadius: 6 },
   title: {
     fontFamily: "Inter_700Bold",
     fontSize: 18,

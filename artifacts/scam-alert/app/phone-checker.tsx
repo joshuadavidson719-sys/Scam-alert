@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
+import { checkPhone } from "@/lib/ai";
 
 const APP_ICON = require("@/assets/images/icon.png");
 
@@ -48,13 +49,7 @@ export default function PhoneCheckerScreen() {
     setError(null);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      const res = await fetch("/api/phone-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: trimmed }),
-      });
-      const data = await res.json() as PhoneResult & { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Analysis failed");
+      const data = await checkPhone(trimmed);
       setResult(data);
       await Haptics.notificationAsync(
         data.isSuspicious
@@ -89,7 +84,7 @@ export default function PhoneCheckerScreen() {
           <Text style={{ fontSize: 32 }}>📞</Text>
           <Text style={[styles.heroTitle, { color: colors.text }]}>Phone Number Check</Text>
           <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
-            Enter a suspicious phone number to check if it's associated with robocalls, scams, or fraud.
+            Get an AI assessment of a phone number's format. This tool cannot verify its owner, reputation, or reported scam history.
           </Text>
         </View>
 

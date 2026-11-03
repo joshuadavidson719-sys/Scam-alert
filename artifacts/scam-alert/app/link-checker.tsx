@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
-import { checkLink } from "@/lib/gemini";
+import { checkLink } from "@/lib/ai";
 const APP_ICON = require("@/assets/images/icon.png");
 
 interface LinkResult {
@@ -48,13 +48,7 @@ export default function LinkCheckerScreen() {
     setError(null);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      const res = await fetch("/api/link-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmed }),
-      });
-      const data = await res.json() as LinkResult & { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Analysis failed");
+      const data = await checkLink(trimmed);
       setResult(data);
       await Haptics.notificationAsync(
         data.isSuspicious
@@ -89,7 +83,7 @@ export default function LinkCheckerScreen() {
           <Text style={{ fontSize: 32 }}>🔗</Text>
           <Text style={[styles.heroTitle, { color: colors.text }]}>URL Safety Check</Text>
           <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
-            Paste any suspicious link to check if it's a phishing or scam site before clicking.
+            Assess suspicious URL patterns before clicking. This AI tool does not visit the site or perform a live malware scan.
           </Text>
         </View>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,9 @@ import {
   TextInput,
   ActivityIndicator,
   Platform,
-  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
+import { Feather } from "@expo/vector-icons";
 import {
   collection,
   query,
@@ -19,7 +18,6 @@ import {
   limit,
   getDocs,
   getCountFromServer,
-  onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
@@ -27,11 +25,8 @@ import { CATEGORIES, type CategoryId } from "@/context/AuthContext";
 import { router } from "expo-router";
 import { UserAvatar } from "@/components/UserAvatar";
 import { CategoryPill } from "@/components/CategoryPill";
-import { ScamStatsChart } from "@/components/ScamStatsChart";
 import { formatTimeAgo } from "@/lib/utils";
 import type { PostData } from "@/components/PostCard";
-
-const APP_ICON = require("@/assets/images/icon.png");
 
 interface UserResult {
   uid: string;
@@ -42,126 +37,17 @@ interface UserResult {
   followerCount?: number;
 }
 
-const CATEGORY_META: Record<string, { color: string; emoji: string; gradient: string[]; tagline: string; users: number }> = {
-  "scam-alert": {
-    color: "#FF3B3B",
-    emoji: "🚨",
-    gradient: ["#FF3B3B", "#CC0000"],
-    tagline: "Real-time fraud alerts",
-    users: 12.4,
-  },
-  news: {
-    color: "#3B82F6",
-    emoji: "📰",
-    gradient: ["#3B82F6", "#1D4ED8"],
-    tagline: "Latest community news",
-    users: 8.7,
-  },
-  motivation: {
-    color: "#F59E0B",
-    emoji: "💪",
-    gradient: ["#F59E0B", "#D97706"],
-    tagline: "Stay inspired & strong",
-    users: 15.2,
-  },
-  health: {
-    color: "#22C55E",
-    emoji: "🏥",
-    gradient: ["#22C55E", "#15803D"],
-    tagline: "Wellness & safety tips",
-    users: 22.1,
-  },
-  finance: {
-    color: "#8B5CF6",
-    emoji: "💰",
-    gradient: ["#8B5CF6", "#6D28D9"],
-    tagline: "Money scam watch",
-    users: 9.8,
-  },
-  "crime-awareness": {
-    color: "#EF4444",
-    emoji: "🔍",
-    gradient: ["#EF4444", "#B91C1C"],
-    tagline: "Know your rights",
-    users: 6.3,
-  },
-  technology: {
-    color: "#06B6D4",
-    emoji: "💻",
-    gradient: ["#06B6D4", "#0E7490"],
-    tagline: "Digital & cyber threats",
-    users: 18.5,
-  },
-  education: {
-    color: "#F97316",
-    emoji: "📚",
-    gradient: ["#F97316", "#C2410C"],
-    tagline: "Learn to spot fraud",
-    users: 11.9,
-  },
-  entertainment: {
-    color: "#EC4899",
-    emoji: "🎬",
-    gradient: ["#EC4899", "#BE185D"],
-    tagline: "Safe fun & culture",
-    users: 24.6,
-  },
+const CATEGORY_COLORS: Record<string, string> = {
+  "scam-alert": "#FF3B3B",
+  news: "#3B82F6",
+  motivation: "#F59E0B",
+  health: "#22C55E",
+  finance: "#8B5CF6",
+  "crime-awareness": "#EF4444",
+  technology: "#06B6D4",
+  education: "#F97316",
+  entertainment: "#EC4899",
 };
-
-// Which niche strings (stored on user profiles) map to each category ID
-const CATEGORY_NICHES: Record<string, string[]> = {
-  "scam-alert":      ["General Awareness"],
-  news:              ["News & Journalism"],
-  motivation:        [],
-  health:            ["Health & Wellness"],
-  finance:           ["Finance"],
-  "crime-awareness": ["Law & Crime"],
-  technology:        ["Cybersecurity", "Technology"],
-  education:         ["Education"],
-  entertainment:     [],
-};
-
-function formatUserCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}k`;
-  return String(n);
-}
-
-// Animated counter: counts from 0 → target with ease-out
-const AnimatedCounter = memo(({ target, color }: { target: number; color: string }) => {
-  const [display, setDisplay] = useState(0);
-  const frameRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    setDisplay(0);
-    if (target === 0) return;
-    const steps = 60;
-    const duration = target >= 1_000_000 ? 1800 : target >= 100 ? 1200 : 800;
-    const interval = duration / steps;
-    let step = 0;
-    frameRef.current = setInterval(() => {
-      step += 1;
-      const eased = 1 - Math.pow(1 - step / steps, 3);
-      setDisplay(Math.round(eased * target));
-      if (step >= steps) {
-        setDisplay(target);
-        if (frameRef.current) clearInterval(frameRef.current);
-      }
-    }, interval);
-    return () => { if (frameRef.current) clearInterval(frameRef.current); };
-  }, [target]);
-
-  return (
-    <View style={{ flexDirection: "row", alignItems: "baseline", gap: 2, marginTop: 6 }}>
-      <Text style={{ fontFamily: "Inter_700Bold", fontSize: 15, color }}>
-        {formatUserCount(display)}
-      </Text>
-      <Text style={{ fontFamily: "Inter_400Regular", fontSize: 10, color: color + "AA" }}>
-        {" "}users
-      </Text>
-    </View>
-  );
-});
 
 export default function ExploreScreen() {
   const colors = useColors();
@@ -173,20 +59,34 @@ export default function ExploreScreen() {
   const [searching, setSearching] = useState(false);
   const [postResults, setPostResults] = useState<PostData[]>([]);
   const [userResults, setUserResults] = useState<UserResult[]>([]);
-  const [nicheCounts, setNicheCounts] = useState<Record<string, number>>({});
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [countsLoading, setCountsLoading] = useState(true);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
 
-  // Live subscription to niche user counts
+  // Fetch category post counts once
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "nicheCounts"), (snap) => {
-      const counts: Record<string, number> = {};
-      snap.docs.forEach((d) => {
-        counts[d.id] = Math.max(0, (d.data().count as number) || 0);
-      });
-      setNicheCounts(counts);
-    }, () => { /* non-fatal */ });
-    return unsub;
+    const fetchCounts = async () => {
+      try {
+        const counts: Record<string, number> = {};
+        await Promise.all(
+          CATEGORIES.map(async (cat) => {
+            try {
+              const snap = await getCountFromServer(query(collection(db, "posts")));
+              counts[cat.id] = snap.data().count;
+            } catch {
+              counts[cat.id] = 0;
+            }
+          })
+        );
+        setCategoryCounts(counts);
+      } catch {
+        // ignore
+      } finally {
+        setCountsLoading(false);
+      }
+    };
+    fetchCounts();
   }, []);
 
   const doSearch = useCallback(async (term: string) => {
@@ -258,37 +158,25 @@ export default function ExploreScreen() {
     inputRef.current?.blur();
   };
 
-  // ── Category tile (2-col grid) ────────────────────────────────────
-  const renderCategory = ({ item }: { item: (typeof CATEGORIES)[0] }) => {
-    const meta = CATEGORY_META[item.id] ?? { color: colors.primary, emoji: "📌", tagline: "Browse posts", users: 0 };
-    // Sum real user counts for every niche that maps to this category
-    const niches = CATEGORY_NICHES[item.id] ?? [];
-    const realCount = niches.reduce((sum, n) => sum + (nicheCounts[n] ?? 0), 0);
-
+  // ── Category tile ────────────────────────────────────
+  const renderCategory = ({ item }: { item: (typeof CATEGORIES)[number] }) => {
+    const color = CATEGORY_COLORS[item.id] ?? colors.primary;
     return (
       <TouchableOpacity
-        style={[styles.catCard, { backgroundColor: colors.card, borderColor: meta.color + "50" }]}
+        style={[styles.catCard, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => router.push("/(tabs)/" as never)}
-        activeOpacity={0.82}
+        activeOpacity={0.8}
       >
-        {/* Colour accent strip across the top */}
-        <View style={[styles.catStrip, { backgroundColor: meta.color }]} />
-
-        <View style={styles.catBody}>
-          {/* Big emoji bubble */}
-          <View style={[styles.catEmojiWrap, { backgroundColor: meta.color + "1A" }]}>
-            <Text style={styles.catEmoji}>{meta.emoji}</Text>
-          </View>
-
-          {/* Name + tagline */}
-          <Text style={[styles.catTitle, { color: colors.text }]}>{item.label}</Text>
-          <Text style={[styles.catTagline, { color: colors.textMuted }]} numberOfLines={2}>
-            {meta.tagline}
-          </Text>
-
-          {/* Live animated user count */}
-          <AnimatedCounter target={realCount} color={meta.color} />
+        <View style={[styles.catIcon, { backgroundColor: color + "20" }]}>
+          <Feather name={item.icon as keyof typeof Feather.glyphMap} size={22} color={color} />
         </View>
+        <View style={styles.catContent}>
+          <Text style={[styles.catTitle, { color: colors.text }]}>{item.label}</Text>
+          <Text style={[styles.catCount, { color: colors.textMuted }]}>
+            {countsLoading ? "..." : `${categoryCounts[item.id] ?? 0} posts`}
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={16} color={colors.textMuted} />
       </TouchableOpacity>
     );
   };
@@ -308,7 +196,7 @@ export default function ExploreScreen() {
           <Text style={[styles.userHandle, { color: colors.textMuted }]}>@{user.username}</Text>
         ) : null}
       </View>
-      <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
+      <Feather name="chevron-right" size={16} color={colors.textMuted} />
     </TouchableOpacity>
   );
 
@@ -328,13 +216,13 @@ export default function ExploreScreen() {
             {post.title}
           </Text>
           <View style={styles.postMeta}>
-            <CategoryPill category={post.category} />
+            <CategoryPill categoryId={post.category} />
             <Text style={[styles.postAuthor, { color: colors.textMuted }]}>
               {" · "}{post.authorName}{" · "}{formatTimeAgo(post.createdAt)}
             </Text>
           </View>
         </View>
-        <Image source={APP_ICON} style={styles.chevronIcon} resizeMode="cover" />
+        <Feather name="chevron-right" size={16} color={colors.textMuted} />
       </TouchableOpacity>
     );
   };
@@ -349,7 +237,7 @@ export default function ExploreScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Explore</Text>
         {/* Search bar */}
         <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Image source={APP_ICON} style={[styles.searchIcon, { marginLeft: 2 }]} resizeMode="cover" />
+          <Feather name="search" size={16} color={colors.textMuted} style={{ marginLeft: 2 }} />
           <TextInput
             ref={inputRef}
             style={[styles.searchInput, { color: colors.text }]}
@@ -365,7 +253,7 @@ export default function ExploreScreen() {
           {searching && <ActivityIndicator size="small" color={colors.primary} />}
           {search.length > 0 && !searching && (
             <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Image source={APP_ICON} style={styles.searchIcon} resizeMode="cover" />
+              <Feather name="x" size={16} color={colors.textMuted} />
             </TouchableOpacity>
           )}
           {isActive && !search && (
@@ -385,7 +273,7 @@ export default function ExploreScreen() {
             <View>
               {noResults ? (
                 <View style={styles.emptyState}>
-                  <Image source={APP_ICON} style={styles.emptyIcon} resizeMode="cover" />
+                  <Feather name="search" size={40} color={colors.textMuted} />
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>No results found</Text>
                   <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                     Try a different keyword or browse by category
@@ -424,34 +312,42 @@ export default function ExploreScreen() {
           data={CATEGORIES}
           keyExtractor={(item) => item.id}
           renderItem={renderCategory}
-          numColumns={2}
-          columnWrapperStyle={styles.catRow}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={() => (
-            <>
-              {/* AI Checker banner */}
-              <TouchableOpacity
-                style={[styles.aiBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}
-                onPress={() => router.push("/scam-checker" as never)}
-                activeOpacity={0.85}
-              >
-                <View style={[styles.aiIconBox, { backgroundColor: colors.primary }]}>
-                  <Image source={APP_ICON} style={styles.aiBoxIcon} resizeMode="cover" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.aiTitle, { color: colors.text }]}>AI Scam Checker</Text>
-                  <Text style={[styles.aiDesc, { color: colors.textSecondary }]}>
-                    Paste a suspicious message — our AI will analyze it instantly
-                  </Text>
-                </View>
-                <View style={[styles.aiArrow, { backgroundColor: colors.primary }]}>
-                  <Image source={APP_ICON} style={styles.aiArrowIcon} resizeMode="cover" />
-                </View>
-              </TouchableOpacity>
-              {/* Scam statistics chart */}
-              <ScamStatsChart />
-              <Text style={[styles.browseLabel, { color: colors.textMuted }]}>BROWSE BY CATEGORY</Text>
-            </>
+            <View>
+            <TouchableOpacity
+              style={[styles.aiBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}
+              onPress={() => router.push("/scam-checker" as never)}
+              activeOpacity={0.85}
+            >
+              <View style={[styles.aiIconBox, { backgroundColor: colors.primary }]}>
+                <Feather name="shield" size={20} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.aiTitle, { color: colors.text }]}>AI Scam Checker</Text>
+                <Text style={[styles.aiDesc, { color: colors.textSecondary }]}>
+                  Paste a suspicious message — our AI will analyze it instantly
+                </Text>
+              </View>
+              <View style={[styles.aiArrow, { backgroundColor: colors.primary }]}>
+                <Feather name="arrow-right" size={14} color="#fff" />
+              </View>
+            </TouchableOpacity>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
+              {[
+                { label: "ScamBot", href: "/chatbot" },
+                { label: "Link patterns", href: "/link-checker" },
+                { label: "Phone format", href: "/phone-checker" },
+                { label: "Premium images & animation", href: "/swiftop-ai" },
+              ].map(tool => (
+                <TouchableOpacity key={tool.href} accessibilityRole="button"
+                  style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 10, padding: 12 }}
+                  onPress={() => router.push(tool.href as never)}>
+                  <Text style={{ color: colors.primary, fontFamily: "Inter_600SemiBold", fontSize: 12 }}>{tool.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            </View>
           )}
           contentContainerStyle={[styles.catList, { paddingBottom: insets.bottom + 80 }]}
           showsVerticalScrollIndicator={false}
@@ -493,75 +389,33 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     fontSize: 14,
   },
-  browseLabel: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 11,
-    letterSpacing: 0.8,
-    marginHorizontal: 14,
-    marginTop: 16,
-    marginBottom: 8,
-  },
   // Category browse
-  catList: { padding: 12, paddingTop: 8 },
-  catRow: {
-    justifyContent: "space-between",
+  catList: { padding: 14, gap: 0 },
+  catCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
     marginBottom: 10,
   },
-  catCard: {
-    borderRadius: 18,
-    borderWidth: 1.5,
-    overflow: "hidden",
-    marginBottom: 0,
-    position: "relative",
-  },
-  catStrip: {
-    height: 4,
-    width: "100%",
-  },
-  catBody: {
-    padding: 14,
-    gap: 10,
-    flex: 1,
-  },
-  catEmojiWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+  catIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
-  catEmoji: {
-    fontSize: 26,
-  },
-  catTextGroup: {
-    gap: 3,
-    flex: 1,
-  },
+  catContent: { flex: 1 },
   catTitle: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
   },
-  catTagline: {
+  catCount: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  catCountChip: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "baseline",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    marginTop: 4,
-  },
-  catCountNum: {
-    fontFamily: "Inter_700Bold",
-    fontSize: 14,
-  },
-  catCountLabel: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
+    marginTop: 2,
   },
   // AI banner
   aiBanner: {
@@ -580,11 +434,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  aiBoxIcon:  { width: 22, height: 22, borderRadius: 6 },
-  aiArrowIcon:{ width: 14, height: 14, borderRadius: 3 },
-  searchIcon: { width: 16, height: 16, borderRadius: 4 },
-  chevronIcon:{ width: 16, height: 16, borderRadius: 4 },
-  emptyIcon:  { width: 48, height: 48, borderRadius: 12 },
   aiTitle: {
     fontFamily: "Inter_700Bold",
     fontSize: 14,

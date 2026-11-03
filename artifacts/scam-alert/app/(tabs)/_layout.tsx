@@ -1,37 +1,20 @@
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
+import { BlurView } from "expo-blur";
+import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Redirect, Tabs } from "expo-router";
+import { Badge, Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
+import { SymbolView } from "expo-symbols";
+import { Feather } from "@expo/vector-icons";
 import React from "react";
+import { ActivityIndicator, Platform, StyleSheet, Text, View, useColorScheme } from "react-native";
 
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
-import { CustomTabBar } from "@/components/CustomTabBar";
 
-function IOSNativeTabLayout() {
+function NativeTabLayout() {
   const unread = useUnreadMessages();
   const unreadNotif = useUnreadNotifications();
-
-  // Lazy-require iOS-only modules so Android never imports them
-  const { isLiquidGlassAvailable } = require("expo-glass-effect") as {
-    isLiquidGlassAvailable: () => boolean;
-  };
-  const { NativeTabs, Icon, Label } = require(
-    "expo-router/unstable-native-tabs"
-  ) as {
-    NativeTabs: React.ComponentType<{ children: React.ReactNode }> & {
-      Trigger: React.ComponentType<{
-        name: string;
-        badgeCount?: number;
-        children: React.ReactNode;
-      }>;
-    };
-    Icon: React.ComponentType<{ sf: { default: string; selected: string } }>;
-    Label: React.ComponentType<{ children: React.ReactNode }>;
-  };
-
-  if (!isLiquidGlassAvailable()) return <ClassicTabLayout />;
-
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
@@ -46,19 +29,15 @@ function IOSNativeTabLayout() {
         <Icon sf={{ default: "plus.circle", selected: "plus.circle.fill" }} />
         <Label>Post</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger
-        name="notifications"
-        badgeCount={unreadNotif > 0 ? unreadNotif : undefined}
-      >
+      <NativeTabs.Trigger name="notifications">
         <Icon sf={{ default: "bell", selected: "bell.fill" }} />
         <Label>Alerts</Label>
+        {unreadNotif > 0 && <Badge>{String(unreadNotif)}</Badge>}
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger
-        name="messages"
-        badgeCount={unread > 0 ? unread : undefined}
-      >
+      <NativeTabs.Trigger name="messages">
         <Icon sf={{ default: "bubble.left", selected: "bubble.left.fill" }} />
         <Label>Messages</Label>
+        {unread > 0 && <Badge>{String(unread)}</Badge>}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon sf={{ default: "person.circle", selected: "person.circle.fill" }} />
@@ -69,38 +48,118 @@ function IOSNativeTabLayout() {
 }
 
 function ClassicTabLayout() {
+  const colors = useColors();
+  const colorScheme = useColorScheme();
   const unread = useUnreadMessages();
   const unreadNotif = useUnreadNotifications();
+  const isDark = colorScheme === "dark";
+  const isIOS = Platform.OS === "ios";
+  const isWeb = Platform.OS === "web";
 
   return (
     <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.mutedForeground,
+        headerShown: false,
+        tabBarStyle: {
+          position: "absolute",
+          backgroundColor: isIOS ? "transparent" : colors.surface,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          elevation: 0,
+          height: isWeb ? 84 : undefined,
+        },
+        tabBarBackground: () =>
+          isIOS ? (
+            <BlurView
+              intensity={90}
+              tint={isDark ? "dark" : "light"}
+              style={StyleSheet.absoluteFill}
+            />
+          ) : isWeb ? (
+            <View
+              style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface }]}
+            />
+          ) : null,
+      }}
     >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
-      <Tabs.Screen name="explore" options={{ title: "Explore" }} />
-      <Tabs.Screen name="create" options={{ title: "Post" }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="house" tintColor={color} size={24} />
+            ) : (
+              <Feather name="home" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: "Explore",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="safari" tintColor={color} size={24} />
+            ) : (
+              <Feather name="compass" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: "Post",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="plus.circle" tintColor={color} size={24} />
+            ) : (
+              <Feather name="plus-circle" size={22} color={color} />
+            ),
+        }}
+      />
       <Tabs.Screen
         name="notifications"
         options={{
           title: "Alerts",
-          tabBarBadge:
-            unreadNotif > 0
-              ? unreadNotif > 99
-                ? "99+"
-                : unreadNotif
-              : undefined,
+          tabBarBadge: unreadNotif > 0 ? (unreadNotif > 99 ? "99+" : unreadNotif) : undefined,
+          tabBarBadgeStyle: { backgroundColor: "#FF3B3B", fontSize: 10, minWidth: 18, height: 18, borderRadius: 9 },
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="bell" tintColor={color} size={24} />
+            ) : (
+              <Feather name="bell" size={22} color={color} />
+            ),
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
           title: "Messages",
-          tabBarBadge:
-            unread > 0 ? (unread > 99 ? "99+" : unread) : undefined,
+          tabBarBadge: unread > 0 ? (unread > 99 ? "99+" : unread) : undefined,
+          tabBarBadgeStyle: { backgroundColor: "#FF3B3B", fontSize: 10, minWidth: 18, height: 18, borderRadius: 9 },
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="bubble.left" tintColor={color} size={24} />
+            ) : (
+              <Feather name="message-circle" size={22} color={color} />
+            ),
         }}
       />
-      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="person.circle" tintColor={color} size={24} />
+            ) : (
+              <Feather name="user" size={22} color={color} />
+            ),
+        }}
+      />
     </Tabs>
   );
 }
@@ -124,6 +183,7 @@ export default function TabLayout() {
   if (profileError && !profile) {
     return (
       <View style={[styles.accessState, { backgroundColor: colors.background }]}>
+        <Feather name="alert-circle" size={42} color={colors.primary} />
         <Text style={[styles.accessTitle, { color: colors.text }]}>Profile unavailable</Text>
         <Text style={[styles.accessMessage, { color: colors.textSecondary }]}>
           {profileError}
@@ -136,13 +196,11 @@ export default function TabLayout() {
     return <Redirect href="/(auth)/onboarding" />;
   }
 
-  // iOS-native Liquid Glass tabs — Android always uses classic layout
-  if (Platform.OS === "ios") {
-    return <IOSNativeTabLayout />;
+  if (isLiquidGlassAvailable()) {
+    return <NativeTabLayout />;
   }
   return <ClassicTabLayout />;
 }
-
 
 const styles = StyleSheet.create({
   accessState: {

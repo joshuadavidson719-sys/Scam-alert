@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
+import { analyzeScam } from "@/lib/ai";
 
 const APP_ICON = require("@/assets/images/icon.png");
 
@@ -76,25 +77,15 @@ export default function ScamCheckerScreen() {
     setResult(null);
     setError("");
     try {
-      const base =
-        typeof window !== "undefined" && window.location
-          ? window.location.origin
-          : `https://${process.env.EXPO_PUBLIC_REPLIT_DEV_DOMAIN ?? "localhost"}`;
-      const response = await fetch(`${base}/api/scam-check`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: message.trim() }),
-      });
-      if (!response.ok) throw new Error("Analysis failed");
-      const data = await response.json() as AnalysisResult;
+      const data = await analyzeScam(message.trim());
       setResult(data);
       Haptics.notificationAsync(
         data.isScam
           ? Haptics.NotificationFeedbackType.Warning
           : Haptics.NotificationFeedbackType.Success
       );
-    } catch {
-      setError("Could not analyze the message. Please try again.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not analyze the message. Please try again.");
     } finally {
       setLoading(false);
     }

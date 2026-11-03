@@ -17,15 +17,17 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
 import { router } from "expo-router";
+import { usePremium } from "@/context/PremiumContext";
+import { PremiumAccessCard } from "@/components/PremiumAccessCard";
+import { generatePaid, recoverLastGeneration } from "@/lib/premium-generation";
+import type { PremiumGenerationResult } from "@workspace/api-client-react";
 
 const APP_ICON = require("@/assets/images/icon.png");
 
-const DOMAIN = process.env.EXPO_PUBLIC_DOMAIN ?? "";
-const BASE = DOMAIN ? `https://${DOMAIN}` : "";
 const SW = Dimensions.get("window").width;
 
 type Mode = "image" | "animation";
@@ -351,6 +353,7 @@ const ANIMATION_PROMPTS = [
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function SwiftopAIScreen() {
   const insets = useSafeAreaInsets();
+  const { status, refresh } = usePremium();
 
   const [mode, setMode] = useState<Mode>("image");
   const [prompt, setPrompt] = useState("");
@@ -362,54 +365,46 @@ export default function SwiftopAIScreen() {
   const [results, setResults] = useState<GenerationResult[]>([]);
   const [selected, setSelected] = useState<GenerationResult | null>(null);
   const [loadingMsg, setLoadingMsg] = useState("");
+  const [generationError, setGenerationError] = useState("");
+  const [generationNotice, setGenerationNotice] = useState("");
+  const canGenerate = !!status?.premium && !!status.generationAccess && !!status.generationAvailable;
+
+  const displayResult = (data: PremiumGenerationResult) => {
+    const result: GenerationResult = data.frameCount > 1 ? {
+      id: data.requestId, mode: "animation", prompt: data.prompt,
+      frames: data.frames, frameCount: data.frameCount, fps: data.fps,
+    } : {
+      id: data.requestId, mode: "image", prompt: data.prompt,
+      b64: data.b64_json ?? data.frames[0], size,
+    };
+    setResults(prev => [result, ...prev.filter(item => item.id !== result.id)]);
+    setSelected(result);
+    setGenerationNotice(data.partial
+      ? `Only ${data.frameCount} frame(s) completed. ${data.creditsCharged} credits were charged; credits reserved for failed frames were returned.`
+      : `${data.creditsCharged} credit(s) used.`);
+  };
 
   const quickPrompts = mode === "image" ? IMAGE_PROMPTS : ANIMATION_PROMPTS;
 
   const generate = useCallback(async () => {
     const trimmed = prompt.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || loading || !canGenerate) return;
+    setGenerationError("");
+    setGenerationNotice("");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     setLoadingMsg(mode === "image" ? "Synthesizing your image..." : `Chaining ${frameCount} frames with visual continuity...`);
 
     try {
-      if (mode === "image") {
-        const res = await fetch(`${BASE}/api/swiftop/generate-image`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: trimmed, size }),
-        });
-        if (!res.ok) throw new Error("Generation failed");
-        const data = await res.json() as { b64_json: string };
-        const result: ImageResult = { id: Date.now().toString(), mode: "image", prompt: trimmed, b64: data.b64_json, size };
-        setResults((prev) => [result, ...prev]);
-        setSelected(result);
-      } else {
-        const res = await fetch(`${BASE}/api/swiftop/generate-animation`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: trimmed, frameCount, style: animStyle, fps }),
-        });
-        if (!res.ok) throw new Error("Generation failed");
-        const data = await res.json() as { frames: string[]; frameCount: number; fps: number };
-        const result: AnimationResult = {
-          id: Date.now().toString(),
-          mode: "animation",
-          prompt: trimmed,
-          frames: data.frames,
-          frameCount: data.frameCount,
-          fps: data.fps ?? fps,
-        };
-        setResults((prev) => [result, ...prev]);
-        setSelected(result);
-      }
-    } catch {
-      Alert.alert("Generation Failed", "Something went wrong. Please try again.");
+      displayResult(await generatePaid(mode, { prompt: trimmed, size, frameCount, style: animStyle, fps }));
+    } catch (failure) {
+      setGenerationError(failure instanceof Error ? failure.message : "Generation failed. Try recovering the last result before starting another request.");
     } finally {
       setLoading(false);
       setLoadingMsg("");
+      void refresh();
     }
-  }, [prompt, mode, size, frameCount, animStyle, fps, loading]);
+  }, [prompt, mode, size, frameCount, animStyle, fps, loading, canGenerate, refresh]);
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -432,6 +427,16 @@ export default function SwiftopAIScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <PremiumAccessCard />
+          {!!generationError && <Text accessibilityRole="alert" style={{ color: "#FFB7C0", marginBottom: 14 }}>{generationError}</Text>}
+          {!!generationNotice && <Text style={{ color: "#C6B9DE", marginBottom: 14 }}>{generationNotice}</Text>}
+          <TouchableOpacity disabled={loading} onPress={async () => {
+            setGenerationError("");
+            setLoading(true);
+            try { displayResult(await recoverLastGeneration()); }
+            catch (failure) { setGenerationError(failure instanceof Error ? failure.message : "Could not recover the last result."); }
+            finally { setLoading(false); void refresh(); }
+          }}><Text style={{ color: "#C9B1FF", marginBottom: 18 }}>Recover last generation</Text></TouchableOpacity>
           {/* Mode Toggle */}
           <View style={styles.modeRow}>
             <TouchableOpacity style={[styles.modeBtn, mode === "image" && styles.modeBtnImg]} onPress={() => { setMode("image"); setSelected(null); }}>
@@ -514,7 +519,7 @@ export default function SwiftopAIScreen() {
           )}
 
           {/* Generate */}
-          <TouchableOpacity style={[styles.generateBtn, loading && styles.generateBtnDisabled]} onPress={generate} disabled={loading || !prompt.trim()} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.generateBtn, (loading || !canGenerate) && styles.generateBtnDisabled]} onPress={generate} disabled={loading || !prompt.trim() || !canGenerate} activeOpacity={0.8}>
             <LinearGradient
               colors={mode === "image" ? ["#7C3AED", "#9F5DFF"] : ["#1D4ED8", "#3B82F6"]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}

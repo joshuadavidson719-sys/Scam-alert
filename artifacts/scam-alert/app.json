@@ -2,7 +2,7 @@
   "expo": {
     "name": "ScamAlert App",
     "slug": "scam-alert",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -21,12 +21,11 @@
       "bundleIdentifier": "com.spicetech.scamalert",
       "infoPlist": {
         "NSCameraUsageDescription": "Allow Scam Alert to use your camera.",
-        "NSPhotoLibraryUsageDescription": "Allow Scam Alert to access your photos to attach images and videos to posts."
+        "NSPhotoLibraryUsageDescription": "Allow Scam Alert to access photos for your profile picture and to attach images or videos to posts."
       }
     },
     "android": {
       "package": "com.spicetech.scamalert",
-      "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -41,6 +40,11 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
         "android.permission.POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE"
       ],
       "intentFilters": [
         {
@@ -57,11 +61,6 @@
             "DEFAULT"
           ]
         }
-      ],
-      "blockedPermissions": [
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
-        "android.permission.FOREGROUND_SERVICE_MICROPHONE"
       ]
     },
     "web": {
@@ -77,11 +76,19 @@
       "expo-font",
       "expo-web-browser",
       "expo-asset",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Scam Alert to use your microphone to record voice notes.",
+          "recordAudioAndroid": true,
+          "enableBackgroundRecording": false
+        }
+      ],
       "expo-video",
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Scam Alert to access your photos to attach images and videos to posts.",
+          "photosPermission": "Allow Scam Alert to access photos for your profile picture and to attach images or videos to posts.",
           "cameraPermission": "Allow Scam Alert to use your camera."
         }
       ],
@@ -100,14 +107,6 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200
         }
-      ],
-      [
-        "expo-audio",
-        {
-          "microphonePermission": "Allow Scam Alert to use your microphone to record voice notes.",
-          "recordAudioAndroid": true,
-          "enableBackgroundRecording": false
-        }
       ]
     ],
     "experiments": {
@@ -115,6 +114,7 @@
       "reactCompiler": true
     },
     "extra": {
+      "apiBaseUrl": "https://scam-alert-api.replit.app",
       "eas": {
         "projectId": "f2d37f46-6661-493f-a937-844ff302ad07"
       }

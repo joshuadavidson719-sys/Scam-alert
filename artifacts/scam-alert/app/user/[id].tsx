@@ -31,6 +31,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
+import { ScamHotlineDirectory } from "@/components/ScamHotlineDirectory";
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -44,21 +45,35 @@ export default function UserProfileScreen() {
   const [followLoading, setFollowLoading] = useState(false);
   const [commentPost, setCommentPost] = useState<PostData | null>(null);
   const [reportPostId, setReportPostId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [postsError, setPostsError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const isMe = user?.uid === id;
 
+  // Bug 1 fix: use onSnapshot instead of getDoc so follower count updates in real-time
   useEffect(() => {
-    if (!id) return;
+    if (!id) { setLoading(false); return; }
+
     const unsub = onSnapshot(doc(db, "users", id), (snap) => {
       if (snap.exists()) {
         const u = snap.data() as UserProfile;
         setTargetUser(u);
         setFollowing(!!user && (u.followers ?? []).includes(user.uid));
+      } else {
+        setTargetUser(null);
       }
+      setLoadError(null);
+      setLoading(false);
+    }, () => {
+      setLoadError("This profile could not be loaded. Check your connection and try again.");
       setLoading(false);
     });
+
     return unsub;
-  }, [id, user]);
+  }, [id, user, retryKey]);
 
   useEffect(() => {
     if (!id) return;
@@ -68,21 +83,24 @@ export default function UserProfileScreen() {
       orderBy("createdAt", "desc")
     );
     const unsub = onSnapshot(q, (snap) => {
+      setPostsError(null);
       setPosts(
         snap.docs.map((d) => ({
           ...(d.data() as Omit<PostData, "id">),
           id: d.id,
         }))
       );
-    });
+    }, () => setPostsError("Posts could not be loaded."));
     return unsub;
-  }, [id]);
+  }, [id, retryKey]);
 
   const handleFollow = async () => {
     if (!user || !targetUser || followLoading) return;
     setFollowLoading(true);
+    setActionError(null);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      // Bug 1 fix: use `id` URL param (reliable) instead of targetUser.uid
       const targetRef = doc(db, "users", id);
       const myRef = doc(db, "users", user.uid);
       if (following) {
@@ -94,6 +112,7 @@ export default function UserProfileScreen() {
       }
       refreshProfile();
     } catch {
+      setActionError("Could not update follow. Please try again.");
       Alert.alert("Error", "Could not update follow. Please try again.");
     } finally {
       setFollowLoading(false);
@@ -101,8 +120,11 @@ export default function UserProfileScreen() {
   };
 
   const handleMessage = async () => {
-    if (!user || !targetUser) return;
+    if (!user || !targetUser || msgLoading) return;
     const chatId = [user.uid, id].sort().join("_");
+    setMsgLoading(true);
+    setActionError(null);
+    try {
     await setDoc(
       doc(db, "chats", chatId),
       {
@@ -121,7 +143,14 @@ export default function UserProfileScreen() {
       { merge: true }
     );
     router.push(`/chat/${chatId}` as never);
+    } catch {
+      setActionError("Could not open the conversation. Please try again.");
+    } finally {
+      setMsgLoading(false);
+    }
   };
+
+  const retry = () => { setLoading(true); setLoadError(null); setRetryKey((k) => k + 1); };
 
   if (loading) {
     return (
@@ -131,10 +160,23 @@ export default function UserProfileScreen() {
     );
   }
 
-  if (!targetUser) {
+  if (loadError || !targetUser) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.textSecondary }}>User not found</Text>
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.background, gap: 10, padding: 24 }]}>
+        <Feather name={loadError ? "wifi-off" : "user-x"} size={36} color={colors.textMuted} />
+        <Text style={{ color: colors.textSecondary, fontFamily: "Inter_500Medium", textAlign: "center" }}>
+          {loadError ?? "User not found"}
+        </Text>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          {loadError && (
+            <TouchableOpacity onPress={retry} style={[styles.msgBtn, { borderColor: colors.primary, backgroundColor: colors.card }]}>
+              <Text style={[styles.msgBtnText, { color: colors.primary }]}>Try again</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => router.back()} style={[styles.msgBtn, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            <Text style={[styles.msgBtnText, { color: colors.text }]}>Go back</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -162,7 +204,10 @@ export default function UserProfileScreen() {
             </View>
 
             <View style={styles.profileSection}>
-              <UserAvatar uri={targetUser.profilePhoto} name={targetUser.username} size={84} />
+              <View pointerEvents="none" style={[styles.headerWash, { backgroundColor: colors.primary + "14" }]} />
+              <View style={[styles.avatarRing, { borderColor: colors.primary + "66", backgroundColor: colors.background }]}>
+                <UserAvatar uri={targetUser.profilePhoto} name={targetUser.username} size={92} />
+              </View>
               <Text style={[styles.username, { color: colors.text }]}>{targetUser.username}</Text>
               <Text style={[styles.niche, { color: colors.primary }]}>
                 {targetUser.niche || "Scam Alert Community"}
@@ -171,7 +216,7 @@ export default function UserProfileScreen() {
                 <Text style={[styles.bio, { color: colors.textSecondary }]}>{targetUser.bio}</Text>
               ) : null}
 
-              <View style={styles.statsRow}>
+              <View style={[styles.statsRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.stat}>
                   <Text style={[styles.statNum, { color: colors.text }]}>{posts.length}</Text>
                   <Text style={[styles.statLabel, { color: colors.textMuted }]}>Posts</Text>
@@ -215,20 +260,27 @@ export default function UserProfileScreen() {
                           { color: following ? colors.text : "#fff" },
                         ]}
                       >
-                        {following ? "✓ Following" : "Follow"}
+                        {following ? "Following" : "Follow"}
                       </Text>
                     )}
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.msgBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                     onPress={handleMessage}
+                    disabled={msgLoading}
                   >
-                    <Feather name="message-circle" size={16} color={colors.text} />
+                    {msgLoading ? <ActivityIndicator size="small" color={colors.text} /> : <Feather name="message-circle" size={16} color={colors.text} />}
                     <Text style={[styles.msgBtnText, { color: colors.text }]}>Message</Text>
                   </TouchableOpacity>
                 </View>
               )}
+              {actionError && (
+                <Text style={{ color: "#E5484D", fontFamily: "Inter_500Medium", fontSize: 12, marginTop: 6, textAlign: "center" }}>{actionError}</Text>
+              )}
             </View>
+
+            <ScamHotlineDirectory />
+            <View style={{ height: 16 }} />
 
             <Text style={[styles.postsHeader, { color: colors.text, borderBottomColor: colors.border }]}>
               Posts
@@ -247,7 +299,10 @@ export default function UserProfileScreen() {
         ListEmptyComponent={
           <View style={styles.emptyPosts}>
             <Feather name="file-text" size={36} color={colors.textMuted} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No posts yet</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{postsError ?? "No posts yet"}</Text>
+            {postsError && (
+              <TouchableOpacity onPress={retry}><Text style={[styles.msgBtnText, { color: colors.primary }]}>Try again</Text></TouchableOpacity>
+            )}
           </View>
         }
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
@@ -295,7 +350,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     gap: 6,
+    overflow: "hidden",
   },
+  headerWash: { position: "absolute", top: 0, left: 0, right: 0, height: 110, borderBottomLeftRadius: 40, borderBottomRightRadius: 40 },
+  avatarRing: { padding: 4, borderRadius: 60, borderWidth: 2 },
   username: {
     fontFamily: "Inter_700Bold",
     fontSize: 22,
@@ -315,7 +373,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 24,
-    marginTop: 12,
+    marginTop: 14,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
   },
   stat: { alignItems: "center", gap: 2 },
   statNum: { fontFamily: "Inter_700Bold", fontSize: 20 },
