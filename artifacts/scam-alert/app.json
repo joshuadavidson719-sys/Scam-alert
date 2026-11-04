@@ -2,7 +2,7 @@
   "expo": {
     "name": "ScamAlert App",
     "slug": "scam-alert",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -117,6 +117,14 @@
       "apiBaseUrl": "https://scam-alert-api.replit.app",
       "eas": {
         "projectId": "f2d37f46-6661-493f-a937-844ff302ad07"
+      },
+      "firebaseConfig": {
+        "apiKey": "AIzaSyCn0Rc4xWW-0LaGhJuIBtZMLsBcsD7KnqI",
+        "authDomain": "applicationid-scamalert-clean.firebaseapp.com",
+        "projectId": "applicationid-scamalert-clean",
+        "storageBucket": "applicationid-scamalert-clean.firebasestorage.app",
+        "messagingSenderId": "86631393939",
+        "appId": "1:86631393939:web:3a359e5c70bee0c8d7bb66"
       }
     }
   }

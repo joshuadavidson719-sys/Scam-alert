@@ -2,11 +2,17 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
+import Constants from "expo-constants";
 
 const rawFirebaseConfig = process.env.EXPO_PUBLIC_FIREBASE_CONFIG?.trim();
 
 const configFromBundle = (() => {
-  if (!rawFirebaseConfig) return {};
+  if (!rawFirebaseConfig) {
+    const embedded = Constants.expoConfig?.extra?.firebaseConfig;
+    return embedded && typeof embedded === "object"
+      ? embedded as Record<string, string>
+      : {};
+  }
 
   try {
     return JSON.parse(rawFirebaseConfig) as Record<string, string>;

@@ -5,7 +5,9 @@ import { auth } from "./firebase";
 export function getApiOrigin() {
   const extra = Constants.expoConfig?.extra?.apiBaseUrl as string | undefined;
   const domain = process.env.EXPO_PUBLIC_DOMAIN;
-  const origin = process.env.EXPO_PUBLIC_API_BASE_URL || (__DEV__ && domain ? `https://${domain}` : extra);
+  const developmentOrigin = Constants.expoConfig?.extra?.developmentApiBaseUrl as string | undefined;
+  const origin = process.env.EXPO_PUBLIC_API_BASE_URL
+    || (__DEV__ ? (developmentOrigin || (domain ? `https://${domain}` : extra)) : extra);
   if (!origin) throw new Error("The app server address is missing from this build.");
   const url = new URL(origin);
   if (url.protocol !== "https:" || (!__DEV__ && /\.replit\.dev$/.test(url.hostname))) {

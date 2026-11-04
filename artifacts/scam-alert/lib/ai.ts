@@ -18,6 +18,9 @@ export async function aiRequest<T>(call: (options: RequestInit) => Promise<T>, t
     return await call({ signal: controller.signal });
   } catch (error) {
     if (controller.signal.aborted) throw new Error("The AI request timed out. Please try again.");
+    if (error && typeof error === "object" && "status" in error && error.status === 404) {
+      throw new AiRequestError("AI is unavailable because the app server needs an update. Please try again later.", 404);
+    }
     if (error && typeof error === "object" && "data" in error) {
       const data = error.data;
       if (data && typeof data === "object" && "error" in data && typeof data.error === "string") {

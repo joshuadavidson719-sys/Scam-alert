@@ -7,8 +7,10 @@ import { auth } from "./firebase";
 export async function chooseAndUploadProfilePhoto(): Promise<string | null> {
   const user = auth.currentUser;
   if (!user) throw new Error("Sign in before changing your profile photo.");
-  // On the web, launch directly within the click gesture so the file picker opens.
-  if (Platform.OS !== "web") {
+  // Android's system photo picker grants access to the selected image itself.
+  // A denied broad-library permission must not prevent opening that picker.
+  // Web must also launch directly within the click gesture.
+  if (Platform.OS === "ios") {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       throw new Error(permission.canAskAgain
@@ -36,6 +38,9 @@ export async function chooseAndUploadProfilePhoto(): Promise<string | null> {
     // references stay relative so a temporary preview hostname is never saved.
     return __DEV__ ? result.path : `${getApiOrigin()}${result.path}`;
   } catch (failure) {
+    if (failure && typeof failure === "object" && "status" in failure && failure.status === 404) {
+      throw new Error("Profile photo uploads are unavailable because the app server needs an update. Your current photo is unchanged.");
+    }
     if (failure && typeof failure === "object" && "data" in failure) {
       const data = failure.data;
       if (data && typeof data === "object" && "error" in data && typeof data.error === "string") {
