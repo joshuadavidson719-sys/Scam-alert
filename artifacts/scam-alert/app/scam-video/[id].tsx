@@ -43,7 +43,13 @@ export default function ScamVideoDetail() {
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: bottomPad + 32, gap: 16 }}>
           {lesson.status === "ready" && lesson.videoUrl ? (
-            <LessonPlayer url={lesson.videoUrl} title={lesson.title} />
+            <LessonPlayer
+              url={Platform.OS === "web" && lesson.webVideoUrl
+                && typeof document !== "undefined"
+                && document.createElement("video").canPlayType('video/webm; codecs="vp9,opus"')
+                ? lesson.webVideoUrl : lesson.videoUrl}
+              title={lesson.title}
+            />
           ) : (
             <View style={[styles.planned, { backgroundColor: colors.muted, borderColor: colors.border }]}>
               <Feather name="file-text" size={22} color={colors.textSecondary} />
@@ -110,6 +116,9 @@ function LessonPlayer({ url, title }: { url: string; title: string }) {
   const player = useVideoPlayer(url, (p) => { p.loop = false; });
   const { status, error } = useEvent(player, "statusChange", { status: player.status });
   const [retryError, setRetryError] = useState(false);
+  useEffect(() => {
+    if (status === "error") console.warn("Scam lesson playback failed:", error?.message ?? "Unknown player error");
+  }, [status, error?.message]);
 
   useFocusEffect(useCallback(() => () => { try { player.pause(); } catch {} }, [player]));
   useEffect(() => {
@@ -131,7 +140,7 @@ function LessonPlayer({ url, title }: { url: string; title: string }) {
   return (
     <View style={[styles.videoWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}
       accessibilityLabel={`Video: ${title}`}>
-      <VideoView player={player} style={StyleSheet.absoluteFill} nativeControls contentFit="contain" allowsFullscreen />
+      <VideoView player={player} style={styles.videoFill} nativeControls contentFit="contain" allowsFullscreen />
       {status === "loading" && (
         <View style={styles.overlay} pointerEvents="none">
           <ActivityIndicator color={colors.primary} />
@@ -161,6 +170,7 @@ const styles = StyleSheet.create({
   topTitle: { fontFamily: "Inter_700Bold", fontSize: 17 },
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10, padding: 32 },
   videoWrap: { width: "100%", maxWidth: 420, alignSelf: "center", aspectRatio: 9 / 16, maxHeight: 620, borderRadius: 16, overflow: "hidden", borderWidth: 1 },
+  videoFill: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" },
   overlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 10, padding: 20 },
   overlayText: { fontFamily: "Inter_500Medium", fontSize: 14, textAlign: "center" },
   planned: { flexDirection: "row", gap: 10, padding: 14, borderRadius: 14, borderWidth: 1, alignItems: "flex-start" },

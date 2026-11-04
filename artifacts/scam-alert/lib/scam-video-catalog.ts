@@ -6,6 +6,7 @@ export type ScamVideoLesson = {
   durationSeconds: number;
   status: "ready" | "planned";
   videoUrl?: string;
+  webVideoUrl?: string;
   thumbnailUrl?: string;
   transcript: string;
   warningSigns: string[];
@@ -85,6 +86,7 @@ export const SCAM_VIDEO_LESSONS: ScamVideoLesson[] = curriculum.map(
     ...(id === "bank-impersonation" ? {
       status: "ready" as const,
       videoUrl: "https://yzoiwcms9wcmozfr.public.blob.vercel-storage.com/scam-awareness/bank-impersonation-1080p-VqtSaAL4ssSIdrQeLuf0XcfgNDKi8u.mp4",
+      webVideoUrl: "https://yzoiwcms9wcmozfr.public.blob.vercel-storage.com/scam-awareness/bank-impersonation-1080p-FvCYXzhihLgMxOdh0Gs8FcReQq8t8n.webm",
       thumbnailUrl: "https://yzoiwcms9wcmozfr.public.blob.vercel-storage.com/scam-awareness/bank-impersonation-poster-OcZrytDdbjAkWwdCdy9xaXz45ELc8S.jpg",
     } : {}),
   }),
