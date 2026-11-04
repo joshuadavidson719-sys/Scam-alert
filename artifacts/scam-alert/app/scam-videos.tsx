@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
-  View, Text, StyleSheet, FlatList, Pressable, TextInput, ScrollView, Platform, Image,
+  View, Text, StyleSheet, FlatList, Pressable, TextInput, ScrollView, Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -10,15 +10,6 @@ import {
   SCAM_VIDEO_LESSONS, SCAM_VIDEO_CATEGORIES, type ScamVideoLesson,
 } from "@/lib/scam-video-catalog";
 
-export function formatDuration(s: number) {
-  const m = Math.floor(s / 60);
-  const r = Math.round(s % 60);
-  return `${m}:${r.toString().padStart(2, "0")}`;
-}
-
-export function isPlayable(l: ScamVideoLesson) {
-  return l.status === "ready" && !!l.videoUrl;
-}
 
 export default function ScamVideosScreen() {
   const colors = useColors();
@@ -28,8 +19,7 @@ export default function ScamVideosScreen() {
   const [category, setCategory] = useState<string>("all");
   const [search, setSearch] = useState("");
 
-  const readyCount = useMemo(() => SCAM_VIDEO_LESSONS.filter(isPlayable).length, []);
-  const plannedCount = SCAM_VIDEO_LESSONS.length - readyCount;
+  const total = SCAM_VIDEO_LESSONS.length;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -41,32 +31,30 @@ export default function ScamVideosScreen() {
         l.summary.toLowerCase().includes(q) ||
         l.category.toLowerCase().includes(q)
       );
-    }).sort((a, b) => Number(isPlayable(b)) - Number(isPlayable(a)));
+    });
   }, [category, search]);
 
   const header = (
     <View>
       <View style={[styles.hero, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.eyebrow, { color: colors.primary }]}>LEARN TO SPOT IT</Text>
+        <Text style={[styles.eyebrow, { color: colors.primary }]}>SCAM LEARNING</Text>
         <Text style={[styles.heroTitle, { color: colors.text }]}>
-          Short lessons that help you pause before you pay.
+          Learn the tricks scammers use, so you can stop them early.
         </Text>
         <View style={styles.statsRow}>
           <View style={[styles.stat, { backgroundColor: colors.success + "1F" }]}>
-            <Text style={[styles.statNum, { color: colors.success }]}>{readyCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.text }]}>
-              {readyCount === 1 ? "video available" : "videos available"}
-            </Text>
+            <Text style={[styles.statNum, { color: colors.success }]}>{total}</Text>
+            <Text style={[styles.statLabel, { color: colors.text }]}>free lessons, all open to read</Text>
           </View>
           <View style={[styles.stat, { backgroundColor: colors.muted }]}>
-            <Text style={[styles.statNum, { color: colors.text }]}>{plannedCount}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>written lessons, video coming</Text>
+            <Text style={[styles.statNum, { color: colors.text }]}>{SCAM_VIDEO_CATEGORIES.length}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>topics to explore</Text>
           </View>
         </View>
         <View style={[styles.notice, { borderColor: colors.border }]}>
           <Feather name="info" size={14} color={colors.textSecondary} />
           <Text style={[styles.noticeText, { color: colors.textSecondary }]}>
-            Videos are AI-generated dramatizations. People and situations shown are not real, and are made only to teach the warning signs.
+            Each lesson has a made-up example, the warning signs, how to stay safe, and a quick check. Examples are fictional so you can learn without risk.
           </Text>
         </View>
       </View>
@@ -126,7 +114,7 @@ export default function ScamVideosScreen() {
         >
           <Feather name="arrow-left" size={22} color={colors.text} />
         </Pressable>
-        <Text style={[styles.topTitle, { color: colors.text }]} accessibilityRole="header">Scam Video Lessons</Text>
+        <Text style={[styles.topTitle, { color: colors.text }]} accessibilityRole="header">Free Scam Lessons</Text>
         <View style={styles.backBtn} />
       </View>
       <FlatList
@@ -157,32 +145,33 @@ export default function ScamVideosScreen() {
 
 function LessonRow({ lesson }: { lesson: ScamVideoLesson }) {
   const colors = useColors();
-  const ready = isPlayable(lesson);
+  const hasVideo = !!lesson.videoUrl;
   return (
     <Pressable
       testID={`lesson-${lesson.id}`}
       onPress={() => router.push(`/scam-video/${lesson.id}` as never)}
       accessibilityRole="button"
-      accessibilityLabel={`${lesson.title}. ${lesson.category}. ${ready ? `Video, ${formatDuration(lesson.durationSeconds)}` : "Written lesson, video not yet available"}`}
+      accessibilityLabel={`${lesson.title}. ${lesson.category}. Read lesson${hasVideo ? ". Includes optional video" : ""}`}
       style={({ pressed }) => [styles.row, {
-        backgroundColor: colors.card, borderColor: ready ? colors.primary + "55" : colors.border,
-        opacity: pressed ? 0.85 : 1,
+        backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1,
       }]}
     >
-      <View style={[styles.thumb, { backgroundColor: ready ? colors.primary + "1A" : colors.muted }]}>
-        {ready && lesson.thumbnailUrl ? (
-          <Image source={{ uri: lesson.thumbnailUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : null}
-        <Feather name={ready ? "play" : "file-text"} size={20} color={ready ? colors.primary : colors.textMuted} />
+      <View style={[styles.thumb, { backgroundColor: colors.primary + "14" }]}>
+        <Feather name="book-open" size={20} color={colors.primary} />
       </View>
       <View style={{ flex: 1, gap: 4 }}>
         <Text style={[styles.cat, { color: colors.textSecondary }]}>{lesson.category.toUpperCase()}</Text>
         <Text style={[styles.rowTitle, { color: colors.text }]} numberOfLines={2}>{lesson.title}</Text>
         <Text style={[styles.rowSummary, { color: colors.textSecondary }]} numberOfLines={2}>{lesson.summary}</Text>
-        <View style={[styles.badge, { backgroundColor: ready ? colors.success + "1F" : colors.muted }]}>
-          <Text style={[styles.badgeText, { color: ready ? colors.success : colors.textSecondary }]}>
-            {ready ? `Watch now · ${formatDuration(lesson.durationSeconds)}` : "Read tips · video coming later"}
-          </Text>
+        <View style={styles.rowFoot}>
+          <Text style={[styles.badgeText, { color: colors.primary }]}>Read lesson</Text>
+          <Feather name="arrow-right" size={13} color={colors.primary} />
+          {hasVideo && (
+            <View style={[styles.badge, { backgroundColor: colors.muted, flexDirection: "row", gap: 4, alignItems: "center", marginLeft: 6 }]}>
+              <Feather name="film" size={11} color={colors.textSecondary} />
+              <Text style={[styles.badgeText, { color: colors.textSecondary }]}>Optional video</Text>
+            </View>
+          )}
         </View>
       </View>
     </Pressable>
@@ -210,7 +199,8 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: "Inter_600SemiBold", fontSize: 13 },
   resultCount: { fontFamily: "Inter_500Medium", fontSize: 12, marginBottom: 4 },
   row: { flexDirection: "row", gap: 12, padding: 12, borderRadius: 14, borderWidth: 1 },
-  thumb: { width: 64, height: 96, borderRadius: 10, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  rowFoot: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  thumb: { width: 48, height: 48, borderRadius: 10, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   cat: { fontFamily: "Inter_600SemiBold", fontSize: 10.5, letterSpacing: 0.8 },
   rowTitle: { fontFamily: "Inter_700Bold", fontSize: 15, lineHeight: 20 },
   rowSummary: { fontFamily: "Inter_400Regular", fontSize: 13, lineHeight: 18 },

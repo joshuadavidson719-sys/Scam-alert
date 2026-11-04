@@ -10,8 +10,8 @@ export function ScamVideoHomeButton() {
     <Pressable
       testID="scam-videos-home-button"
       accessibilityRole="button"
-      accessibilityLabel="Open Scam Video Lessons library"
-      accessibilityHint="Learn how common scams work with short lessons and safety tips"
+      accessibilityLabel="Open Free Scam Lessons"
+      accessibilityHint="50 free lessons on how to spot a scammer"
       onPress={() => router.push("/scam-videos" as never)}
       style={({ pressed }) => [
         styles.wrap,
@@ -19,12 +19,12 @@ export function ScamVideoHomeButton() {
       ]}
     >
       <View style={[styles.icon, { backgroundColor: colors.primary + "1F" }]}>
-        <Feather name="play-circle" size={22} color={colors.primary} />
+        <Feather name="book-open" size={22} color={colors.primary} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={[styles.title, { color: colors.text }]}>Scam Video Lessons</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Free Scam Lessons</Text>
         <Text style={[styles.sub, { color: colors.textSecondary }]} numberOfLines={1}>
-          Spot the warning signs before you pay
+          50 short lessons to help you spot a scammer
         </Text>
       </View>
       <Feather name="chevron-right" size={20} color={colors.textMuted} />

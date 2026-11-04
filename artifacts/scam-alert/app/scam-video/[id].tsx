@@ -8,9 +8,95 @@ import { useEvent } from "expo";
 import { useColors } from "@/hooks/useColors";
 import { SCAM_VIDEO_LESSONS, type ScamVideoLesson } from "@/lib/scam-video-catalog";
 
-function formatDuration(s: number) {
-  const m = Math.floor(s / 60);
-  return `${m}:${Math.round(s % 60).toString().padStart(2, "0")}`;
+type KnowledgeCheck = { question: string; options: string[]; correctIndex: number; explanation: string };
+
+function QuickCheck({ check }: { check: KnowledgeCheck }) {
+  const colors = useColors();
+  const [picked, setPicked] = useState<number | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const correct = submitted && picked === check.correctIndex;
+  return (
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={styles.secHead}>
+        <Feather name="help-circle" size={18} color={colors.primary} />
+        <Text style={[styles.h3, { color: colors.text }]} accessibilityRole="header">Quick check</Text>
+      </View>
+      <Text style={[styles.body, { color: colors.text, fontFamily: "Inter_600SemiBold" }]}>{check.question}</Text>
+      <View accessibilityRole="radiogroup" style={{ gap: 8 }}>
+        {check.options.map((o, i) => {
+          const sel = picked === i;
+          const showRight = submitted && i === check.correctIndex;
+          const showWrong = submitted && sel && !correct;
+          const border = showRight ? colors.success : showWrong ? colors.destructive : sel ? colors.primary : colors.border;
+          return (
+            <Pressable key={i} disabled={submitted} onPress={() => setPicked(i)}
+              accessibilityRole="radio" accessibilityState={{ checked: sel, disabled: submitted }} accessibilityLabel={o}
+              style={[styles.option, { borderColor: border, backgroundColor: sel ? colors.primary + "12" : colors.background }]}>
+              <View style={[styles.radio, { borderColor: border }]}>
+                {sel && <View style={[styles.radioDot, { backgroundColor: border }]} />}
+              </View>
+              <Text style={[styles.body, { color: colors.text, flex: 1 }]}>{o}</Text>
+              {showRight && <Feather name="check" size={18} color={colors.success} />}
+              {showWrong && <Feather name="x" size={18} color={colors.destructive} />}
+            </Pressable>
+          );
+        })}
+      </View>
+      {submitted ? (
+        <View accessibilityLiveRegion="polite" style={[styles.feedback, { backgroundColor: (correct ? colors.success : colors.warning) + "1A" }]}>
+          <Text style={[styles.h3, { color: correct ? colors.success : colors.warning }]}>
+            {correct ? "Correct. Well spotted." : "Not quite."}
+          </Text>
+          <Text style={[styles.body, { color: colors.text }]}>{check.explanation}</Text>
+          <Pressable onPress={() => { setPicked(null); setSubmitted(false); }} accessibilityRole="button"
+            style={[styles.btn, { backgroundColor: colors.muted, alignSelf: "flex-start" }]}>
+            <Text style={[styles.btnText, { color: colors.text }]}>Try again</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable disabled={picked === null} onPress={() => setSubmitted(true)} accessibilityRole="button"
+          accessibilityState={{ disabled: picked === null }}
+          style={[styles.btn, { backgroundColor: colors.primary, opacity: picked === null ? 0.45 : 1, alignSelf: "flex-start" }]}>
+          <Text style={[styles.btnText, { color: colors.primaryForeground }]}>Check answer</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+function OptionalVideo({ url, title, transcript }: { url: string; title: string; transcript?: string }) {
+  const colors = useColors();
+  const [open, setOpen] = useState(false);
+  useFocusEffect(useCallback(() => () => setOpen(false), []));
+  return (
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={styles.secHead}>
+        <Feather name="film" size={18} color={colors.textSecondary} />
+        <Text style={[styles.h3, { color: colors.text }]} accessibilityRole="header">Optional sample video</Text>
+      </View>
+      <Text style={[styles.meta, { color: colors.textSecondary }]}>
+        AI-generated dramatization. The people and situation are not real. The lesson above is complete without it.
+      </Text>
+      {open ? (
+        <>
+          <LessonPlayer url={url} title={title} />
+          <Pressable onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel="Close video"
+            style={[styles.btn, { backgroundColor: colors.muted, alignSelf: "flex-start" }]}>
+            <Text style={[styles.btnText, { color: colors.text }]}>Close video</Text>
+          </Pressable>
+          {!!transcript && (
+            <Text style={[styles.body, { color: colors.textSecondary }]} selectable>{transcript}</Text>
+          )}
+        </>
+      ) : (
+        <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel="Watch optional video"
+          style={[styles.btn, { backgroundColor: colors.muted, alignSelf: "flex-start", flexDirection: "row", gap: 8, alignItems: "center" }]}>
+          <Feather name="play" size={16} color={colors.text} />
+          <Text style={[styles.btnText, { color: colors.text }]}>Watch optional video</Text>
+        </Pressable>
+      )}
+    </View>
+  );
 }
 
 export default function ScamVideoDetail() {
@@ -41,34 +127,34 @@ export default function ScamVideoDetail() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: bottomPad + 32, gap: 16 }}>
-          {lesson.status === "ready" && lesson.videoUrl ? (
-            <LessonPlayer
+        <ScrollView key={lesson.id} contentContainerStyle={{ padding: 16, paddingBottom: bottomPad + 32, gap: 16 }}>
+          <Header lesson={lesson} />
+          {!!lesson.example && (
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.secHead}>
+                <Feather name="message-square" size={18} color={colors.primary} />
+                <Text style={[styles.h3, { color: colors.text }]} accessibilityRole="header">What it looks like</Text>
+              </View>
+              <Text style={[styles.body, { color: colors.text }]}>{lesson.example}</Text>
+              <Text style={[styles.meta, { color: colors.textMuted }]}>Fictional example for learning. Names and details are made up.</Text>
+            </View>
+          )}
+          <Section title="Warning signs" icon="alert-triangle" tint={colors.warning} items={lesson.warningSigns} />
+          <Section title="How to stay safe" icon="shield" tint={colors.success} items={lesson.safetySteps} />
+          {lesson.knowledgeCheck && <QuickCheck key={lesson.id} check={lesson.knowledgeCheck} />}
+          {lesson.videoUrl && (
+            <OptionalVideo
+              key={`v-${lesson.id}`}
               url={Platform.OS === "web" && lesson.webVideoUrl
                 && typeof document !== "undefined"
                 && document.createElement("video").canPlayType('video/webm; codecs="vp9,opus"')
                 ? lesson.webVideoUrl : lesson.videoUrl}
               title={lesson.title}
+              transcript={lesson.transcript}
             />
-          ) : (
-            <View style={[styles.planned, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <Feather name="file-text" size={22} color={colors.textSecondary} />
-              <Text style={[styles.plannedText, { color: colors.textSecondary }]}>
-                The video for this lesson is not available yet. The written warning signs and safety steps below are ready to use now.
-              </Text>
-            </View>
-          )}
-          <Header lesson={lesson} />
-          <Section title="Warning signs" icon="alert-triangle" tint={colors.warning} items={lesson.warningSigns} />
-          <Section title="How to stay safe" icon="shield" tint={colors.success} items={lesson.safetySteps} />
-          {!!lesson.transcript && (
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.h3, { color: colors.text }]} accessibilityRole="header">Transcript</Text>
-              <Text style={[styles.body, { color: colors.textSecondary }]} selectable>{lesson.transcript}</Text>
-            </View>
           )}
           <Text style={[styles.disclaimer, { color: colors.textMuted }]}>
-            Videos are AI-generated dramatizations for education. Names, people and situations are not real. If you think you have been targeted, stop contact and call your bank or local police using a number you look up yourself.
+            Think you are being targeted? Stop replying, do not send money or codes, and call your bank or local police on a number you look up yourself.
           </Text>
         </ScrollView>
       )}
@@ -82,11 +168,7 @@ function Header({ lesson }: { lesson: ScamVideoLesson }) {
     <View style={{ gap: 6 }}>
       <Text style={[styles.cat, { color: colors.primary }]}>{lesson.category.toUpperCase()}</Text>
       <Text style={[styles.h1, { color: colors.text }]} accessibilityRole="header">{lesson.title}</Text>
-      {lesson.status === "ready" && lesson.videoUrl ? (
-        <Text style={[styles.meta, { color: colors.textSecondary }]}>Video · {formatDuration(lesson.durationSeconds)}</Text>
-      ) : (
-        <Text style={[styles.meta, { color: colors.textSecondary }]}>Written lesson · video coming later</Text>
-      )}
+      <Text style={[styles.meta, { color: colors.textSecondary }]}>Free lesson · about 2 minutes to read</Text>
       <Text style={[styles.body, { color: colors.textSecondary }]}>{lesson.summary}</Text>
     </View>
   );
@@ -173,6 +255,10 @@ const styles = StyleSheet.create({
   videoFill: { position: "absolute", top: 0, left: 0, width: "100%", height: "100%" },
   overlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 10, padding: 20 },
   overlayText: { fontFamily: "Inter_500Medium", fontSize: 14, textAlign: "center" },
+  option: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 12, borderWidth: 1.5, minHeight: 48 },
+  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  radioDot: { width: 10, height: 10, borderRadius: 5 },
+  feedback: { padding: 12, borderRadius: 12, gap: 8 },
   planned: { flexDirection: "row", gap: 10, padding: 14, borderRadius: 14, borderWidth: 1, alignItems: "flex-start" },
   plannedText: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 13.5, lineHeight: 19 },
   cat: { fontFamily: "Inter_700Bold", fontSize: 11, letterSpacing: 1.2 },

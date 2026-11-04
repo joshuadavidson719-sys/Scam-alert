@@ -1,3 +1,5 @@
+import { learningContent, type KnowledgeCheck } from "./scam-learning-content";
+
 export type ScamVideoLesson = {
   id: string;
   title: string;
@@ -11,10 +13,12 @@ export type ScamVideoLesson = {
   transcript: string;
   warningSigns: string[];
   safetySteps: string[];
+  example: string;
+  knowledgeCheck: KnowledgeCheck;
 };
 
-// A curriculum is not a playable video inventory. Mark a lesson ready only
-// after its distinct rendered video has been uploaded and verified.
+// All written lessons are complete and free to read. The status field describes
+// OPTIONAL video availability only; it never gates access to a lesson.
 const curriculum: [string, string, string, string, string, string][] = [
   ["bank-impersonation", "The caller is not your bank", "Money & banking", "An urgent bank call asks you to protect your money by following the caller's instructions.", "A caller asks for a one-time code or a transfer to a 'safe account'.", "Hang up and call the bank using the number on your card or its official website."],
   ["fake-payment-receipt", "The payment screenshot trick", "Shopping", "A buyer sends a convincing receipt, but no payment has reached your account.", "A screenshot is offered instead of money you can independently confirm.", "Check your own banking app before handing over goods; do not trust the buyer's screen."],
@@ -73,7 +77,7 @@ export const SCAM_VIDEO_CATEGORIES = [...new Set(curriculum.map((lesson) => less
 export const BANK_IMPERSONATION_TRANSCRIPT = "A call claims to be from your bank. The caller says your account is at risk and demands immediate action. Pause. A familiar name or number on your screen does not prove who is calling. Scammers can disguise caller details and create pressure so you act before you think. Never read out a one-time code, password, or PIN to an unexpected caller. Never move money to a so-called safe account on their instructions. End the call. Find the bank's contact number yourself, on your card or its official website, and call using a separate phone if possible. Ask whether there is really a problem. If you already shared details or sent money, contact your bank immediately and report the incident through official local channels. Save the messages and call details as evidence. Stop. Verify independently. Protect your money. This is an AI dramatization, not a real victim's story.";
 
 export const SCAM_VIDEO_LESSONS: ScamVideoLesson[] = curriculum.map(
-  ([id, title, category, summary, warning, action]) => ({
+  ([id, title, category, summary, warning, action], index) => ({
     id,
     title,
     category,
@@ -83,6 +87,7 @@ export const SCAM_VIDEO_LESSONS: ScamVideoLesson[] = curriculum.map(
     transcript: id === "bank-impersonation" ? BANK_IMPERSONATION_TRANSCRIPT : "",
     warningSigns: [warning],
     safetySteps: [action, "If money or account access may be at risk, contact the relevant provider promptly using an independently verified channel."],
+    ...learningContent(id, action, warning, index),
     ...(id === "bank-impersonation" ? {
       status: "ready" as const,
       videoUrl: "https://yzoiwcms9wcmozfr.public.blob.vercel-storage.com/scam-awareness/bank-impersonation-1080p-VqtSaAL4ssSIdrQeLuf0XcfgNDKi8u.mp4",
