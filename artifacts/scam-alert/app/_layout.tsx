@@ -65,6 +65,8 @@ function RootLayoutNav() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="scam-videos" options={{ headerShown: false }} />
+      <Stack.Screen name="scam-video/[id]" options={{ headerShown: false }} />
       <Stack.Screen
         name="post/[id]"
         options={{ headerShown: false, presentation: "card" }}
