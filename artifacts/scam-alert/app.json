@@ -2,7 +2,7 @@
   "expo": {
     "name": "ScamAlert App",
     "slug": "scam-alert",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -114,7 +114,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiBaseUrl": "https://scam-alert-api.replit.app",
+      "apiBaseUrl": "https://scam-alert-api-server.vercel.app",
       "eas": {
         "projectId": "f2d37f46-6661-493f-a937-844ff302ad07"
       },

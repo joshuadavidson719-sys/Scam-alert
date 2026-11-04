@@ -24,8 +24,8 @@ export async function chooseAndUploadProfilePhoto(): Promise<string | null> {
   if (picked.canceled) return null;
   const image = picked.assets[0];
   if (!image?.base64) throw new Error("This photo could not be read. Choose a JPG, PNG, or WebP image.");
-  if ((image.fileSize ?? 0) > 5 * 1024 * 1024 || image.base64.length > 6990508) {
-    throw new Error("This photo is too large. Crop it or choose an image smaller than 5 MB.");
+  if ((image.fileSize ?? 0) > 3 * 1024 * 1024 || image.base64.length > 4194304) {
+    throw new Error("This photo is too large. Crop it or choose an image smaller than 3 MB.");
   }
   if (auth.currentUser?.uid !== user.uid) throw new Error("Your account changed. Sign in again before uploading.");
   configureApi();

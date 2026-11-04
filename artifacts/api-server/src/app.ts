@@ -3,8 +3,11 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import profilePhotosRouter from "./routes/profilePhotos";
 
 const app: Express = express();
+// The managed reverse proxy is the single trusted hop in front of this server.
+app.set("trust proxy", 1);
 
 app.use(
   pinoHttp({
@@ -26,6 +29,8 @@ app.use(
   }),
 );
 app.use(cors());
+// Authenticate and rate-limit photo uploads before parsing their larger bodies.
+app.use("/api/profile-photos", profilePhotosRouter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
