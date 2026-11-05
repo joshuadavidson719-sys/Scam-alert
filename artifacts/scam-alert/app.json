@@ -2,7 +2,7 @@
   "expo": {
     "name": "ScamAlert App",
     "slug": "scam-alert",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -25,7 +25,7 @@
       }
     },
     "android": {
-      "package": "com.spicetech.scamalert",
+      "package": "app.my.scamalertapiserver",
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -61,7 +61,8 @@
             "DEFAULT"
           ]
         }
-      ]
+      ],
+      "versionCode": 22
     },
     "web": {
       "favicon": "./assets/images/icon.png"
