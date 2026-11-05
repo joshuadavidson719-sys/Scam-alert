@@ -48,6 +48,12 @@ export default function CreateScreen() {
   const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
+  const webFileRef = useRef<File | null>(null);
+  const mediaUrlRef = useRef<string | null>(null);
+  const uploadedMediaRef = useRef<{ file: File; url: string; uid: string } | null>(null);
+  const uploadControllerRef = useRef<AbortController | null>(null);
+  const postingRef = useRef(false);
 
   const titleInputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
@@ -76,8 +82,14 @@ export default function CreateScreen() {
     const input = e.target as any;
     const file = input.files?.[0];
     if (!file) return;
+    if (postingRef.current) { input.value = ""; return; }
+    if (mediaUrlRef.current) URL.revokeObjectURL(mediaUrlRef.current);
     const uri = URL.createObjectURL(file);
-    const isVid = file.type.startsWith("video/");
+    mediaUrlRef.current = uri;
+    webFileRef.current = file;
+    uploadedMediaRef.current = null;
+    setPostError(null);
+    const isVid = file.type.startsWith("video/") || /\.(mp4|webm|mov|ogv|m4v|3gp)$/i.test(file.name);
     setMediaUri(uri);
     setMediaType(isVid ? "video" : "image");
     input.value = "";
@@ -93,12 +105,15 @@ export default function CreateScreen() {
     document.body.appendChild(input);
     fileInputRef.current = input;
     return () => {
+      uploadControllerRef.current?.abort();
+      if (mediaUrlRef.current) URL.revokeObjectURL(mediaUrlRef.current);
       input.removeEventListener("change", handleWebFileChange);
       document.body.removeChild(input);
     };
   }, [handleWebFileChange]);
 
   const handlePickMedia = async () => {
+    if (postingRef.current) return;
     if (Platform.OS === "web") {
       fileInputRef.current?.click();
       return;
@@ -130,12 +145,21 @@ export default function CreateScreen() {
   };
 
   const handleRemoveMedia = () => {
+    if (postingRef.current) return;
+    if (Platform.OS === "web") {
+      if (mediaUrlRef.current) URL.revokeObjectURL(mediaUrlRef.current);
+      mediaUrlRef.current = null;
+      webFileRef.current = null;
+      uploadedMediaRef.current = null;
+    }
+    setPostError(null);
     setMediaUri(null);
     setMediaType(null);
     setUploadProgress(0);
   };
 
   const handlePost = async () => {
+    if (postingRef.current) return;
     if (!title.trim()) {
       Alert.alert("Missing Title", "Please add a title for your post.");
       return;
@@ -146,12 +170,37 @@ export default function CreateScreen() {
     }
     if (!user || !profile) return;
 
+    postingRef.current = true;
+    setPostError(null);
     setLoading(true);
     let uploadedImageUrl: string | null = null;
     let uploadedVideoUrl: string | null = null;
 
     try {
-      if (mediaUri && _isFBConfigured) {
+      if (mediaUri && Platform.OS === "web") {
+        const file = webFileRef.current;
+        if (!file) throw new Error("Please select the video or photo again. Your post text is still here.");
+        setUploading(true);
+        setUploadProgress(0);
+        let downloadUrl = uploadedMediaRef.current?.file === file && uploadedMediaRef.current.uid === user.uid
+          ? uploadedMediaRef.current.url : null;
+        if (!downloadUrl) {
+          const { uploadWebPostMedia } = await import("../../lib/post-media.web");
+          const controller = new AbortController();
+          uploadControllerRef.current = controller;
+          const timeout = setTimeout(() => controller.abort(), 10 * 60_000);
+          try {
+            downloadUrl = await uploadWebPostMedia(file, setUploadProgress, controller.signal);
+            uploadedMediaRef.current = { file, url: downloadUrl, uid: user.uid };
+          } finally {
+            clearTimeout(timeout);
+            uploadControllerRef.current = null;
+          }
+        }
+        if (mediaType === "video") uploadedVideoUrl = downloadUrl;
+        else uploadedImageUrl = downloadUrl;
+        setUploading(false);
+      } else if (mediaUri && _isFBConfigured) {
         setUploading(true);
         const ext = mediaUri.split(".").pop() ?? (mediaType === "video" ? "mp4" : "jpg");
         const path = `post-media/${user.uid}/${Date.now()}.${ext}`;
@@ -189,11 +238,15 @@ export default function CreateScreen() {
         createdAt: serverTimestamp(),
       });
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTitle("");
       setDescription("");
       setMediaUri(null);
       setMediaType(null);
+      if (mediaUrlRef.current) URL.revokeObjectURL(mediaUrlRef.current);
+      mediaUrlRef.current = null;
+      webFileRef.current = null;
+      uploadedMediaRef.current = null;
       setUploadProgress(0);
       setSelectedCategory("scam-alert");
       appliedKeyRef.current = null;
@@ -201,8 +254,13 @@ export default function CreateScreen() {
       router.replace("/(tabs)/" as never);
     } catch (err) {
       setUploading(false);
-      Alert.alert("Error", "Failed to create post. Please try again.");
+      const message = err instanceof Error
+        ? err.message
+        : "Failed to create post. Your text and selected media are still here. Please try again.";
+      setPostError(message);
+      if (Platform.OS !== "web") Alert.alert("Error", message);
     } finally {
+      postingRef.current = false;
       setLoading(false);
     }
   };
@@ -217,6 +275,11 @@ export default function CreateScreen() {
       ]}
       keyboardShouldPersistTaps="handled"
     >
+      {postError ? (
+        <Text accessibilityRole="alert" style={{ color: colors.primary, marginBottom: 12 }}>
+          {postError}
+        </Text>
+      ) : null}
       <View style={styles.headerRow}>
         <Text style={[styles.title, { color: colors.text }]}>New Post</Text>
         <TouchableOpacity

@@ -13,6 +13,55 @@ tags:
   - name: swiftop
     description: Swiftop AI image and animation generation
 paths:
+  /post-media/uploads:
+    post:
+      operationId: authorizePostMediaUpload
+      tags: [posts]
+      description: Authenticated Vercel Blob client-upload handshake. File bytes upload directly to private Blob storage, not through this API.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostMediaUploadHandshake"
+      responses:
+        "200":
+          description: Short-lived upload credential scoped to one owned pathname, allowed media types and a 100 MB limit.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostMediaUploadAuthorization"
+        default:
+          description: Upload could not be authorized
+  /post-media/{uid}/{filename}:
+    get:
+      operationId: getPostMedia
+      tags: [posts]
+      description: Stream community post media; supports HTTP byte ranges for video playback and seeking.
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: Range
+          in: header
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Full media stream
+        "206":
+          description: Requested byte range
+        "404":
+          description: Media does not exist
+        "416":
+          description: Unsupported byte range
   /healthz:
     get:
       operationId: healthCheck
@@ -93,6 +142,31 @@ paths:
 
 components:
   schemas:
+    PostMediaUploadHandshake:
+      type: object
+      required: [type, payload]
+      properties:
+        type:
+          type: string
+          enum: [blob.generate-client-token]
+        payload:
+          type: object
+          required: [pathname]
+          properties:
+            pathname:
+              type: string
+            clientPayload:
+              type: ["string", "null"]
+            multipart:
+              type: boolean
+    PostMediaUploadAuthorization:
+      type: object
+      required: [type, clientToken]
+      properties:
+        type:
+          type: string
+        clientToken:
+          type: string
     HealthStatus:
       type: object
       properties:

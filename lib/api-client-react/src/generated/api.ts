@@ -24,6 +24,8 @@ import type {
   HealthStatus,
   LinkCheckInput,
   PhoneCheckInput,
+  PostMediaUploadAuthorization,
+  PostMediaUploadHandshake,
   PremiumGenerationInput,
   PremiumGenerationResult,
   PremiumStatus,
@@ -45,6 +47,153 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
+
+export const getAuthorizePostMediaUploadUrl = () => {
+
+
+
+
+  return `/api/post-media/uploads`
+}
+
+/**
+ * Authenticated Vercel Blob client-upload handshake. File bytes upload directly to private Blob storage, not through this API.
+ */
+export const authorizePostMediaUpload = async (postMediaUploadHandshake: PostMediaUploadHandshake, options?: RequestInit): Promise<PostMediaUploadAuthorization> => {
+
+  return customFetch<PostMediaUploadAuthorization>(getAuthorizePostMediaUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      postMediaUploadHandshake,)
+  }
+);}
+
+
+
+
+export const getAuthorizePostMediaUploadMutationOptions = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authorizePostMediaUpload>>, TError,{data: BodyType<PostMediaUploadHandshake>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof authorizePostMediaUpload>>, TError,{data: BodyType<PostMediaUploadHandshake>}, TContext> => {
+
+const mutationKey = ['authorizePostMediaUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authorizePostMediaUpload>>, {data: BodyType<PostMediaUploadHandshake>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authorizePostMediaUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthorizePostMediaUploadMutationResult = NonNullable<Awaited<ReturnType<typeof authorizePostMediaUpload>>>
+    export type AuthorizePostMediaUploadMutationBody = BodyType<PostMediaUploadHandshake>
+    export type AuthorizePostMediaUploadMutationError = ErrorType<AiErrorResponse>
+
+    export const useAuthorizePostMediaUpload = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authorizePostMediaUpload>>, TError,{data: BodyType<PostMediaUploadHandshake>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof authorizePostMediaUpload>>,
+        TError,
+        {data: BodyType<PostMediaUploadHandshake>},
+        TContext
+      > => {
+      return useMutation(getAuthorizePostMediaUploadMutationOptions(options));
+    }
+
+export const getGetPostMediaUrl = (uid: string,
+    filename: string,) => {
+
+
+
+
+  return `/api/post-media/${uid}/${filename}`
+}
+
+/**
+ * Stream community post media; supports HTTP byte ranges for video playback and seeking.
+ */
+export const getPostMedia = async (uid: string,
+    filename: string, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getGetPostMediaUrl(uid,filename),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPostMediaQueryKey = (uid: string,
+    filename: string,) => {
+    return [
+    `/api/post-media/${uid}/${filename}`
+    ] as const;
+    }
+
+
+export const getGetPostMediaQueryOptions = <TData = Awaited<ReturnType<typeof getPostMedia>>, TError = ErrorType<void>>(uid: string,
+    filename: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostMedia>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPostMediaQueryKey(uid,filename);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPostMedia>>> = ({ signal }) => getPostMedia(uid,filename, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(uid && filename), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPostMedia>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPostMediaQueryResult = NonNullable<Awaited<ReturnType<typeof getPostMedia>>>
+export type GetPostMediaQueryError = ErrorType<void>
+
+
+
+export function useGetPostMedia<TData = Awaited<ReturnType<typeof getPostMedia>>, TError = ErrorType<void>>(
+ uid: string,
+    filename: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostMedia>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPostMediaQueryOptions(uid,filename,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
 
 
 
