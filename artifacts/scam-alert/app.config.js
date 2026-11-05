@@ -1,5 +1,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
+// Pin the existing Play identity after legacy CI rewrites app.json.
+const PLAY_ANDROID_PACKAGE = "app.my.scamalertapiserver";
 
 function parseGoogleServices(rawValue) {
   const raw = rawValue.trim();
@@ -62,7 +64,7 @@ function readGoogleClientIds() {
   const appClient = (googleServices.client || []).find(
     (client) =>
       client.client_info?.android_client_info?.package_name ===
-      "com.spicetech.scamalert",
+      PLAY_ANDROID_PACKAGE,
   );
   const oauthClients =
     appClient?.oauth_client ||
@@ -80,6 +82,7 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
+    android: { ...(config.android || {}), package: PLAY_ANDROID_PACKAGE },
     extra: {
       ...(config.extra || {}),
       ...googleClientIds,
