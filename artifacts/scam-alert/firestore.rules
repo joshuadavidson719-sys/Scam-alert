@@ -17,9 +17,25 @@ service cloud.firestore {
 
     // ── Users ──────────────────────────────────────────────────────────────────
     match /users/{userId} {
+      // A follower may change only their own membership, not profile fields
+      // or any other user's follower entry.
+      function canChangeOwnFollow() {
+        let before = resource.data.get('followers', []);
+        let after = request.resource.data.get('followers', []);
+        return isSignedIn()
+          && request.auth.uid != userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers'])
+          && before is list && after is list
+          && after.size() == after.toSet().size()
+          && after.toSet().difference(before.toSet()).hasOnly([request.auth.uid])
+          && before.toSet().difference(after.toSet()).hasOnly([request.auth.uid]);
+      }
+
       allow read: if true;
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      allow update: if isAdmin() || canChangeOwnFollow()
+        || (isOwner(userId)
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin']));
       allow delete: if isAdmin();
     }
 
