@@ -104,10 +104,14 @@ export default function CreateScreen() {
       return;
     }
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Required", "Please allow access to your photo library to attach media.");
-        return;
+      // Android's system picker grants access only to the chosen attachment.
+      // Keep the existing iOS permission flow; never request broad Android access.
+      if (Platform.OS === "ios") {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("Permission Required", "Please allow access to your photo library to attach media.");
+          return;
+        }
       }
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images", "videos"],

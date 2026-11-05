@@ -81,10 +81,14 @@ async function saveToGallery(b64: string, filename: string): Promise<boolean> {
     link.click();
     return true;
   }
-  const { status } = await MediaLibrary.requestPermissionsAsync();
-  if (status !== "granted") {
-    Alert.alert("Permission Required", "Please allow access to your photo library to save images.");
-    return false;
+  // Saving our own generated file never needs permission to read the library.
+  // Older Android versions still require write permission; iOS keeps its flow.
+  if (Platform.OS === "ios" || (Platform.OS === "android" && Number(Platform.Version) < 33)) {
+    const { status } = await MediaLibrary.requestPermissionsAsync(Platform.OS === "android", []);
+    if (status !== "granted") {
+      Alert.alert("Permission Required", "Please allow saving images to your photo library.");
+      return false;
+    }
   }
   const path = await writeBase64ToCache(b64, filename);
   await MediaLibrary.saveToLibraryAsync(path);
