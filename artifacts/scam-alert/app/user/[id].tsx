@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   FlatList,
   Alert,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -95,25 +96,34 @@ export default function UserProfileScreen() {
   }, [id, retryKey]);
 
   const handleFollow = async () => {
-    if (!user || !targetUser || followLoading) return;
+    if (!user || !targetUser || followLoading || isMe) return;
     setFollowLoading(true);
     setActionError(null);
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (Platform.OS !== "web") {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
       // Bug 1 fix: use `id` URL param (reliable) instead of targetUser.uid
       const targetRef = doc(db, "users", id);
       const myRef = doc(db, "users", user.uid);
-      if (following) {
+      if (Platform.OS === "web") {
+        const { saveWebFollow } = await import("@/lib/follow.web");
+        await saveWebFollow(db, user.uid, id, following);
+      } else if (following) {
         await updateDoc(targetRef, { followers: arrayRemove(user.uid) });
         await updateDoc(myRef, { following: arrayRemove(id) });
       } else {
         await updateDoc(targetRef, { followers: arrayUnion(user.uid) });
         await updateDoc(myRef, { following: arrayUnion(id) });
       }
-      refreshProfile();
-    } catch {
-      setActionError("Could not update follow. Please try again.");
-      Alert.alert("Error", "Could not update follow. Please try again.");
+      void refreshProfile();
+    } catch (error) {
+      const permissionDenied = (error as { code?: string })?.code === "permission-denied";
+      const message = permissionDenied && Platform.OS === "web"
+        ? "Following is blocked by the site's Firebase permissions. Please contact support."
+        : "Could not update follow. Please check your connection and try again.";
+      setActionError(message);
+      if (Platform.OS !== "web") Alert.alert("Error", message);
     } finally {
       setFollowLoading(false);
     }
