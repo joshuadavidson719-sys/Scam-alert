@@ -8,6 +8,37 @@
 import * as zod from 'zod';
 
 
+/**
+ * Authenticated Vercel Blob client-upload handshake. File bytes upload directly to private Blob storage, not through this API.
+ */
+export const AuthorizePostMediaUploadBody = zod.object({
+  "type": zod.enum(['blob.generate-client-token']),
+  "payload": zod.object({
+  "pathname": zod.string(),
+  "clientPayload": zod.string().nullish(),
+  "multipart": zod.boolean().optional()
+})
+})
+
+export const AuthorizePostMediaUploadResponse = zod.object({
+  "type": zod.string(),
+  "clientToken": zod.string()
+})
+
+
+/**
+ * Stream community post media; supports HTTP byte ranges for video playback and seeking.
+ */
+export const GetPostMediaParams = zod.object({
+  "uid": zod.coerce.string(),
+  "filename": zod.coerce.string()
+})
+
+export const GetPostMediaHeader = zod.object({
+  "Range": zod.string().optional()
+})
+
+
 export const uploadProfilePhotoBodyImageBase64Min = 16;
 export const uploadProfilePhotoBodyImageBase64Max = 6990508;
 

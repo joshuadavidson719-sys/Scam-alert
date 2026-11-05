@@ -5,6 +5,30 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type PostMediaUploadHandshakeType = typeof PostMediaUploadHandshakeType[keyof typeof PostMediaUploadHandshakeType];
+
+
+export const PostMediaUploadHandshakeType = {
+  'blobgenerate-client-token': 'blob.generate-client-token',
+} as const;
+
+export type PostMediaUploadHandshakePayload = {
+  pathname: string;
+  /** @nullable */
+  clientPayload?: string | null;
+  multipart?: boolean;
+};
+
+export interface PostMediaUploadHandshake {
+  type: PostMediaUploadHandshakeType;
+  payload: PostMediaUploadHandshakePayload;
+}
+
+export interface PostMediaUploadAuthorization {
+  type: string;
+  clientToken: string;
+}
+
 export interface ProfilePhotoUploadInput {
   /**
      * @minLength 16

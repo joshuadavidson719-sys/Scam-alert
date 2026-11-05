@@ -72,6 +72,7 @@
     "react-native-view-shot": "4.0.3",
     "expo-audio": "~1.1.1",
     "expo-crypto": "~15.0.9",
-    "react-native-purchases": "^11.0.0"
+    "react-native-purchases": "^11.0.0",
+    "@vercel/blob": "^2.8.2"
   }
 }
