@@ -12,8 +12,11 @@ const fileTypes: Record<string, string> = Object.fromEntries(
 );
 
 export function postMediaType(file: File): { contentType: string; extension: string } {
-  const contentType = file.type.toLowerCase() ||
-    fileTypes[file.name.split(".").pop()?.toLowerCase() ?? ""];
+  const declaredType = file.type.toLowerCase().split(";")[0].trim();
+  // Some browsers/OS file pickers label real MP4s as generic binary files.
+  const contentType = ["", "application/octet-stream", "binary/octet-stream"].includes(declaredType)
+    ? fileTypes[file.name.split(".").pop()?.toLowerCase() ?? ""]
+    : declaredType;
   const extension = types[contentType];
   if (!extension) throw new Error("Choose an MP4, WebM, MOV video, or a JPG, PNG, WebP, or GIF photo.");
   if (!file.size) throw new Error("This file is empty. Please choose another.");

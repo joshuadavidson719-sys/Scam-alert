@@ -52,6 +52,8 @@ test("uses real file metadata, not a browser blob URL, and supports missing MIME
   const api = client();
   assert.deepEqual(api.postMediaType({ name: "awareness.MP4", type: "", size: 10 }),
     { contentType: "video/mp4", extension: "mp4" });
+  assert.deepEqual(api.postMediaType({ name: "awareness.mp4", type: "application/octet-stream", size: 10 }),
+    { contentType: "video/mp4", extension: "mp4" });
   assert.equal(api.postMediaType({ name: "photo", type: "image/jpeg", size: 10 }).extension, "jpg");
 });
 
