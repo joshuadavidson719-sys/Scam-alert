@@ -2,7 +2,7 @@
   "expo": {
     "name": "ScamAlert App",
     "slug": "scam-alert",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -25,7 +25,7 @@
       }
     },
     "android": {
-      "package": "app.my.scamalertapiserver",
+      "package": "com.spicetech.scamalert",
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -128,7 +128,8 @@
         "storageBucket": "applicationid-scamalert-clean.firebasestorage.app",
         "messagingSenderId": "86631393939",
         "appId": "1:86631393939:web:3a359e5c70bee0c8d7bb66"
-      }
+      },
+      "googleWebClientId": "86631393939-qbct109csftr2uomir53sr45pd8hb34v.apps.googleusercontent.com"
     }
   }
 }
