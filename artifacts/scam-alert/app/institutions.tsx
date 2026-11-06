@@ -33,7 +33,12 @@ export default function InstitutionsScreen() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace("/(tabs)" as never));
 
-  const priceCard = (
+  const priceCard = Platform.OS !== "web" ? (
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Text style={[styles.section, { color: colors.text }]}>Institutional services</Text>
+      <Text style={[styles.body, { color: colors.textSecondary }]}>Information for banks and credit unions. No institutional purchases, prices or payment links are offered in the Android app. Personal Premium remains separate.</Text>
+    </View>
+  ) : (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <Text style={[styles.eyebrow, { color: colors.textSecondary }]}>INSTITUTION PLAN</Text>
       <Text style={[styles.label, { color: colors.text }]}>Country or region</Text>
@@ -86,7 +91,7 @@ export default function InstitutionsScreen() {
       </View>
 
       <View style={[styles.caveats, { borderColor: colors.border }]}>
-        {INSTITUTION_CAVEATS.map((c) => (
+        {INSTITUTION_CAVEATS.filter(c => Platform.OS === "web" || !/billing|subscription/i.test(c)).map((c) => (
           <View key={c} style={styles.caveatRow}>
             <Feather name="info" size={14} color={colors.textMuted} style={{ marginTop: 2 }} />
             <Text style={[styles.caveat, { color: colors.textSecondary }]}>{c}</Text>

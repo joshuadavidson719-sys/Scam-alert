@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { configureApi } from "@/lib/api-base";
 import type { InstitutionRegion } from "@/constants/institutionPlans";
+import { InstitutionIdentityCheck } from "./InstitutionIdentityCheck";
 
 function messageFor(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "data" in error) {
@@ -33,6 +34,7 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [identityReady, setIdentityReady] = useState(false);
   const actionRef = useRef(false);
   const mounted = useRef(true);
   const currentUid = useRef(user?.uid);
@@ -46,8 +48,8 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
   const subscribe = async () => {
     if (!user) { router.push("/(auth)/login" as never); return; }
     if (Platform.OS !== "web" || !market || !offer?.available || actionRef.current) return;
-    if (name.trim().length < 2 || !accepted) {
-      setError("Enter your institution's name and accept the recurring billing terms.");
+    if (!identityReady || name.trim().length < 2 || !accepted) {
+      setError("Complete the identity check, enter your institution's name and accept the recurring billing terms.");
       return;
     }
     actionRef.current = true;
@@ -63,7 +65,8 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
       });
       if (!mounted.current || currentUid.current !== uid) return;
       const url = new URL(result.purchaseUrl);
-      if (url.protocol !== "https:" || url.hostname !== "whop.com" || !url.pathname.startsWith("/checkout/")) {
+      if (url.protocol !== "https:" || url.hostname !== "whop.com" || url.port || url.username || url.password ||
+          !/^\/checkout\/[A-Za-z0-9_-]+\/?$/.test(url.pathname) || url.hash) {
         throw new Error("Invalid checkout destination.");
       }
       // No paid status is stored or granted here. Whop owns checkout and Orders.
@@ -113,6 +116,7 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
       )}
       {Platform.OS === "web" && market && offer?.available ? (
         <>
+          <InstitutionIdentityCheck onReady={setIdentityReady} />
           <Text style={[styles.label, { color: colors.text }]}>Institution name</Text>
           <TextInput
             value={name} onChangeText={setName} editable={!busy} maxLength={150}
@@ -132,17 +136,17 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
             </Text>
           </Pressable>
           <Pressable
-            onPress={() => void subscribe()} disabled={busy || (!!user && (!accepted || name.trim().length < 2))}
+            onPress={() => void subscribe()} disabled={busy || (!!user && (!identityReady || !accepted || name.trim().length < 2))}
             accessibilityRole="button" testID="institution-subscribe"
-            style={[styles.button, { backgroundColor: colors.primary, opacity: busy || (!!user && (!accepted || name.trim().length < 2)) ? 0.5 : 1 }]}
+            style={[styles.button, { backgroundColor: colors.primary, opacity: busy || (!!user && (!identityReady || !accepted || name.trim().length < 2)) ? 0.5 : 1 }]}
           >
             {busy ? <ActivityIndicator color={colors.primaryForeground} /> : <Feather name="lock" size={16} color={colors.primaryForeground} />}
             <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>{busy ? "Opening checkout…" : user ? "Subscribe securely with Whop" : "Sign in to subscribe"}</Text>
           </Pressable>
-          <Text style={[styles.small, { color: colors.textMuted }]}>No setup fee. Whop confirms the final amount before you pay. You will use a Whop account for receipts and billing.</Text>
+          <Text style={[styles.small, { color: colors.textMuted }]}>No setup fee. Whop confirms the final amount before you pay. We request the issuer's 3-D Secure challenge for supported card payments; availability depends on the card and processor. You will use a Whop account for receipts and billing.</Text>
         </>
       ) : Platform.OS !== "web" ? (
-        <Text style={[styles.body, { color: colors.textSecondary }]}>Institutional subscriptions are billed through the Scam Alert website, separately from personal app Premium. This screen does not process app-store purchases.</Text>
+        <Text style={[styles.body, { color: colors.textSecondary }]}>Institutional service information only. No institutional purchases or payment links are available in the Android app.</Text>
       ) : null}
       {error && <Text accessibilityRole="alert" style={[styles.body, { color: colors.destructive }]}>{error}</Text>}
       {billing.data?.manageUrl && Platform.OS === "web" && (

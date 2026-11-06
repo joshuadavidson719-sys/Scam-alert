@@ -31,7 +31,8 @@ export function validateInstitutionPlan(plan: {
 export function safeWhopCheckoutUrl(value: string | null | undefined): string {
   if (!value) throw new Error("Checkout URL is missing.");
   const url = new URL(value);
-  if (url.protocol !== "https:" || url.hostname !== "whop.com" || !url.pathname.startsWith("/checkout/")) {
+  if (url.protocol !== "https:" || url.hostname !== "whop.com" || url.port ||
+      url.username || url.password || !/^\/checkout\/[A-Za-z0-9_-]+\/?$/.test(url.pathname) || url.hash) {
     throw new Error("Invalid checkout destination.");
   }
   return url.toString();
