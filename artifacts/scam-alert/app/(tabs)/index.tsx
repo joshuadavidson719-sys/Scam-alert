@@ -32,7 +32,6 @@ import { TrendingCarousel } from "@/components/TrendingCarousel";
 import { FollowSuggestions } from "@/components/FollowSuggestions";
 import { SmartBanner } from "@/components/SmartBanner";
 import { ScamVideoHomeButton } from "@/components/ScamVideoHomeButton";
-import { InstitutionsHomeButton } from "@/components/InstitutionsHomeButton";
 import { TrendingScamsToday } from "@/components/TrendingScamsToday";
 import { ScamOfTheDay } from "@/components/ScamOfTheDay";
 import { NearbyAlerts } from "@/components/NearbyAlerts";
@@ -296,7 +295,6 @@ export default function HomeScreen() {
 
       <SmartBanner />
       <ScamVideoHomeButton />
-      <InstitutionsHomeButton />
 
       {loading ? (
         <View style={styles.centered}>
