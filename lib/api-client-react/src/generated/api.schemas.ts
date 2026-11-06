@@ -5,6 +5,54 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type InstitutionOfferMarket = typeof InstitutionOfferMarket[keyof typeof InstitutionOfferMarket];
+
+
+export const InstitutionOfferMarket = {
+  ec: 'ec',
+  ca: 'ca',
+} as const;
+
+export interface InstitutionOffer {
+  market: InstitutionOfferMarket;
+  available: boolean;
+  currency: string;
+  amount: number;
+  billingDays: number;
+  formattedPrice: string;
+  message: string;
+}
+
+export interface InstitutionBilling {
+  offers: InstitutionOffer[];
+  manageUrl: string;
+}
+
+export type InstitutionCheckoutRequestMarket = typeof InstitutionCheckoutRequestMarket[keyof typeof InstitutionCheckoutRequestMarket];
+
+
+export const InstitutionCheckoutRequestMarket = {
+  ec: 'ec',
+  ca: 'ca',
+} as const;
+
+export interface InstitutionCheckoutRequest {
+  market: InstitutionCheckoutRequestMarket;
+  /**
+     * @minLength 2
+     * @maxLength 150
+     */
+  institutionName: string;
+  acceptedBillingTerms: true;
+  /** @pattern ^[a-f0-9-]{36}$ */
+  requestId: string;
+}
+
+export interface InstitutionCheckout {
+  purchaseUrl: string;
+  checkoutId: string;
+}
+
 export type PostMediaUploadHandshakeType = typeof PostMediaUploadHandshakeType[keyof typeof PostMediaUploadHandshakeType];
 
 

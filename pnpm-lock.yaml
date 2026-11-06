@@ -166,6 +166,9 @@ importers:
 
   artifacts/api-server:
     dependencies:
+      '@whop/sdk':
+        specifier: ^2.7.0
+        version: 2.7.0
       '@google-cloud/storage':
         specifier: ^8.4.0
         version: 8.4.0
@@ -7233,6 +7236,19 @@ packages:
         optional: true
       use-sync-external-store:
         optional: true
+
+  '@stablelib/base64@1.0.1':
+    resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
+
+  '@whop/sdk@2.7.0':
+    resolution: {integrity: sha512-u9ri0clLZYszbeAZO28fof6C1kyZgwtg+26nXhwK+AUtwRXcknKWWeJZraVdeKo/sJLya1GxPDWBk++bcvMd+A==}
+    engines: {node: '>=18.0.0'}
+
+  fast-sha256@1.3.0:
+    resolution: {integrity: sha512-n11RGP/lrWEFI/bWdygLxhI+pVeo1ZYIVwvvPkW7azl/rOy+F3HYRZ2K5zeE9mmkhQppyv9sQFx0JM9UabnpPQ==}
+
+  standardwebhooks@1.1.1:
+    resolution: {integrity: sha512-bCbX9ZEyFkWPsRz7Bl3NuQUJohmwGSev/yhr7vhaGPlc4AfIrspIRa6cPTBuI1ItmrTDJ4d/S2hCsfe4+vQGnQ==}
 
 snapshots:
 
@@ -15192,3 +15208,17 @@ snapshots:
       '@types/react': 19.2.14
       react: 19.1.0
       use-sync-external-store: 1.6.0(react@19.1.0)
+
+  '@stablelib/base64@1.0.1': {}
+
+  '@whop/sdk@2.7.0':
+    dependencies:
+      standardwebhooks: 1.1.1
+
+  fast-sha256@1.3.0: {}
+
+  standardwebhooks@1.1.1:
+    dependencies:
+      '@stablelib/base64': 1.0.1
+      fast-sha256: 1.3.0
+

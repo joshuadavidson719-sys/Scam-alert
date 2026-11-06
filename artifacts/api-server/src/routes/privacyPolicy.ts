@@ -145,6 +145,15 @@ router.get("/privacy-policy", (_req, res) => {
         Google Play handles Android payments. We do not receive or store your
         payment-card details. You may request deletion using the contact details below.
       </p>
+      <h2>Institutional subscriptions</h2>
+      <p>
+        Whop processes website subscriptions for banks and credit unions. When you
+        open institutional checkout, we send Whop your institution name, app account
+        identifier and selected market. Whop handles payment details, billing
+        history, receipts and cancellation under its own privacy policy. Scam Alert
+        does not receive or store card or bank details. A checkout return does not
+        by itself confirm payment or activate app access.
+      </p>
       <h2>Profile photos</h2>
       <p>
         If you choose a profile photo, the image is stored in our app storage and

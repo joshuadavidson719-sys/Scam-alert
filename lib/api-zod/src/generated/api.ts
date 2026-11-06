@@ -8,6 +8,42 @@
 import * as zod from 'zod';
 
 
+export const GetInstitutionBillingResponse = zod.object({
+  "offers": zod.array(zod.object({
+  "market": zod.enum(['ec', 'ca']),
+  "available": zod.boolean(),
+  "currency": zod.string(),
+  "amount": zod.number(),
+  "billingDays": zod.number(),
+  "formattedPrice": zod.string(),
+  "message": zod.string()
+})),
+  "manageUrl": zod.string()
+})
+
+
+/**
+ * Create hosted checkout for an authenticated institution representative. Does not grant access or charge a card.
+ */
+export const createInstitutionCheckoutBodyInstitutionNameMin = 2;
+export const createInstitutionCheckoutBodyInstitutionNameMax = 150;
+
+export const createInstitutionCheckoutBodyRequestIdRegExp = new RegExp('^[a-f0-9-]{36}$');
+
+
+export const CreateInstitutionCheckoutBody = zod.object({
+  "market": zod.enum(['ec', 'ca']),
+  "institutionName": zod.string().min(createInstitutionCheckoutBodyInstitutionNameMin).max(createInstitutionCheckoutBodyInstitutionNameMax),
+  "acceptedBillingTerms": zod.literal(true),
+  "requestId": zod.string().regex(createInstitutionCheckoutBodyRequestIdRegExp)
+})
+
+export const CreateInstitutionCheckoutResponse = zod.object({
+  "purchaseUrl": zod.string(),
+  "checkoutId": zod.string()
+})
+
+
 /**
  * Authenticated Vercel Blob client-upload handshake. File bytes upload directly to private Blob storage, not through this API.
  */

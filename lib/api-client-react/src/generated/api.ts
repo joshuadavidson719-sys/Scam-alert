@@ -22,6 +22,9 @@ import type {
 import type {
   AiErrorResponse,
   HealthStatus,
+  InstitutionBilling,
+  InstitutionCheckout,
+  InstitutionCheckoutRequest,
   LinkCheckInput,
   PhoneCheckInput,
   PostMediaUploadAuthorization,
@@ -49,6 +52,145 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
+
+export const getGetInstitutionBillingUrl = () => {
+
+
+
+
+  return `/api/institutions/billing`
+}
+
+export const getInstitutionBilling = async ( options?: RequestInit): Promise<InstitutionBilling> => {
+
+  return customFetch<InstitutionBilling>(getGetInstitutionBillingUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstitutionBillingQueryKey = () => {
+    return [
+    `/api/institutions/billing`
+    ] as const;
+    }
+
+
+export const getGetInstitutionBillingQueryOptions = <TData = Awaited<ReturnType<typeof getInstitutionBilling>>, TError = ErrorType<AiErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInstitutionBilling>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstitutionBillingQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstitutionBilling>>> = ({ signal }) => getInstitutionBilling({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstitutionBilling>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetInstitutionBillingQueryResult = NonNullable<Awaited<ReturnType<typeof getInstitutionBilling>>>
+export type GetInstitutionBillingQueryError = ErrorType<AiErrorResponse>
+
+
+
+export function useGetInstitutionBilling<TData = Awaited<ReturnType<typeof getInstitutionBilling>>, TError = ErrorType<AiErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInstitutionBilling>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetInstitutionBillingQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateInstitutionCheckoutUrl = () => {
+
+
+
+
+  return `/api/institutions/checkout`
+}
+
+/**
+ * Create hosted checkout for an authenticated institution representative. Does not grant access or charge a card.
+ */
+export const createInstitutionCheckout = async (institutionCheckoutRequest: InstitutionCheckoutRequest, options?: RequestInit): Promise<InstitutionCheckout> => {
+
+  return customFetch<InstitutionCheckout>(getCreateInstitutionCheckoutUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      institutionCheckoutRequest,)
+  }
+);}
+
+
+
+
+export const getCreateInstitutionCheckoutMutationOptions = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInstitutionCheckout>>, TError,{data: BodyType<InstitutionCheckoutRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInstitutionCheckout>>, TError,{data: BodyType<InstitutionCheckoutRequest>}, TContext> => {
+
+const mutationKey = ['createInstitutionCheckout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInstitutionCheckout>>, {data: BodyType<InstitutionCheckoutRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createInstitutionCheckout(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInstitutionCheckoutMutationResult = NonNullable<Awaited<ReturnType<typeof createInstitutionCheckout>>>
+    export type CreateInstitutionCheckoutMutationBody = BodyType<InstitutionCheckoutRequest>
+    export type CreateInstitutionCheckoutMutationError = ErrorType<AiErrorResponse>
+
+    export const useCreateInstitutionCheckout = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInstitutionCheckout>>, TError,{data: BodyType<InstitutionCheckoutRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createInstitutionCheckout>>,
+        TError,
+        {data: BodyType<InstitutionCheckoutRequest>},
+        TContext
+      > => {
+      return useMutation(getCreateInstitutionCheckoutMutationOptions(options));
+    }
 
 export const getAuthorizePostMediaUploadUrl = () => {
 
