@@ -51,7 +51,7 @@ test("country prices match the user's revised institutional offering", () => {
 });
 test("checkout request body rejects forged consent, unsupported markets and malformed retries", () => {
   const schema = load("../lib/api-zod/src/generated/api.ts", { zod: require("zod") }).CreateInstitutionCheckoutBody;
-  const valid = { market: "ec", institutionName: "Test Credit Union", acceptedBillingTerms: true, requestId: "12345678-abcd-abcd-abcd-123456789abc" };
+  const valid = { market: "ec", institutionName: "Test Credit Union", acceptedBillingTerms: true, requestId: "12345678-abcd-abcd-abcd-123456789abc", passkeyApproval: "A".repeat(43) };
   assert.equal(schema.safeParse(valid).success, true);
   for (const patch of [{ market: "us" }, { acceptedBillingTerms: false }, { institutionName: "A" }, { requestId: "bad" }]) {
     assert.equal(schema.safeParse({ ...valid, ...patch }).success, false);
@@ -69,7 +69,7 @@ const security = load("../artifacts/api-server/src/lib/institutionSecurity.ts", 
 });
 const validBody = {
   market: "ec", institutionName: "Test Credit Union", acceptedBillingTerms: true,
-  requestId: "12345678-abcd-4bcd-8bcd-123456789abc",
+  requestId: "12345678-abcd-4bcd-8bcd-123456789abc", passkeyApproval: "A".repeat(43),
 };
 test("bank checkout requires a verified email and recent real authentication", () => {
   const valid = { sub: "test-representative", email_verified: true, auth_time: 1000 };
@@ -94,7 +94,7 @@ test("rejects extra client pricing, spoofed ownership, hidden controls and inval
 });
 
 const schemas = load("../lib/api-zod/src/generated/api.ts", { zod: require("zod") });
-async function exerciseCheckout({ origin = "https://app.example.com", body = validBody, claims, dsLevel = "mandate_challenge", unavailable = false } = {}) {
+async function exerciseCheckout({ origin = "https://app.example.com", body = validBody, claims, dsLevel = "mandate_challenge", unavailable = false, passkeyOkay = true } = {}) {
   let checkoutCalls = 0;
   const calls = [];
   let handlers;
@@ -112,6 +112,11 @@ async function exerciseCheckout({ origin = "https://app.example.com", body = val
       return claims;
     } },
     "../lib/groq": { AiServiceError: ServiceError },
+    "../lib/passkeys/service": {
+      InstitutionPasskeys: class {
+        async approveCheckout() { if (!passkeyOkay) throw new ServiceError(403, "Passkey approval is required."); }
+      },
+    },
     "../lib/institutionSecurity": {
       ...security,
       isAllowedBillingOrigin: value => security.isAllowedBillingOrigin(value, { INSTITUTION_WEBSITE_ORIGIN: "https://app.example.com" }),
@@ -148,6 +153,8 @@ test("route rejects spoofed origins, missing sign-in, unverified email and expir
     [{ claims: { ...fresh, email_verified: false } }, 403],
     [{ claims: { ...fresh, auth_time: 1 } }, 401],
     [{ claims: fresh, body: { ...validBody, amount: 1 } }, 400],
+    [{ claims: fresh, body: { ...validBody, passkeyApproval: undefined } }, 400],
+    [{ claims: fresh, passkeyOkay: false }, 403],
   ]) {
     const result = await exerciseCheckout(options);
     assert.equal(result.status, expected);

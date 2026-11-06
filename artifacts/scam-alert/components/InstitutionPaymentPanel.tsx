@@ -8,6 +8,8 @@ import { useColors } from "@/hooks/useColors";
 import { configureApi } from "@/lib/api-base";
 import type { InstitutionRegion } from "@/constants/institutionPlans";
 import { InstitutionIdentityCheck } from "./InstitutionIdentityCheck";
+import { InstitutionPasskeyCard } from "./InstitutionPasskeyCard";
+import { approveInstitutionCheckout, passkeyErrorMessage } from "@/lib/institutionPasskeys";
 
 function messageFor(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "data" in error) {
@@ -35,6 +37,7 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [identityReady, setIdentityReady] = useState(false);
+  const [passkeyReady, setPasskeyReady] = useState(false);
   const actionRef = useRef(false);
   const mounted = useRef(true);
   const currentUid = useRef(user?.uid);
@@ -48,8 +51,8 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
   const subscribe = async () => {
     if (!user) { router.push("/(auth)/login" as never); return; }
     if (Platform.OS !== "web" || !market || !offer?.available || actionRef.current) return;
-    if (!identityReady || name.trim().length < 2 || !accepted) {
-      setError("Complete the identity check, enter your institution's name and accept the recurring billing terms.");
+    if (!identityReady || !passkeyReady || name.trim().length < 2 || !accepted) {
+      setError("Complete the identity and passkey checks, enter your institution's name and accept the recurring billing terms.");
       return;
     }
     actionRef.current = true;
@@ -60,9 +63,12 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
       const key = `${uid}:${market}:${name.trim()}`;
       if (retryRequest.current?.key !== key) retryRequest.current = { key, id: window.crypto.randomUUID() };
       configureApi();
-      const result = await createInstitutionCheckout({
+      const intent = {
         market, institutionName: name.trim(), acceptedBillingTerms: true, requestId: retryRequest.current.id,
-      });
+      } as const;
+      const passkeyApproval = await approveInstitutionCheckout(intent);
+      if (!mounted.current || currentUid.current !== uid) return;
+      const result = await createInstitutionCheckout({ ...intent, passkeyApproval });
       if (!mounted.current || currentUid.current !== uid) return;
       const url = new URL(result.purchaseUrl);
       if (url.protocol !== "https:" || url.hostname !== "whop.com" || url.port || url.username || url.password ||
@@ -72,7 +78,7 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
       // No paid status is stored or granted here. Whop owns checkout and Orders.
       window.location.assign(url.toString());
     } catch (failure) {
-      if (mounted.current) setError(messageFor(failure, "Checkout could not be opened. Check your connection and try again."));
+      if (mounted.current) setError(messageFor(failure, passkeyErrorMessage(failure)));
     } finally {
       actionRef.current = false;
       if (mounted.current) setBusy(false);
@@ -117,6 +123,7 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
       {Platform.OS === "web" && market && offer?.available ? (
         <>
           <InstitutionIdentityCheck onReady={setIdentityReady} />
+          <InstitutionPasskeyCard key={user?.uid ?? "signed-out"} enabled={!!user && identityReady && !busy} onReady={setPasskeyReady} />
           <Text style={[styles.label, { color: colors.text }]}>Institution name</Text>
           <TextInput
             value={name} onChangeText={setName} editable={!busy} maxLength={150}
@@ -136,12 +143,12 @@ export function InstitutionPaymentPanel({ region }: { region: InstitutionRegion 
             </Text>
           </Pressable>
           <Pressable
-            onPress={() => void subscribe()} disabled={busy || (!!user && (!identityReady || !accepted || name.trim().length < 2))}
+            onPress={() => void subscribe()} disabled={busy || (!!user && (!identityReady || !passkeyReady || !accepted || name.trim().length < 2))}
             accessibilityRole="button" testID="institution-subscribe"
-            style={[styles.button, { backgroundColor: colors.primary, opacity: busy || (!!user && (!identityReady || !accepted || name.trim().length < 2)) ? 0.5 : 1 }]}
+            style={[styles.button, { backgroundColor: colors.primary, opacity: busy || (!!user && (!identityReady || !passkeyReady || !accepted || name.trim().length < 2)) ? 0.5 : 1 }]}
           >
             {busy ? <ActivityIndicator color={colors.primaryForeground} /> : <Feather name="lock" size={16} color={colors.primaryForeground} />}
-            <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>{busy ? "Opening checkout…" : user ? "Subscribe securely with Whop" : "Sign in to subscribe"}</Text>
+            <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>{busy ? "Approve on your device…" : user ? "Approve with passkey & continue" : "Sign in to subscribe"}</Text>
           </Pressable>
           <Text style={[styles.small, { color: colors.textMuted }]}>No setup fee. Whop confirms the final amount before you pay. We request the issuer's 3-D Secure challenge for supported card payments; availability depends on the card and processor. You will use a Whop account for receipts and billing.</Text>
         </>

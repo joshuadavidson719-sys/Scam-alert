@@ -9,6 +9,8 @@ import {
 import { verifiedIdentity } from "../lib/firebaseIdentity";
 import { isAllowedBillingOrigin, isStrictCheckoutBody, requireBillingIdentity } from "../lib/institutionSecurity";
 import { AiServiceError } from "../lib/groq";
+import { InstitutionPasskeys } from "../lib/passkeys/service";
+import type { PasskeyContext } from "../lib/passkeys/policy";
 import {
   readInstitutionOffer, MANAGE_INSTITUTION_BILLING, safeWhopCheckoutUrl,
 } from "../lib/institutionBilling";
@@ -54,6 +56,10 @@ router.post("/institutions/checkout", async (req, res, next): Promise<void> => {
   try {
     const identity = await verifiedIdentity(req);
     res.locals.uid = requireBillingIdentity(identity!);
+    res.locals.passkeyContext = {
+      uid: res.locals.uid, authTime: identity!.auth_time as number, origin: req.get("Origin")!,
+      rpId: new URL(req.get("Origin")!).hostname,
+    } satisfies PasskeyContext;
     next();
   } catch (error) {
     res.status(error instanceof AiServiceError ? error.status : 503).json({
@@ -72,6 +78,8 @@ router.post("/institutions/checkout", async (req, res, next): Promise<void> => {
     const origin = new URL(process.env.INSTITUTION_WEBSITE_ORIGIN ?? "");
     if (origin.protocol !== "https:" || origin.username || origin.password) throw new Error("Website configuration missing.");
     const uid = res.locals.uid as string;
+    await new InstitutionPasskeys(res.locals.passkeyContext as PasskeyContext)
+      .approveCheckout(parsed.data.passkeyApproval, parsed.data);
     const idempotencyKey = createHash("sha256").update([
       uid, parsed.data.requestId, plan.id, parsed.data.institutionName.trim(),
     ].join(":")).digest("hex");
@@ -85,7 +93,7 @@ router.post("/institutions/checkout", async (req, res, next): Promise<void> => {
         institution_name: parsed.data.institutionName.trim(),
         market: parsed.data.market,
         billing_terms_version: "institution-30day-2000",
-        security_policy: "verified-email-recent-auth",
+        security_policy: "verified-email-recent-auth-passkey",
         issuer_challenge_requested: true,
       },
     }, { idempotencyKey });
@@ -103,9 +111,11 @@ router.post("/institutions/checkout", async (req, res, next): Promise<void> => {
     }, "Hosted institutional checkout created with issuer authentication requested");
     // Hosted Whop checkout owns payment identity, receipts and cancellation.
     // Nothing here grants an app entitlement or trusts the return URL as paid.
-  } catch {
+  } catch (error) {
     req.log.warn("Institutional hosted checkout unavailable");
-    res.status(503).json({ error: "Checkout could not be opened. No payment was taken by this app. Please try again." });
+    res.status(error instanceof AiServiceError ? error.status : 503).json({
+      error: error instanceof AiServiceError ? error.message : "Checkout could not be opened. No payment was taken by this app. Please try again.",
+    });
   }
 });
 

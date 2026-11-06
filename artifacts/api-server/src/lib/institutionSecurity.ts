@@ -42,12 +42,13 @@ export function isAllowedBillingOrigin(origin: string | undefined, env = process
   return !!origin && origin === httpsOrigin(origin) && billingOrigins(env).has(origin);
 }
 
-export function isStrictCheckoutBody(body: unknown) {
+export function isStrictCheckoutBody(body: unknown, withApproval = true) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return false;
   const value = body as Record<string, unknown>;
-  const allowed = ["market", "institutionName", "acceptedBillingTerms", "requestId"];
+  const allowed = ["market", "institutionName", "acceptedBillingTerms", "requestId", ...(withApproval ? ["passkeyApproval"] : [])];
   return Object.keys(value).length === allowed.length &&
     Object.keys(value).every(key => allowed.includes(key)) &&
+    (!withApproval || (typeof value.passkeyApproval === "string" && /^[A-Za-z0-9_-]{43}$/.test(value.passkeyApproval))) &&
     typeof value.institutionName === "string" &&
     value.institutionName.trim().length >= 2 && value.institutionName.length <= 150 &&
     // Reject hidden bidi/control characters that can disguise the merchant name.

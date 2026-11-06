@@ -25,6 +25,12 @@ import type {
   InstitutionBilling,
   InstitutionCheckout,
   InstitutionCheckoutRequest,
+  InstitutionPasskeyApproval,
+  InstitutionPasskeyEnrollment,
+  InstitutionPasskeyIntent,
+  InstitutionPasskeyOptions,
+  InstitutionPasskeyResponse,
+  InstitutionPasskeyStatus,
   LinkCheckInput,
   PhoneCheckInput,
   PostMediaUploadAuthorization,
@@ -52,6 +58,337 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
+
+export const getGetInstitutionPasskeysUrl = () => {
+
+
+
+
+  return `/api/institutions/passkeys/status`
+}
+
+export const getInstitutionPasskeys = async ( options?: RequestInit): Promise<InstitutionPasskeyStatus> => {
+
+  return customFetch<InstitutionPasskeyStatus>(getGetInstitutionPasskeysUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetInstitutionPasskeysQueryKey = () => {
+    return [
+    `/api/institutions/passkeys/status`
+    ] as const;
+    }
+
+
+export const getGetInstitutionPasskeysQueryOptions = <TData = Awaited<ReturnType<typeof getInstitutionPasskeys>>, TError = ErrorType<AiErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInstitutionPasskeys>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInstitutionPasskeysQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInstitutionPasskeys>>> = ({ signal }) => getInstitutionPasskeys({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInstitutionPasskeys>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetInstitutionPasskeysQueryResult = NonNullable<Awaited<ReturnType<typeof getInstitutionPasskeys>>>
+export type GetInstitutionPasskeysQueryError = ErrorType<AiErrorResponse>
+
+
+
+export function useGetInstitutionPasskeys<TData = Awaited<ReturnType<typeof getInstitutionPasskeys>>, TError = ErrorType<AiErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getInstitutionPasskeys>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetInstitutionPasskeysQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getStartInstitutionPasskeyRegistrationUrl = () => {
+
+
+
+
+  return `/api/institutions/passkeys/register/options`
+}
+
+export const startInstitutionPasskeyRegistration = async (institutionPasskeyEnrollment: InstitutionPasskeyEnrollment, options?: RequestInit): Promise<InstitutionPasskeyOptions> => {
+
+  return customFetch<InstitutionPasskeyOptions>(getStartInstitutionPasskeyRegistrationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      institutionPasskeyEnrollment,)
+  }
+);}
+
+
+
+
+export const getStartInstitutionPasskeyRegistrationMutationOptions = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startInstitutionPasskeyRegistration>>, TError,{data: BodyType<InstitutionPasskeyEnrollment>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startInstitutionPasskeyRegistration>>, TError,{data: BodyType<InstitutionPasskeyEnrollment>}, TContext> => {
+
+const mutationKey = ['startInstitutionPasskeyRegistration'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startInstitutionPasskeyRegistration>>, {data: BodyType<InstitutionPasskeyEnrollment>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  startInstitutionPasskeyRegistration(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartInstitutionPasskeyRegistrationMutationResult = NonNullable<Awaited<ReturnType<typeof startInstitutionPasskeyRegistration>>>
+    export type StartInstitutionPasskeyRegistrationMutationBody = BodyType<InstitutionPasskeyEnrollment>
+    export type StartInstitutionPasskeyRegistrationMutationError = ErrorType<AiErrorResponse>
+
+    export const useStartInstitutionPasskeyRegistration = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startInstitutionPasskeyRegistration>>, TError,{data: BodyType<InstitutionPasskeyEnrollment>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startInstitutionPasskeyRegistration>>,
+        TError,
+        {data: BodyType<InstitutionPasskeyEnrollment>},
+        TContext
+      > => {
+      return useMutation(getStartInstitutionPasskeyRegistrationMutationOptions(options));
+    }
+
+export const getFinishInstitutionPasskeyRegistrationUrl = () => {
+
+
+
+
+  return `/api/institutions/passkeys/register/verify`
+}
+
+export const finishInstitutionPasskeyRegistration = async (institutionPasskeyResponse: InstitutionPasskeyResponse, options?: RequestInit): Promise<InstitutionPasskeyStatus> => {
+
+  return customFetch<InstitutionPasskeyStatus>(getFinishInstitutionPasskeyRegistrationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      institutionPasskeyResponse,)
+  }
+);}
+
+
+
+
+export const getFinishInstitutionPasskeyRegistrationMutationOptions = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finishInstitutionPasskeyRegistration>>, TError,{data: BodyType<InstitutionPasskeyResponse>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof finishInstitutionPasskeyRegistration>>, TError,{data: BodyType<InstitutionPasskeyResponse>}, TContext> => {
+
+const mutationKey = ['finishInstitutionPasskeyRegistration'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof finishInstitutionPasskeyRegistration>>, {data: BodyType<InstitutionPasskeyResponse>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  finishInstitutionPasskeyRegistration(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FinishInstitutionPasskeyRegistrationMutationResult = NonNullable<Awaited<ReturnType<typeof finishInstitutionPasskeyRegistration>>>
+    export type FinishInstitutionPasskeyRegistrationMutationBody = BodyType<InstitutionPasskeyResponse>
+    export type FinishInstitutionPasskeyRegistrationMutationError = ErrorType<AiErrorResponse>
+
+    export const useFinishInstitutionPasskeyRegistration = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finishInstitutionPasskeyRegistration>>, TError,{data: BodyType<InstitutionPasskeyResponse>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof finishInstitutionPasskeyRegistration>>,
+        TError,
+        {data: BodyType<InstitutionPasskeyResponse>},
+        TContext
+      > => {
+      return useMutation(getFinishInstitutionPasskeyRegistrationMutationOptions(options));
+    }
+
+export const getStartInstitutionPasskeyApprovalUrl = () => {
+
+
+
+
+  return `/api/institutions/passkeys/authenticate/options`
+}
+
+export const startInstitutionPasskeyApproval = async (institutionPasskeyIntent: InstitutionPasskeyIntent, options?: RequestInit): Promise<InstitutionPasskeyOptions> => {
+
+  return customFetch<InstitutionPasskeyOptions>(getStartInstitutionPasskeyApprovalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      institutionPasskeyIntent,)
+  }
+);}
+
+
+
+
+export const getStartInstitutionPasskeyApprovalMutationOptions = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startInstitutionPasskeyApproval>>, TError,{data: BodyType<InstitutionPasskeyIntent>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startInstitutionPasskeyApproval>>, TError,{data: BodyType<InstitutionPasskeyIntent>}, TContext> => {
+
+const mutationKey = ['startInstitutionPasskeyApproval'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startInstitutionPasskeyApproval>>, {data: BodyType<InstitutionPasskeyIntent>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  startInstitutionPasskeyApproval(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartInstitutionPasskeyApprovalMutationResult = NonNullable<Awaited<ReturnType<typeof startInstitutionPasskeyApproval>>>
+    export type StartInstitutionPasskeyApprovalMutationBody = BodyType<InstitutionPasskeyIntent>
+    export type StartInstitutionPasskeyApprovalMutationError = ErrorType<AiErrorResponse>
+
+    export const useStartInstitutionPasskeyApproval = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startInstitutionPasskeyApproval>>, TError,{data: BodyType<InstitutionPasskeyIntent>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startInstitutionPasskeyApproval>>,
+        TError,
+        {data: BodyType<InstitutionPasskeyIntent>},
+        TContext
+      > => {
+      return useMutation(getStartInstitutionPasskeyApprovalMutationOptions(options));
+    }
+
+export const getFinishInstitutionPasskeyApprovalUrl = () => {
+
+
+
+
+  return `/api/institutions/passkeys/authenticate/verify`
+}
+
+export const finishInstitutionPasskeyApproval = async (institutionPasskeyResponse: InstitutionPasskeyResponse, options?: RequestInit): Promise<InstitutionPasskeyApproval> => {
+
+  return customFetch<InstitutionPasskeyApproval>(getFinishInstitutionPasskeyApprovalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      institutionPasskeyResponse,)
+  }
+);}
+
+
+
+
+export const getFinishInstitutionPasskeyApprovalMutationOptions = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finishInstitutionPasskeyApproval>>, TError,{data: BodyType<InstitutionPasskeyResponse>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof finishInstitutionPasskeyApproval>>, TError,{data: BodyType<InstitutionPasskeyResponse>}, TContext> => {
+
+const mutationKey = ['finishInstitutionPasskeyApproval'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof finishInstitutionPasskeyApproval>>, {data: BodyType<InstitutionPasskeyResponse>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  finishInstitutionPasskeyApproval(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FinishInstitutionPasskeyApprovalMutationResult = NonNullable<Awaited<ReturnType<typeof finishInstitutionPasskeyApproval>>>
+    export type FinishInstitutionPasskeyApprovalMutationBody = BodyType<InstitutionPasskeyResponse>
+    export type FinishInstitutionPasskeyApprovalMutationError = ErrorType<AiErrorResponse>
+
+    export const useFinishInstitutionPasskeyApproval = <TError = ErrorType<AiErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finishInstitutionPasskeyApproval>>, TError,{data: BodyType<InstitutionPasskeyResponse>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof finishInstitutionPasskeyApproval>>,
+        TError,
+        {data: BodyType<InstitutionPasskeyResponse>},
+        TContext
+      > => {
+      return useMutation(getFinishInstitutionPasskeyApprovalMutationOptions(options));
+    }
 
 export const getGetInstitutionBillingUrl = () => {
 

@@ -154,6 +154,17 @@ router.get("/privacy-policy", (_req, res) => {
         does not receive or store card or bank details. A checkout return does not
         by itself confirm payment or activate app access.
       </p>
+      <h2>Institutional passkeys</h2>
+      <p>
+        Institutional website checkout requires a passkey, a verified account and
+        recent sign-in. We store public keys, website scope, verification counters
+        and minimal security metadata in server-protected Firebase records.
+        Fingerprints, face scans, device PINs and private passkey keys stay with
+        your device or passkey provider and are not sent to Scam Alert.
+        Approval challenges expire and cannot be reused. If all registered devices
+        are lost, manual identity review is required; an email reset does not
+        remove passkey protection.
+      </p>
       <h2>Profile photos</h2>
       <p>
         If you choose a profile photo, the image is stored in our app storage and

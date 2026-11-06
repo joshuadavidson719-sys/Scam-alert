@@ -2,6 +2,24 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Passkey records are server-only. User profile ownership and client-side
+    // administrator fields must never grant access to these collections.
+    match /_institutionPasskeyAccounts/{document} {
+      allow read, write: if false;
+    }
+    match /_institutionPasskeyChallenges/{document} {
+      allow read, write: if false;
+    }
+    match /_institutionPasskeyApprovals/{document} {
+      allow read, write: if false;
+    }
+    match /_institutionPasskeyCredentialOwners/{document} {
+      allow read, write: if false;
+    }
+    match /_institutionPasskeyLimits/{document} {
+      allow read, write: if false;
+    }
+
     function isSignedIn() {
       return request.auth != null;
     }
