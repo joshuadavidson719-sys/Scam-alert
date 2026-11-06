@@ -27,6 +27,8 @@ import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
+import { ProfileBanner, BannerColorPicker } from "@/components/ProfileBanner";
+import type { BannerColorId } from "@/constants/bannerPalettes";
 import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
@@ -83,7 +85,17 @@ export default function ProfileScreen() {
   const photoBusy = useRef(false);
   const [themeColor, setThemeColor] = useState("#FF3B3B");
   const [activeTab, setActiveTab] = useState<TabId>("posts");
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const [bannerPending, setBannerPending] = useState<BannerColorId | null>(null);
+      const [bannerError, setBannerError] = useState<string | null>(null);
+      const bannerSaving = useRef(false);
+      const topPad = Platform.OS === "web" ? 67 : insets.top;
+      const handleBannerColor = async (id: BannerColorId) => {
+        if (bannerSaving.current || !user) return;
+        bannerSaving.current = true; setBannerPending(id); setBannerError(null);
+        try { await updateUserProfile({ profileBannerColor: id }); }
+        catch { setBannerError("Banner colour could not be saved. Please try again."); }
+        finally { bannerSaving.current = false; setBannerPending(null); }
+      };
 
   const headerTextColor = isDark(themeColor) ? "#FFFFFF" : "#000000";
 
@@ -171,39 +183,25 @@ export default function ProfileScreen() {
 
   const Header = (
     <View>
-      {/* Coloured header banner */}
-      <View style={[styles.banner, { backgroundColor: themeColor, paddingTop: topPad + 10 }]}>
-        <View style={styles.headerActions}>
-          {profile.isAdmin && (
-            <TouchableOpacity onPress={() => router.push("/admin" as never)} style={styles.iconBtn}>
-              <Feather name="shield" size={18} color={headerTextColor} />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={() => router.push("/legal/privacy" as never)} style={styles.iconBtn}>
-            <Feather name="info" size={18} color={headerTextColor} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout} style={styles.iconBtn}>
-            <Feather name="log-out" size={18} color={headerTextColor} />
-          </TouchableOpacity>
-        </View>
+      <View style={{ paddingTop: topPad + 10 }}>
+            <ProfileBanner colorId={profile.profileBannerColor} username={profile.username} niche={profile.niche}
+              posts={posts.length} followers={profile.followers?.length ?? 0} following={profile.following?.length ?? 0}
+              avatar={<TouchableOpacity onPress={handlePickProfilePhoto} disabled={photoUploading} style={styles.avatarWrapper} accessibilityLabel="Change profile photo">
+                <UserAvatar uri={profile.profilePhoto} name={profile.username} size={88} />
+                <View style={[styles.cameraOverlay, { backgroundColor: themeColor }]}>
+                  {photoUploading ? <ActivityIndicator size="small" color={headerTextColor} /> : <Feather name="camera" size={14} color={headerTextColor} />}
+                </View>
+              </TouchableOpacity>}
+              actions={<>
+                {profile.isAdmin && <TouchableOpacity onPress={() => router.push("/admin" as never)} style={styles.iconBtn} accessibilityLabel="Admin"><Feather name="shield" size={18} color="#FFFFFF" /></TouchableOpacity>}
+                <TouchableOpacity onPress={() => router.push("/legal/privacy" as never)} style={styles.iconBtn} accessibilityLabel="Privacy and info"><Feather name="info" size={18} color="#FFFFFF" /></TouchableOpacity>
+                <TouchableOpacity onPress={handleLogout} style={styles.iconBtn} accessibilityLabel="Sign out"><Feather name="log-out" size={18} color="#FFFFFF" /></TouchableOpacity>
+              </>}
+            />
+            <BannerColorPicker value={profile.profileBannerColor} pending={bannerPending} error={bannerError} onSelect={(id) => void handleBannerColor(id)} textColor={colors.text} mutedColor={colors.textSecondary} />
+          </View>
 
-        <View style={styles.avatarSection}>
-          <TouchableOpacity onPress={handlePickProfilePhoto} style={styles.avatarWrapper}>
-            <UserAvatar uri={profile.profilePhoto} name={profile.username} size={90} />
-            <View style={[styles.cameraOverlay, { backgroundColor: themeColor }]}>
-              {photoUploading
-                ? <ActivityIndicator size="small" color={headerTextColor} />
-                : <Feather name="camera" size={14} color={headerTextColor} />}
-            </View>
-          </TouchableOpacity>
-          <Text style={[styles.username, { color: headerTextColor }]}>{profile.username}</Text>
-          <Text style={[styles.niche, { color: headerTextColor, opacity: 0.85 }]}>
-            {profile.niche || "Scam Alert Community"}
-          </Text>
-        </View>
-      </View>
-
-      {/* Bio */}
+          {/* Bio */}
       <View style={[styles.bioSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {editingBio ? (
           <View style={{ gap: 8 }}>
@@ -233,24 +231,6 @@ export default function ProfileScreen() {
             </Text>
           </TouchableOpacity>
         )}
-      </View>
-
-      {/* Stats */}
-      <View style={[styles.statsRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={styles.stat}>
-          <Text style={[styles.statNum, { color: themeColor }]}>{posts.length}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>Posts</Text>
-        </View>
-        <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-        <View style={styles.stat}>
-          <Text style={[styles.statNum, { color: themeColor }]}>{profile.followers?.length ?? 0}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>Followers</Text>
-        </View>
-        <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-        <View style={styles.stat}>
-          <Text style={[styles.statNum, { color: themeColor }]}>{profile.following?.length ?? 0}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>Following</Text>
-        </View>
       </View>
 
       {/* Theme colour picker */}
