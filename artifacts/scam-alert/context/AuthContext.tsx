@@ -39,6 +39,7 @@ export interface UserProfile {
   email: string;
   username: string;
   profilePhoto: string | null;
+  profileBannerColor?: string;
   niche: string;
   bio: string;
   followers: string[];

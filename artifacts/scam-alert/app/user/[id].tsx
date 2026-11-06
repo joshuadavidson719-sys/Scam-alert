@@ -29,6 +29,7 @@ import { db } from "@/lib/firebase";
 import { useColors } from "@/hooks/useColors";
 import { useAuth, type UserProfile } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/UserAvatar";
+import { ProfileBanner } from "@/components/ProfileBanner";
 import { PostCard, type PostData } from "@/components/PostCard";
 import { CommentSheet } from "@/components/CommentSheet";
 import { ReportModal } from "@/components/ReportModal";
@@ -213,39 +214,15 @@ export default function UserProfileScreen() {
               <View style={{ width: 24 }} />
             </View>
 
-            <View style={styles.profileSection}>
-              <View pointerEvents="none" style={[styles.headerWash, { backgroundColor: colors.primary + "14" }]} />
-              <View style={[styles.avatarRing, { borderColor: colors.primary + "66", backgroundColor: colors.background }]}>
-                <UserAvatar uri={targetUser.profilePhoto} name={targetUser.username} size={92} />
-              </View>
-              <Text style={[styles.username, { color: colors.text }]}>{targetUser.username}</Text>
-              <Text style={[styles.niche, { color: colors.primary }]}>
-                {targetUser.niche || "Scam Alert Community"}
-              </Text>
-              {targetUser.bio ? (
+            <View style={{ paddingTop: 14 }}>
+                  <ProfileBanner colorId={targetUser.profileBannerColor} username={targetUser.username} niche={targetUser.niche}
+                    posts={posts.length} followers={targetUser.followers?.length ?? 0} following={targetUser.following?.length ?? 0}
+                    avatar={<UserAvatar uri={targetUser.profilePhoto} name={targetUser.username} size={88} />} />
+                </View>
+                <View style={styles.profileSection}>
+                  {targetUser.bio ? (
                 <Text style={[styles.bio, { color: colors.textSecondary }]}>{targetUser.bio}</Text>
               ) : null}
-
-              <View style={[styles.statsRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={styles.stat}>
-                  <Text style={[styles.statNum, { color: colors.text }]}>{posts.length}</Text>
-                  <Text style={[styles.statLabel, { color: colors.textMuted }]}>Posts</Text>
-                </View>
-                <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.stat}>
-                  <Text style={[styles.statNum, { color: colors.text }]}>
-                    {targetUser.followers?.length ?? 0}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: colors.textMuted }]}>Followers</Text>
-                </View>
-                <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.stat}>
-                  <Text style={[styles.statNum, { color: colors.text }]}>
-                    {targetUser.following?.length ?? 0}
-                  </Text>
-                  <Text style={[styles.statLabel, { color: colors.textMuted }]}>Following</Text>
-                </View>
-              </View>
 
               {!isMe && (
                 <View style={styles.actionBtns}>
