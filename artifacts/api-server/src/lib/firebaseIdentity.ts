@@ -17,7 +17,7 @@ function projectId() {
   }
 }
 
-export async function verifiedUser(req: Request, optional = false): Promise<string | null> {
+export async function verifiedIdentity(req: Request, optional = false) {
   const header = req.get("Authorization");
   if (!header && optional) return null;
   if (!header?.startsWith("Bearer ")) throw new AiServiceError(401, "Sign in to continue.");
@@ -29,8 +29,12 @@ export async function verifiedUser(req: Request, optional = false): Promise<stri
       requiredClaims: ["sub", "exp", "iat"],
     });
     if (!payload.sub || payload.sub.length > 128 || (payload.iat ?? Infinity) > Date.now() / 1000 + 60) throw new Error("Invalid identity");
-    return payload.sub;
+    return payload;
   } catch {
     throw new AiServiceError(401, "Your session has expired. Sign in again.");
   }
+}
+
+export async function verifiedUser(req: Request, optional = false): Promise<string | null> {
+  return (await verifiedIdentity(req, optional))?.sub ?? null;
 }

@@ -8,6 +8,82 @@
 import * as zod from 'zod';
 
 
+export const GetInstitutionPasskeysResponse = zod.object({
+  "count": zod.number(),
+  "rpId": zod.string(),
+  "maxKeys": zod.number(),
+  "recoveryMessage": zod.string()
+})
+
+
+export const startInstitutionPasskeyRegistrationBodyManagementApprovalMin = 43;
+export const startInstitutionPasskeyRegistrationBodyManagementApprovalMax = 43;
+
+
+
+export const StartInstitutionPasskeyRegistrationBody = zod.object({
+  "managementApproval": zod.string().min(startInstitutionPasskeyRegistrationBodyManagementApprovalMin).max(startInstitutionPasskeyRegistrationBodyManagementApprovalMax).optional()
+})
+
+export const StartInstitutionPasskeyRegistrationResponse = zod.object({
+  "challengeId": zod.string(),
+  "options": zod.record(zod.string(), zod.unknown())
+})
+
+
+export const finishInstitutionPasskeyRegistrationBodyChallengeIdRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
+
+
+export const FinishInstitutionPasskeyRegistrationBody = zod.object({
+  "challengeId": zod.string().regex(finishInstitutionPasskeyRegistrationBodyChallengeIdRegExp),
+  "credential": zod.record(zod.string(), zod.unknown())
+})
+
+export const FinishInstitutionPasskeyRegistrationResponse = zod.object({
+  "count": zod.number(),
+  "rpId": zod.string(),
+  "maxKeys": zod.number(),
+  "recoveryMessage": zod.string()
+})
+
+
+export const startInstitutionPasskeyApprovalBodyCheckoutInstitutionNameMin = 2;
+export const startInstitutionPasskeyApprovalBodyCheckoutInstitutionNameMax = 150;
+
+export const startInstitutionPasskeyApprovalBodyCheckoutRequestIdRegExp = new RegExp('^[a-f0-9-]{36}$');
+
+
+export const StartInstitutionPasskeyApprovalBody = zod.object({
+  "purpose": zod.enum(['checkout', 'enroll']),
+  "checkout": zod.object({
+  "market": zod.enum(['ec', 'ca']),
+  "institutionName": zod.string().min(startInstitutionPasskeyApprovalBodyCheckoutInstitutionNameMin).max(startInstitutionPasskeyApprovalBodyCheckoutInstitutionNameMax),
+  "acceptedBillingTerms": zod.literal(true),
+  "requestId": zod.string().regex(startInstitutionPasskeyApprovalBodyCheckoutRequestIdRegExp)
+}).optional()
+})
+
+export const StartInstitutionPasskeyApprovalResponse = zod.object({
+  "challengeId": zod.string(),
+  "options": zod.record(zod.string(), zod.unknown())
+})
+
+
+export const finishInstitutionPasskeyApprovalBodyChallengeIdRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
+
+
+export const FinishInstitutionPasskeyApprovalBody = zod.object({
+  "challengeId": zod.string().regex(finishInstitutionPasskeyApprovalBodyChallengeIdRegExp),
+  "credential": zod.record(zod.string(), zod.unknown())
+})
+
+export const FinishInstitutionPasskeyApprovalResponse = zod.object({
+  "approvalToken": zod.string(),
+  "expiresInSeconds": zod.number(),
+  "purpose": zod.enum(['checkout', 'enroll'])
+})
+
+
 export const GetInstitutionBillingResponse = zod.object({
   "offers": zod.array(zod.object({
   "market": zod.enum(['ec', 'ca']),
@@ -25,6 +101,7 @@ export const GetInstitutionBillingResponse = zod.object({
 /**
  * Create hosted checkout for an authenticated institution representative. Does not grant access or charge a card.
  */
+export const createInstitutionCheckoutBodyPasskeyApprovalRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
 export const createInstitutionCheckoutBodyInstitutionNameMin = 2;
 export const createInstitutionCheckoutBodyInstitutionNameMax = 150;
 
@@ -32,6 +109,7 @@ export const createInstitutionCheckoutBodyRequestIdRegExp = new RegExp('^[a-f0-9
 
 
 export const CreateInstitutionCheckoutBody = zod.object({
+  "passkeyApproval": zod.string().regex(createInstitutionCheckoutBodyPasskeyApprovalRegExp),
   "market": zod.enum(['ec', 'ca']),
   "institutionName": zod.string().min(createInstitutionCheckoutBodyInstitutionNameMin).max(createInstitutionCheckoutBodyInstitutionNameMax),
   "acceptedBillingTerms": zod.literal(true),

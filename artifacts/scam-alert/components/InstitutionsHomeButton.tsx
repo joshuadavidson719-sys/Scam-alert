@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "@/hooks/useColors";
@@ -22,7 +22,7 @@ export function InstitutionsHomeButton() {
         Banks & Credit Unions
       </Text>
       <Text style={[styles.sub, { color: colors.textSecondary }]} numberOfLines={1}>
-        Plans
+        {Platform.OS === "web" ? "Plans" : "Services"}
       </Text>
       <View style={{ flex: 1 }} />
       <Feather name="chevron-right" size={18} color={colors.textMuted} />

@@ -13,6 +13,95 @@ tags:
   - name: swiftop
     description: Swiftop AI image and animation generation
 paths:
+  /institutions/passkeys/status:
+    get:
+      operationId: getInstitutionPasskeys
+      tags: [institutions]
+      responses:
+        "200":
+          description: Passkey count for the signed-in account on this website.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionPasskeyStatus"
+        default:
+          description: Passkey request failed. The response contains an error message.
+  /institutions/passkeys/register/options:
+    post:
+      operationId: startInstitutionPasskeyRegistration
+      tags: [institutions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstitutionPasskeyEnrollment"
+      responses:
+        "200":
+          description: Single-use server-generated registration challenge.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionPasskeyOptions"
+        default:
+          description: Passkey request failed. The response contains an error message.
+  /institutions/passkeys/register/verify:
+    post:
+      operationId: finishInstitutionPasskeyRegistration
+      tags: [institutions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstitutionPasskeyResponse"
+      responses:
+        "200":
+          description: Passkey saved after cryptographic verification.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionPasskeyStatus"
+        default:
+          description: Passkey request failed. The response contains an error message.
+  /institutions/passkeys/authenticate/options:
+    post:
+      operationId: startInstitutionPasskeyApproval
+      tags: [institutions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstitutionPasskeyIntent"
+      responses:
+        "200":
+          description: Single-use challenge bound to this account and intended action.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionPasskeyOptions"
+        default:
+          description: Passkey request failed. The response contains an error message.
+  /institutions/passkeys/authenticate/verify:
+    post:
+      operationId: finishInstitutionPasskeyApproval
+      tags: [institutions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstitutionPasskeyResponse"
+      responses:
+        "200":
+          description: Short-lived, single-use approval, not proof of payment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionPasskeyApproval"
+        default:
+          description: Passkey request failed. The response contains an error message.
   /institutions/billing:
     get:
       operationId: getInstitutionBilling
@@ -175,6 +264,78 @@ paths:
 
 components:
   schemas:
+    InstitutionPasskeyStatus:
+      type: object
+      required: [count, rpId, maxKeys, recoveryMessage]
+      properties:
+        count: {type: integer}
+        rpId: {type: string}
+        maxKeys: {type: integer}
+        recoveryMessage: {type: string}
+    InstitutionPasskeyEnrollment:
+      type: object
+      additionalProperties: false
+      properties:
+        managementApproval:
+          type: string
+          minLength: 43
+          maxLength: 43
+    InstitutionPasskeyOptions:
+      type: object
+      required: [challengeId, options]
+      properties:
+        challengeId: {type: string}
+        options:
+          type: object
+          additionalProperties: true
+    InstitutionPasskeyResponse:
+      type: object
+      additionalProperties: false
+      required: [challengeId, credential]
+      properties:
+        challengeId:
+          type: string
+          pattern: '^[A-Za-z0-9_-]{43}$'
+        credential:
+          type: object
+          additionalProperties: true
+    InstitutionPasskeyIntent:
+      type: object
+      additionalProperties: false
+      required: [purpose]
+      properties:
+        purpose:
+          type: string
+          enum: [checkout, enroll]
+        checkout:
+          $ref: "#/components/schemas/InstitutionCheckoutIntent"
+    InstitutionPasskeyApproval:
+      type: object
+      required: [approvalToken, expiresInSeconds, purpose]
+      properties:
+        approvalToken: {type: string}
+        expiresInSeconds: {type: integer}
+        purpose:
+          type: string
+          enum: [checkout, enroll]
+    InstitutionCheckoutIntent:
+      type: object
+      additionalProperties: false
+      required: [market, institutionName, acceptedBillingTerms, requestId]
+      properties:
+        market:
+          type: string
+          enum: [ec, ca]
+        institutionName:
+          type: string
+          minLength: 2
+          maxLength: 150
+        acceptedBillingTerms:
+          type: boolean
+          enum: [true]
+        requestId:
+          type: string
+          pattern: '^[a-f0-9-]{36}$'
     InstitutionOffer:
       type: object
       required: [market, available, currency, amount, billingDays, formattedPrice, message]
@@ -207,8 +368,11 @@ components:
     InstitutionCheckoutRequest:
       type: object
       additionalProperties: false
-      required: [market, institutionName, acceptedBillingTerms, requestId]
+      required: [market, institutionName, acceptedBillingTerms, requestId, passkeyApproval]
       properties:
+        passkeyApproval:
+          type: string
+          pattern: '^[A-Za-z0-9_-]{43}$'
         market:
           type: string
           enum: [ec, ca]
@@ -221,116 +385,7 @@ components:
           enum: [true]
         requestId:
           type: string
-          pattern: '^[a-f0-9-]{36}    PostMediaUploadHandshake:
-      type: object
-      required: [type, payload]
-      properties:
-        type:
-          type: string
-          enum: [blob.generate-client-token]
-        payload:
-          type: object
-          required: [pathname]
-          properties:
-            pathname:
-              type: string
-            clientPayload:
-              type: ["string", "null"]
-            multipart:
-              type: boolean
-    PostMediaUploadAuthorization:
-      type: object
-      required: [type, clientToken]
-      properties:
-        type:
-          type: string
-        clientToken:
-          type: string
-    HealthStatus:
-      type: object
-      properties:
-        status:
-          type: string
-      required:
-        - status
-
-    GenerateImageBody:
-      type: object
-      properties:
-        prompt:
-          type: string
-          description: Text description of the image to generate
-          minLength: 1
-          maxLength: 4000
-        size:
-          type: string
-          enum: ["1024x1024", "1536x1024", "1024x1536"]
-          description: Output image size (default 1024x1024)
-      required:
-        - prompt
-
-    GenerateImageResponse:
-      type: object
-      properties:
-        b64_json:
-          type: string
-          description: Base64-encoded PNG image
-        prompt:
-          type: string
-      required:
-        - b64_json
-        - prompt
-
-    GenerateAnimationBody:
-      type: object
-      properties:
-        prompt:
-          type: string
-          description: Text description of the animation scene to generate
-          minLength: 1
-          maxLength: 4000
-        frameCount:
-          type: integer
-          minimum: 4
-          maximum: 12
-          description: Number of frames to generate (default 8)
-        style:
-          type: string
-          enum: ["flow", "zoom", "pan", "morph"]
-          description: Animation style preset (default flow)
-        fps:
-          type: integer
-          minimum: 4
-          maximum: 16
-          description: Target playback FPS hint (default 8)
-      required:
-        - prompt
-
-    GenerateAnimationResponse:
-      type: object
-      properties:
-        frames:
-          type: array
-          items:
-            type: string
-          description: Array of base64-encoded PNG frames
-        prompt:
-          type: string
-        frameCount:
-          type: integer
-      required:
-        - frames
-        - prompt
-        - frameCount
-
-    ErrorResponse:
-      type: object
-      properties:
-        error:
-          type: string
-      required:
-        - error
-
+          pattern: '^[a-f0-9-]{36}$'
     InstitutionCheckout:
       type: object
       required: [purchaseUrl, checkoutId]

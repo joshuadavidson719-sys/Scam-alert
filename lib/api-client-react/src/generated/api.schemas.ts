@@ -5,6 +5,83 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface InstitutionPasskeyStatus {
+  count: number;
+  rpId: string;
+  maxKeys: number;
+  recoveryMessage: string;
+}
+
+export interface InstitutionPasskeyEnrollment {
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  managementApproval?: string;
+}
+
+export type InstitutionPasskeyOptionsOptions = { [key: string]: unknown };
+
+export interface InstitutionPasskeyOptions {
+  challengeId: string;
+  options: InstitutionPasskeyOptionsOptions;
+}
+
+export type InstitutionPasskeyResponseCredential = { [key: string]: unknown };
+
+export interface InstitutionPasskeyResponse {
+  /** @pattern ^[A-Za-z0-9_-]{43}$ */
+  challengeId: string;
+  credential: InstitutionPasskeyResponseCredential;
+}
+
+export type InstitutionPasskeyIntentPurpose = typeof InstitutionPasskeyIntentPurpose[keyof typeof InstitutionPasskeyIntentPurpose];
+
+
+export const InstitutionPasskeyIntentPurpose = {
+  checkout: 'checkout',
+  enroll: 'enroll',
+} as const;
+
+export type InstitutionCheckoutIntentMarket = typeof InstitutionCheckoutIntentMarket[keyof typeof InstitutionCheckoutIntentMarket];
+
+
+export const InstitutionCheckoutIntentMarket = {
+  ec: 'ec',
+  ca: 'ca',
+} as const;
+
+export interface InstitutionCheckoutIntent {
+  market: InstitutionCheckoutIntentMarket;
+  /**
+     * @minLength 2
+     * @maxLength 150
+     */
+  institutionName: string;
+  acceptedBillingTerms: true;
+  /** @pattern ^[a-f0-9-]{36}$ */
+  requestId: string;
+}
+
+export interface InstitutionPasskeyIntent {
+  purpose: InstitutionPasskeyIntentPurpose;
+  checkout?: InstitutionCheckoutIntent;
+}
+
+export type InstitutionPasskeyApprovalPurpose = typeof InstitutionPasskeyApprovalPurpose[keyof typeof InstitutionPasskeyApprovalPurpose];
+
+
+export const InstitutionPasskeyApprovalPurpose = {
+  checkout: 'checkout',
+  enroll: 'enroll',
+} as const;
+
+export interface InstitutionPasskeyApproval {
+  approvalToken: string;
+  expiresInSeconds: number;
+  purpose: InstitutionPasskeyApprovalPurpose;
+}
+
 export type InstitutionOfferMarket = typeof InstitutionOfferMarket[keyof typeof InstitutionOfferMarket];
 
 
@@ -37,6 +114,8 @@ export const InstitutionCheckoutRequestMarket = {
 } as const;
 
 export interface InstitutionCheckoutRequest {
+  /** @pattern ^[A-Za-z0-9_-]{43}$ */
+  passkeyApproval: string;
   market: InstitutionCheckoutRequestMarket;
   /**
      * @minLength 2

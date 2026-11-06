@@ -8,6 +8,8 @@
 import type { InstitutionCheckoutRequestMarket } from './institutionCheckoutRequestMarket';
 
 export interface InstitutionCheckoutRequest {
+  /** @pattern ^[A-Za-z0-9_-]{43}$ */
+  passkeyApproval: string;
   market: InstitutionCheckoutRequestMarket;
   /**
      * @minLength 2

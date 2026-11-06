@@ -33,6 +33,11 @@ const SECTIONS = [
       "Whop processes website subscriptions for banks and credit unions. When you open institutional checkout, we send Whop your institution name, app account identifier and selected market. Whop handles payment details, billing history, receipts and subscription cancellation under its own privacy policy. Scam Alert does not receive or store your card or bank details. Returning from checkout does not by itself confirm payment or activate any app access.",
   },
   {
+    title: "Institutional Passkeys",
+    content:
+      "Institutional website checkout requires a passkey in addition to a verified account and recent sign-in. We store the credential's public key, website scope, verification counter and minimal security metadata in server-protected Firebase records. Fingerprints, face scans, device PINs and private passkey keys stay with your device or passkey provider and are not sent to Scam Alert. Approval challenges expire and cannot be reused. Passkeys are separate from personal Premium and require manual identity review if every registered device is lost.",
+  },
+  {
     title: "Profile Photos",
     content:
       "Choosing a profile photo uploads the image to our app storage and saves its reference in your Firebase profile. Your profile image is visible to other users and can be accessed through its image link. Do not use a sensitive or private image. You can keep using a preset avatar instead.",
