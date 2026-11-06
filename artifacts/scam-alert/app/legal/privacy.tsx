@@ -28,6 +28,11 @@ const SECTIONS = [
       "When you use text AI tools, Groq processes the text, links, or phone numbers you submit. OpenAI processes image prompts and generated image frames for Premium generation. Do not submit passwords, banking credentials, or sensitive personal information. We store generation prompts and results privately so you can recover interrupted requests, and record subscription identifiers and credit usage to apply your monthly allowance. RevenueCat verifies subscriptions and Google Play handles Android payments; we do not receive or store your payment-card details. Generated results are not published to other users unless you share them. You can request deletion using the contact details in this policy.",
   },
   {
+    title: "Institutional Subscriptions",
+    content:
+      "Whop processes website subscriptions for banks and credit unions. When you open institutional checkout, we send Whop your institution name, app account identifier and selected market. Whop handles payment details, billing history, receipts and subscription cancellation under its own privacy policy. Scam Alert does not receive or store your card or bank details. Returning from checkout does not by itself confirm payment or activate any app access.",
+  },
+  {
     title: "Profile Photos",
     content:
       "Choosing a profile photo uploads the image to our app storage and saves its reference in your Firebase profile. Your profile image is visible to other users and can be accessed through its image link. Do not use a sensitive or private image. You can keep using a preset avatar instead.",
