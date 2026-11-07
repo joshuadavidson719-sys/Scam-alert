@@ -185,7 +185,7 @@ export default function CreateScreen() {
         let downloadUrl = uploadedMediaRef.current?.file === file && uploadedMediaRef.current.uid === user.uid
           ? uploadedMediaRef.current.url : null;
         if (!downloadUrl) {
-          const { uploadWebPostMedia } = await import("../../lib/post-media.web");
+          const { uploadWebPostMedia } = await import("../../lib/post-media");
           const controller = new AbortController();
           uploadControllerRef.current = controller;
           const timeout = setTimeout(() => controller.abort(), 10 * 60_000);
